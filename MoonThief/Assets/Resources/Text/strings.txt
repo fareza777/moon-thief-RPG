@@ -12,11 +12,19 @@ splash.made|a hand-built night tale
 splash.presents|presents
 
 # ---- main menu
-menu.new|NEW NIGHT
+menu.new|NEW GAME
 menu.continue|CONTINUE
+menu.story|STORY
 menu.settings|SETTINGS
+menu.about|ABOUT
+menu.share|SHARE
+menu.rate|RATE US
 menu.credits|CREDITS
 menu.hint|TAP A ROW TO PICK
+share.copied|Store link copied - send it to a friend.
+share.text|The Moon Thief - a night tale in three nights. {0}
+rate.store|Opening the store page...
+rate.thanks|Stars make the night brighter. Thank you!
 cred.title|THE MOON THIEF
 cred.sub|a tale in three nights
 cred.body|studio      f7 developer games\npixel art   super retro collection\ncode        unity, built from scratch\nsound       chiptune written in code\nfont        5x8 bitmap, drawn by hand
@@ -36,6 +44,26 @@ set.shake|SCREEN SHAKE
 set.on|ON
 set.off|OFF
 set.saved|PROGRESS SAVED
+set.music|MUSIC
+set.autobattle|AUTO BATTLE
+
+# ---- onboarding (first boot, three cards)
+onb.title.1|WALK
+onb.body.1|Drag anywhere on the road to walk.\nTap a villager to talk.\nTap a chest to open it.
+onb.title.2|FIGHT & BEFRIEND
+onb.body.2|Wild beasts chase you in the dark.\nIn a fight: ATTACK, BEFRIEND,\nshare a MORSEL, or LET GO.\nAUTO fights for you.
+onb.title.3|THE QUEST
+onb.body.3|Your goal is written in the corner.\nFollow the moon-chevron.\nGather shards. Raise the moon.
+onb.next|NEXT
+onb.start|BEGIN
+
+# ---- the shop
+shop.title|MARN'S WARES
+shop.sub|{0} GOLD
+shop.buy|BUY
+shop.sold|Carried off. Careful out there.
+shop.poor|Not enough gold, love.
+shop.hint|TAP A WARE TO BUY IT
 
 # ---- pause
 pause.title|PAUSED
@@ -47,6 +75,7 @@ pause.totitle|LEAVE TO TITLE
 
 # ---- cinematic intro
 ci.skip|TAP TO SKIP
+ci.0a|Quiet Hollow, on the last\ngood night of the year.
 ci.1|Night came early.
 ci.2|The moon did not rise.
 ci.3|No one saw it go.
@@ -68,11 +97,12 @@ hud.quest|NEXT: {0}
 
 # ---- quest chain (the clear workflow). Kept short: this line lives in the corner of the
 # ---- screen over the world, and a 39-character line ran most of the way across it.
-quest.1|Talk to Mira by the crystal.
-quest.2|Open night chests. {0} shards left.
-quest.3|Follow the lamps north.
-quest.4|Face the Pale Guard.
-quest.5|Raise the moon at the crystal.
+# Numbered: the corner line reads like a walkthrough, so the order is never in doubt.
+quest.1|1. Talk to Mira by the crystal.
+quest.2|2. Open night chests. {0} shards left.
+quest.3|3. Follow the lamps north.
+quest.4|4. Face the Pale Guard.
+quest.5|5. Raise the moon at the crystal.
 
 # ---- heroes
 hero.amber|AMBER
@@ -99,6 +129,14 @@ bt.befriendfail|{0} is not ready yet.
 bt.morsel|You lay down a moonlit morsel.
 bt.nomore|The bag is empty.
 bt.hint|tap a command, then a foe
+bt.auto.on|AUTO on - the party fights itself.
+bt.auto.off|AUTO off.
+bt.attack.0|{0} lunges!
+bt.attack.1|{0} sweeps the whole field!
+bt.attack.2|{0} mends {1}!
+bt.attack.2b|{0} throws a pebble at {1}!
+bt.attack.crit|{0} finds the weak seam! {1} damage!
+bt.heal|+{0}
 
 # ---- monsters
 mon.slime|DEW SLIME
@@ -114,6 +152,9 @@ mon.bones|HOLLOW BONES
 mon.hob|STONE HOB
 mon.wisp|LANTERN WISP
 mon.minotaur|PALE GUARD
+mon.thane|NIGHT THANE
+mon.thick|THICKET
+mon.palebell|PALE BELL
 
 # ---- result cards
 card.wintitle|THE WAY IS CLEAR
@@ -123,6 +164,8 @@ card.bossline|The last shard slips out of its hands.
 card.lossline|The party wakes by the crystal. The moon is still gone.
 card.xp|XP {0}
 card.gold|GOLD {0}
+card.levelup|LEVEL UP - now level {0}!
+card.healall|The party breathes easier.
 card.befriended|FRIENDS {0}/{1}
 card.joined|They wanted to come.
 card.moon|The moon is still gone.
@@ -164,6 +207,7 @@ npc.pip|PIP
 npc.oda|ODA
 npc.nail|NAIL
 npc.prune|PRUNE
+npc.marn|MARN
 
 # ---- dialog: Mira, the keeper of the lantern
 dl.elder.1.1|The moon did not rise. Not one cloud, and still dark.
@@ -205,6 +249,8 @@ dl.nail.1|I dig by feel now. Every hole I open, the dark is already in it.
 dl.nail.2|If I do not come back up tonight, my lantern is yours.
 dl.prune.1|I am the queen of this square. Four days now. Nobody argued.
 dl.prune.2|When the moon comes back I will knight the first person who finds it.
+dl.marn.1|Wares for the dark. Gold keeps the lantern lit.
+dl.marn.2|You look like trouble. My favourite kind of customer.
 
 # ---- battle messages, part two
 bt.morsel2|{0} is shared out. The party gains {1} HP.

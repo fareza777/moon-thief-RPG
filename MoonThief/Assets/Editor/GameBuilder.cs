@@ -20,6 +20,7 @@ namespace MoonThief.EditorTools
         const string ScenePath = "Assets/Scenes/Game.unity";
         const string ApkPath = "Build/Android/TheMoonThief.apk";
         const string WinPath = "Build/Windows/TheMoonThief.exe";
+        const string LinuxPath = "Build/Linux/TheMoonThief.x86_64";
         const string AppId = "com.fajargames.moonthief";
 
         [MenuItem("MoonThief/Build Game")]
@@ -51,6 +52,14 @@ namespace MoonThief.EditorTools
         {
             Build(renderScreenshots: false, buildPlayers: false);
             BuildAndroid();
+            EditorApplication.Exit(0);
+        }
+
+        /// <summary>A Linux player - the build this box can run headless for the -selftest pass.</summary>
+        public static void LinuxOnly()
+        {
+            Build(renderScreenshots: false, buildPlayers: false);
+            BuildLinux();
             EditorApplication.Exit(0);
         }
 
@@ -215,6 +224,13 @@ namespace MoonThief.EditorTools
             game.EditorInterior(5);
             Shot("18-interior-kitchen");
 
+            // the first-boot cards and Marn's shop card
+            game.EditorOnboard();
+            Shot("27-onboard");
+            game.EditorExplore(1);
+            game.EditorShop();
+            Shot("28-shop");
+
             // 19-22. the journal: the hub, two pages and the bestiary
             game.EditorJournal(-1);
             Shot("19-journal-hub");
@@ -345,6 +361,26 @@ namespace MoonThief.EditorTools
                                            " (" + report.summary.totalErrors + " errors)");
 
             Debug.Log("[MoonThief] APK ready: " + outPath + "  size=" + new FileInfo(outPath).Length + " bytes");
+        }
+
+        static void BuildLinux()
+        {
+            var outPath = Proj(LinuxPath);
+            Directory.CreateDirectory(Path.GetDirectoryName(outPath));
+            Debug.Log("[MoonThief] building Linux player -> " + outPath);
+
+            var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+            {
+                scenes = new[] { ScenePath },
+                locationPathName = outPath,
+                target = BuildTarget.StandaloneLinux64,
+                options = BuildOptions.None
+            });
+
+            if (report.summary.result != BuildResult.Succeeded)
+                Debug.LogWarning("[MoonThief] Linux build failed: " + report.summary.result);
+            else
+                Debug.Log("[MoonThief] Linux player ready: " + outPath);
         }
 
         static void BuildWindows()

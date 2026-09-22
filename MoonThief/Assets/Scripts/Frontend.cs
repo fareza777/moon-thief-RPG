@@ -14,6 +14,8 @@ namespace MoonThief
         public static bool Sound = true;
         public static bool Shake = true;
         public static bool IntroSeen;
+        public static bool Music = true;
+        public static bool OnbSeen;            // the three onboarding cards only run once
 
         public static float RevealSpeed => SpeedIndex switch
         {
@@ -37,7 +39,10 @@ namespace MoonThief
             Sound = PlayerPrefs.GetInt("mt.sound", 1) == 1;
             Shake = PlayerPrefs.GetInt("mt.shake", 1) == 1;
             IntroSeen = PlayerPrefs.GetInt("mt.intro", 0) == 1;
+            Music = PlayerPrefs.GetInt("mt.music", 1) == 1;
+            OnbSeen = PlayerPrefs.GetInt("mt.onb", 0) == 1;
             Sfx.Muted = !Sound;
+            Sfx.Mus.Muted = !Music;
         }
 
         public static void Store()
@@ -46,8 +51,11 @@ namespace MoonThief
             PlayerPrefs.SetInt("mt.sound", Sound ? 1 : 0);
             PlayerPrefs.SetInt("mt.shake", Shake ? 1 : 0);
             PlayerPrefs.SetInt("mt.intro", IntroSeen ? 1 : 0);
+            PlayerPrefs.SetInt("mt.music", Music ? 1 : 0);
+            PlayerPrefs.SetInt("mt.onb", OnbSeen ? 1 : 0);
             PlayerPrefs.Save();
             Sfx.Muted = !Sound;
+            Sfx.Mus.Muted = !Music;
         }
     }
 
@@ -138,7 +146,7 @@ namespace MoonThief
     /// </summary>
     public class MenuView : MonoBehaviour
     {
-        public enum Sc { None, Splash, Main, Settings, Credits, Pause, Cinema, ChapterCard, Journal, Page }
+        public enum Sc { None, Splash, Main, Settings, Credits, Pause, Cinema, ChapterCard, Journal, Page, Onboard, Shop }
 
         /// <summary>Everything the pause card can open. One enum keeps the hub, the back stack
         /// and the self-test in agreement about what is on screen.</summary>
@@ -147,7 +155,12 @@ namespace MoonThief
         public float HalfH = 16f;
 
         // wired by Game
-        public Action OnStartNew, OnLoadSave, OnResume, OnSaveGame, OnLeaveToTitle, OnIntroDone, OnSplashDone;
+        public Action OnStartNew, OnLoadSave, OnResume, OnSaveGame, OnLeaveToTitle, OnIntroDone, OnSplashDone, OnOnboardDone, OnShopClosed, OnStory;
+
+        /// <summary>The store page SHARE and RATE point at. Application.identifier is the same
+        /// value the builder sets, so the link can never drift from the shipped package.</summary>
+        public static string StoreUrl => "https://play.google.com/store/apps/details?id="
+            + (string.IsNullOrEmpty(Application.identifier) ? "com.fajargames.moonthief" : Application.identifier);
 
         const float RowW = 14.6f, RowH = 2.0f, RowGap = 0.55f;
 
@@ -176,6 +189,7 @@ namespace MoonThief
         Sc _sc = Sc.None;
         float _t;
         Transform _root, _splashRoot, _mainRoot, _setRoot, _credRoot, _pauseRoot, _ciRoot, _ccRoot, _toastRoot;
+        Transform _onbRoot, _shopRoot;
 
         // one row list per card. A single shared list looked simpler, but each BuildRows()
         // appended to it while LayRows() only ever activated the first four entries -- the
@@ -187,6 +201,8 @@ namespace MoonThief
         List<Row> _credRows = new List<Row>();
         List<Row> _jrRows = new List<Row>();
         List<Row> _pageRows = new List<Row>();
+        List<Row> _onbRows = new List<Row>();
+        List<Row> _shopRows = new List<Row>();
 
         /// <summary>The rows of the card that is up.</summary>
         List<Row> Rows
@@ -200,6 +216,8 @@ namespace MoonThief
                     case Sc.Credits: return _credRows;
                     case Sc.Journal: return _jrRows;
                     case Sc.Page: return _pageRows;
+                    case Sc.Shop: return _shopRows;
+                    case Sc.Onboard: return _onbRows;
                     default: return _mainRows;
                 }
             }
@@ -223,6 +241,10 @@ namespace MoonThief
         PixelLabel _splashTop, _splashSub, _splashPres, _setTitle, _pauseTitle, _pauseSub, _hint, _toast;
         PixelLabel _credTitle, _credSub, _credText, _credThanks;
         PixelLabel _ciText, _ciSkip, _ciCount, _ccNight, _ccPlace;
+        PixelLabel _onbTitle, _onbBody, _shopTitle, _shopSub, _shopFoot;
+        SpriteRenderer _onbPanel, _shopPanel;
+        readonly List<SpriteRenderer> _onbDots = new List<SpriteRenderer>();
+        int _onbPage;
         SpriteRenderer _ciPlate;
         SpriteRenderer _ciArt, _ciDim, _splashBg, _splashMoon, _ccDim, _pauseDim, _pausePanel, _setPanel, _credPanel;
         SpriteRenderer _toastPanel;
@@ -252,6 +274,8 @@ namespace MoonThief
             BuildCinema();
             BuildJournal();
             BuildPage();
+            BuildOnboard();
+            BuildShop();
             BuildToast();
             HideAll();
         }
@@ -331,7 +355,8 @@ namespace MoonThief
         {
             _mainRoot = Root("main", 0);
             _hint = PixelLabelUtil.Make(_mainRoot, "hint", 1, new Color(0.72f, 0.74f, 0.9f), TextAlign.Center, 6008);
-            _hint.transform.localPosition = new Vector3(0f, -9.2f, 0f);
+            // seven rows stack to -14.7; the hint parks just under them, off the last row's panel
+            _hint.transform.localPosition = new Vector3(0f, -15.5f, 0f);
             _hint.Set(Strings.Get("menu.hint"));
             _mainRows = BuildRows(_mainRoot);
         }
@@ -382,7 +407,8 @@ namespace MoonThief
             _credThanks = PixelLabelUtil.Make(_credRoot, "credThanks", 2, new Color(0.88f, 0.96f, 0.86f), TextAlign.Center, 6006);
             _credThanks.Set(Strings.Get("cred.thanks"));
 
-            Rule("credRule2", -3.5f);
+            // the lower hairline separates the story text from the RATE/SHARE/BACK rows
+            Rule("credRule2", -3.15f);
 
             _credRows = BuildRows(_credRoot);
         }
@@ -507,6 +533,46 @@ namespace MoonThief
             _pageRows = BuildRows(_pageRoot);
         }
 
+        /// <summary>The three first-boot cards. One card, one line of dots, a NEXT row that
+        /// becomes BEGIN on the last page: three screens in one layout, run once ever.</summary>
+        void BuildOnboard()
+        {
+            _onbRoot = Root("onboard", 0);
+            FullQuad(_onbRoot, "dim", 6000, new Color(6f / 255f, 5f / 255f, 16f / 255f, 0.94f));
+            _onbPanel = Panel(_onbRoot, "onbPanel", 6002, 15.6f, 13.6f, 0.4f);
+            var moon = SpriteRendererUtil.Make(_onbRoot, "onbMoon", TexArt.MoonFull(), 6004);
+            moon.transform.localPosition = new Vector3(0f, 6.4f, 0f);
+            moon.transform.localScale = Vector3.one * 2.4f;
+            _onbTitle = PixelLabelUtil.Make(_onbRoot, "onbTitle", 3, new Color(1f, 0.95f, 0.78f), TextAlign.Center, 6006);
+            _onbTitle.transform.localPosition = new Vector3(0f, 3.6f, 0f);
+            _onbBody = PixelLabelUtil.Make(_onbRoot, "onbBody", 1, new Color(0.93f, 0.95f, 1f), TextAlign.Center, 6006);
+            _onbBody.MaxWidthUnits = 14.2f;
+            _onbBody.transform.localPosition = new Vector3(0f, 0.4f, 0f);
+            for (int i = 0; i < 3; i++)
+            {
+                var dot = SpriteRendererUtil.Make(_onbRoot, "onbDot" + i, TexArt.Dot(), 6006);
+                dot.transform.localPosition = new Vector3((i - 1) * 1.1f, -2.6f, 0f);
+                dot.transform.localScale = Vector3.one * 0.35f;
+                _onbDots.Add(dot);
+            }
+            _onbRows = BuildRows(_onbRoot);
+        }
+
+        /// <summary>Marn's stall as a menu card: wares with prices in the value column,
+        /// the purse total under the title. Rebuilt on every buy so gold and rows stay true.</summary>
+        void BuildShop()
+        {
+            _shopRoot = Root("shop", 0);
+            FullQuad(_shopRoot, "dim", 6000, new Color(6f / 255f, 5f / 255f, 16f / 255f, 0.9f));
+            _shopPanel = Panel(_shopRoot, "shopPanel", 6002, 16.4f, 20f, 0.2f);
+            _shopTitle = PixelLabelUtil.Make(_shopRoot, "shopTitle", 3, new Color(1f, 0.95f, 0.78f), TextAlign.Center, 6006);
+            _shopTitle.Set(Strings.Get("shop.title"));
+            _shopSub = PixelLabelUtil.Make(_shopRoot, "shopSub", 1, new Color(0.9f, 0.9f, 0.6f), TextAlign.Center, 6006);
+            _shopFoot = PixelLabelUtil.Make(_shopRoot, "shopFoot", 1, new Color(0.6f, 0.64f, 0.86f), TextAlign.Center, 6007);
+            _shopFoot.Set(Strings.Get("shop.hint"));
+            _shopRows = BuildRows(_shopRoot);
+        }
+
         void BuildToast()
         {
             _toastRoot = Root("toast", 0);
@@ -616,6 +682,8 @@ namespace MoonThief
             _ccRoot.gameObject.SetActive(false);
             if (_jrRoot != null) _jrRoot.gameObject.SetActive(false);
             if (_pageRoot != null) _pageRoot.gameObject.SetActive(false);
+            if (_onbRoot != null) _onbRoot.gameObject.SetActive(false);
+            if (_shopRoot != null) _shopRoot.gameObject.SetActive(false);
         }
 
         // ------------------------------------------------------------------ screens
@@ -638,20 +706,51 @@ namespace MoonThief
             _mainRoot.gameObject.SetActive(true);
 
             bool hasSave = SaveSystem.Exists();
-            string[] labels = { Strings.Get("menu.new"), Strings.Get("menu.continue"),
-                                Strings.Get("menu.settings"), Strings.Get("menu.credits") };
+            // seven rows, one each for the things a finished game does at its front door:
+            // play, carry on, re-watch the story, tune it, meet it, tell a friend, rate it
+            string[] labels =
+            {
+                Strings.Get("menu.new"), Strings.Get("menu.continue"), Strings.Get("menu.story"),
+                Strings.Get("menu.settings"), Strings.Get("menu.about"),
+                Strings.Get("menu.share"), Strings.Get("menu.rate"),
+            };
             var acts = new Action[]
             {
                 () => OnStartNew?.Invoke(),
                 () => OnLoadSave?.Invoke(),
+                () => OnStory?.Invoke(),
                 () => ShowSettings(false),
                 () => ShowCredits(),
+                () => DoShare(),
+                () => DoRate(),
             };
-            var vals = new string[] { "", hasSave ? SaveStamp() : Strings.Get("set.off"), "", "" };
-            LayRows(_mainRows, labels, acts, vals, 2.6f, 4);
-            for (int i = 0; i < 4; i++) _mainRows[i].Enabled = i != 1 || hasSave;
+            var vals = new string[] { "", hasSave ? SaveStamp() : Strings.Get("set.off"), "", "", "", "", "" };
+            LayRows(_mainRows, labels, acts, vals, 2.6f, 7);
+            for (int i = 0; i < 7; i++) _mainRows[i].Enabled = i != 1 || hasSave;
             _sel = hasSave ? 1 : 0;
             Select(_sel);
+        }
+
+        /// <summary>Copy the store link so a player can paste it anywhere. A proper share sheet
+        /// needs a plugin; the clipboard version works on every platform and costs nothing.</summary>
+        void DoShare()
+        {
+            GUIUtility.systemCopyBuffer = Strings.Get("share.text", StoreUrl);
+            Sfx.Play("ui");
+            ShowToast(Strings.Get("share.copied"), 3.2f);
+        }
+
+        /// <summary>market:// on a phone opens the Play Store app; everywhere else the web page
+        /// is the same page.</summary>
+        void DoRate()
+        {
+            Sfx.Play("ui");
+            ShowToast(Strings.Get("rate.thanks"), 3.0f);
+#if UNITY_ANDROID && !UNITY_EDITOR
+            Application.OpenURL("market://details?id=" + Application.identifier);
+#else
+            Application.OpenURL(StoreUrl);
+#endif
         }
 
         string SaveStamp()
@@ -676,6 +775,7 @@ namespace MoonThief
             string[] labels =
             {
                 Strings.Get("set.textspeed"),
+                Strings.Get("set.music"),
                 Strings.Get("set.sound"),
                 Strings.Get("set.shake"),
                 Strings.Get("menu.back"),
@@ -683,6 +783,7 @@ namespace MoonThief
             var acts = new Action[]
             {
                 () => { Prefs.SpeedIndex = (Prefs.SpeedIndex + 1) % 4; Prefs.Store(); RefreshSettingsRows(); Select(_sel); },
+                () => { Prefs.Music = !Prefs.Music; Prefs.Store(); RefreshSettingsRows(); Select(_sel); },
                 () => { Prefs.Sound = !Prefs.Sound; Prefs.Store(); RefreshSettingsRows(); Select(_sel); },
                 () => { Prefs.Shake = !Prefs.Shake; Prefs.Store(); RefreshSettingsRows(); Select(_sel); },
                 () => { if (_settingsFromPause) ShowPause(); else ShowMain(); },
@@ -690,26 +791,134 @@ namespace MoonThief
             string[] vals =
             {
                 Prefs.SpeedName,
+                Prefs.Music ? Strings.Get("set.on") : Strings.Get("set.off"),
                 Prefs.Sound ? Strings.Get("set.on") : Strings.Get("set.off"),
                 Prefs.Shake ? Strings.Get("set.on") : Strings.Get("set.off"),
                 "",
             };
-            float rowsTop = LayoutCard(_setPanel, 16.4f, 4, true);
+            float rowsTop = LayoutCard(_setPanel, 16.4f, 5, true);
             _setTitle.transform.localPosition = new Vector3(0f, _cardTop - 2.15f, 0f);
-            float bottom = LayRows(_setRows, labels, acts, vals, rowsTop, 4);
+            float bottom = LayRows(_setRows, labels, acts, vals, rowsTop, 5);
             _setFoot.transform.localPosition = new Vector3(0f, FootY(bottom), 0f);
             Select(_sel);
         }
 
+        /// <summary>About = the credits card plus the two things a player wants from it:
+        /// a way to rate and a way to share. The rows sit under the story text.</summary>
         public void ShowCredits()
         {
             HideAll();
             _sc = Sc.Credits;
             _sel = 0;
             _credRoot.gameObject.SetActive(true);
-            LayRows(_credRows, new[] { Strings.Get("menu.back") }, new Action[] { ShowMain }, new[] { "" }, -6.4f, 1);
+            var labels = new[] { Strings.Get("menu.rate"), Strings.Get("menu.share"), Strings.Get("menu.back") };
+            var acts = new Action[] { () => DoRate(), () => DoShare(), (Action)ShowMain };
+            var vals = new[] { "", "", "" };
+            LayRows(_credRows, labels, acts, vals, -5.4f, 3);
             LayoutCredits();
             Select(0);
+        }
+
+        /// <summary>The first-boot onboarding: one card, three pages of "what is this game",
+        /// dots underneath, a row that reads NEXT until the last page where it reads BEGIN.
+        /// It runs once ever; OnOnboardDone lands on the title screen.</summary>
+        public void ShowOnboard()
+        {
+            HideAll();
+            _sc = Sc.Onboard;
+            _onbPage = 0;
+            _sel = 0;
+            _onbRoot.gameObject.SetActive(true);
+            RefreshOnboard();
+            Select(0);
+        }
+
+        void RefreshOnboard()
+        {
+            _onbTitle.Set(Strings.Get("onb.title." + (_onbPage + 1)));
+            _onbBody.Set(Strings.Get("onb.body." + (_onbPage + 1)));
+            for (int i = 0; i < _onbDots.Count; i++)
+                _onbDots[i].color = i == _onbPage
+                    ? new Color(1f, 0.93f, 0.55f)
+                    : new Color(0.5f, 0.55f, 0.8f, 0.45f);
+            bool last = _onbPage >= 2;
+            LayRows(_onbRows, new[] { Strings.Get(last ? "onb.start" : "onb.next") },
+                new Action[] { NextOnboard }, new[] { "" }, -4.6f, 1);
+            Select(0);
+        }
+
+        void NextOnboard()
+        {
+            Sfx.Play("ui");
+            if (_onbPage < 2) { _onbPage++; RefreshOnboard(); return; }
+            OnOnboardDone?.Invoke();
+        }
+
+        /// <summary>Marn's stall: a pause-like card the shopkeeper opens instead of dialogue.
+        /// Rows are his wares; the value column is the price; BACK hands control to Game.</summary>
+        public void ShowShop()
+        {
+            HideAll();
+            _sc = Sc.Shop;
+            _sel = 0;
+            _shopRoot.gameObject.SetActive(true);
+            RefreshShop();
+            Select(0);
+        }
+
+        /// <summary>What Marn stocks tonight: the pantry plus whatever gear this chapter sells.</summary>
+        static string[] ShopStock()
+        {
+            switch (Mathf.Clamp(Game.State.Chapter, 1, 3))
+            {
+                case 1: return new[] { "item.berry", "item.morsel", "item.honey",
+                                       "item.spoon", "item.cloak", "item.knife", "item.charm.bell" };
+                case 2: return new[] { "item.berry", "item.morsel", "item.honey", "item.soup",
+                                       "item.knife", "item.vest", "item.charm.bell", "item.charm.thread" };
+                default: return new[] { "item.morsel", "item.honey", "item.soup", "item.tea",
+                                        "item.sickle", "item.mail", "item.blade", "item.charm.moon" };
+            }
+        }
+
+        void RefreshShop()
+        {
+            _shopSub.Set(Strings.Get("shop.sub", Game.State.Gold));
+            float rowsTop = LayoutCard(_shopPanel, 16.4f, ShopStock().Length + 1, true);
+            _shopTitle.transform.localPosition = new Vector3(0f, _cardTop - 1.9f, 0f);
+            _shopSub.transform.localPosition = new Vector3(0f, _cardTop - 3.4f, 0f);
+            var labels = new List<string>();
+            var vals = new List<string>();
+            var acts = new List<Action>();
+            foreach (var key in ShopStock())
+            {
+                var def = Items.Get(key);
+                labels.Add(Strings.Get(key));
+                vals.Add(def.Price + " G");
+                var k = key;
+                acts.Add(() => Buy(k));
+            }
+            labels.Add(Strings.Get("menu.back"));
+            vals.Add("");
+            acts.Add(() => OnShopClosed?.Invoke());
+            float bottom = LayRows(_shopRows, labels.ToArray(), acts.ToArray(), vals.ToArray(), rowsTop, labels.Count);
+            _shopFoot.transform.localPosition = new Vector3(0f, FootY(bottom), 0f);
+        }
+
+        void Buy(string key)
+        {
+            var def = Items.Get(key);
+            if (Game.State.Gold < def.Price)
+            {
+                Sfx.Play("fail");
+                ShowToast(Strings.Get("shop.poor"), 2.6f);
+                return;
+            }
+            Game.State.Gold -= def.Price;
+            Game.State.AddBag(key);
+            Sfx.Play("buy");
+            ShowToast(Strings.Get("shop.sold"), 2.6f);
+            RefreshShop();
+            Select(_sel);
         }
 
         /// <summary>Credits flow: fixed title block, then the body and the closing line are
@@ -717,9 +926,9 @@ namespace MoonThief
         /// through the thank-you line and the BACK button.</summary>
         void LayoutCredits()
         {
-            const float backRowTop = -6.4f;
-            const float bandTop = 0.9f, bandBottom = -3.2f;         // between the two hairlines
-            float floor = backRowTop + 1.15f;                       // clear of the BACK row panel
+            const float backRowTop = -5.4f;                         // the first of RATE/SHARE/BACK
+            const float bandTop = 0.9f, bandBottom = -3.0f;         // between the two hairlines
+            float floor = backRowTop + 1.15f;                       // clear of the row panels
             float thanksH = PixelFont.LineHeight(_credThanks.Scale);
             float thanksTop = floor + thanksH;
             _credThanks.transform.localPosition = new Vector3(0f, Fx.Snap(thanksTop), 0f);
@@ -1427,6 +1636,8 @@ namespace MoonThief
                 if (_sc == Sc.Credits) { Sfx.Play("ui"); ShowMain(); return; }
                 if (_sc == Sc.Journal) { Sfx.Play("ui"); ShowPause(); return; }
                 if (_sc == Sc.Page) { Sfx.Play("ui"); ShowJournal(); return; }
+                if (_sc == Sc.Shop) { Sfx.Play("ui"); OnShopClosed?.Invoke(); return; }
+                if (_sc == Sc.Onboard) { NextOnboard(); return; }
             }
             if (confirm) { Activate(); return; }
             if (!tap) return;

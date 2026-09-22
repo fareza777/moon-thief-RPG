@@ -86,6 +86,21 @@ namespace MoonThief
             public string LootKey;
         }
 
+        /// <summary>A felled monster's ticket home: the species, the tile it guarded, and when
+        /// it may come back. The wild used to repopulate the instant a fight ended, which made
+        /// the fields feel bottomless - now the road breathes for a while first.</summary>
+        struct Respawn
+        {
+            public MonsterSpec Spec;
+            public Vector2 Home;
+            public float T;
+        }
+        readonly List<Respawn> _respawns = new List<Respawn>();
+
+        /// <summary>Seconds before a defeated monster's spot stirs again (a little random,
+        /// and never while the hero is standing on it).</summary>
+        public static float RespawnDelay => 30f + UnityEngine.Random.value * 45f;
+
         public bool Ready { get; private set; }
 
         // ---------------------------------------------------------------- build
@@ -1232,6 +1247,34 @@ namespace MoonThief
                 _plateOk.Add(near);
             }
 
+            // quest bubbles: a villager with something to offer (or to hand in) wears a "!"
+            // over the name plate, so the errands announce themselves from across the square.
+            // Mira's bubble tracks the main line instead - she is the story's giver.
+            for (int i = 0; i < Npcs.Count; i++)
+            {
+                var n = Npcs[i];
+                if (n.Root == null) continue;
+                bool wants = n.Npc.NameKey == "npc.elder" && Quests.Step("mq.1") == 0;
+                if (!wants)
+                {
+                    var q = Quests.ForGiver(n.Npc.NameKey, out bool ready);
+                    wants = q != null;
+                }
+                if (n.Alert == null)
+                {
+                    var ago = new GameObject("questAlert");
+                    ago.transform.SetParent(n.Root, false);
+                    ago.transform.localPosition = new Vector3(0f, 2.95f, 0f);
+                    ago.transform.localScale = Vector3.one * 0.8f;
+                    n.Alert = ago.AddComponent<SpriteRenderer>();
+                    n.Alert.sprite = TexArt.Alert();
+                    n.Alert.sortingOrder = 2100;
+                }
+                n.Alert.enabled = wants && _textOn;
+                if (wants)
+                    n.Alert.transform.localPosition = new Vector3(0f, 2.95f + Mathf.Sin(_time * 5f + i) * 0.12f, 0f);
+            }
+
             // Nothing is drawn on top of a character. A tag that covers the hero (or the monster
             // standing in front of the villager it names) reads as a mistake, so every plate is
             // tested against the sprite boxes of the whole cast before it is shown.
@@ -1321,19 +1364,31 @@ namespace MoonThief
             Ready = false;
             if (_root != null) Fx.Kill(_root.gameObject);
             Monsters.Clear(); Npcs.Clear(); _props.Clear(); _glows.Clear(); _glowAmp.Clear(); _flies.Clear();
-            _water.Clear(); _critters.Clear(); _bossProp = null; _bossHidden = false;
-            Hero = null; Map = null; HudRoot = null; _vignette = null;
+            _water.Clear(); _critters.Clear(); _respawns.Clear();
+            _bossProp = null; _bossHidden = false;
+            Hero = null; Map = null; HudRoot = null; _vignette = null; _objArrow = null;
         }
 
-        /// <summary>Respawns wild monsters after a battle or a defeat (chests stay opened).
-        /// The old herd is destroyed first: respawning without clearing left every earlier
-        /// monster walking the map, and each one had a body, a shadow and an animation.</summary>
+        /// <summary>After a fight the world used to wipe every monster and roll a fresh herd on
+        /// the spot - so a single kill brought the whole field back to life. Now a felled beast
+        /// simply keeps its respawn ticket and comes back when the timer runs out, somewhere the
+        /// hero is not looking at. Nothing here spawns instantly; the herd regrows off-screen.
+        /// Kept name for the chapter-prep path, which only wants the wild to keep ticking.</summary>
         public void ResetForChapter()
         {
-            foreach (var m in Monsters)
-                if (m.Root != null) Fx.Kill(m.Root.gameObject);
-            Monsters.Clear();
-            SpawnMonsters();
+            // nothing instant: pending respawn tickets continue on their own clock
+        }
+
+        /// <summary>How many wild monsters the night currently fields (self-test + audit).</summary>
+        public int MonsterCount => Monsters.Count;
+        public int PendingRespawns => _respawns.Count;
+
+        /// <summary>The villager actor matching a name key, e.g. for the objective compass.</summary>
+        public Actor FindNpc(string nameKey)
+        {
+            foreach (var n in Npcs)
+                if (n.Npc.NameKey == nameKey) return n;
+            return null;
         }
 
         /// <summary>True while the zone card owns the top of the frame ("NIGHT TWO" / "the long
@@ -1516,13 +1571,65 @@ namespace MoonThief
             return best?.Root != null ? (Vector2?)(Vector2)best.Root.localPosition : null;
         }
 
+        /// <summary>Takes a monster off the map - caught, fled or fought - and files its
+        /// respawn ticket: same species, same patch of road, back in half a minute to a
+        /// minute-and-a-half, and only once the hero has wandered off. This replaces the
+        /// old wipe-and-fill, where one kill restocked the entire night in a frame.</summary>
         public void RemoveMonster(Actor m)
         {
+            RemoveMonster(m, RespawnDelay);
+        }
+
+        public void RemoveMonster(Actor m, float delay)
+        {
+            if (m == null) return;
+            _respawns.Add(new Respawn { Spec = m.Spec, Home = m.HomeCell, T = delay });
             Monsters.Remove(m);
             if (m.Root != null) Fx.Kill(m.Root.gameObject);
         }
 
         public bool NearBoss => Vector2.Distance(HeroPos, Map.BossPos) < 1.6f;
+
+        // ---------------------------------------------------------------- objective compass
+
+        SpriteRenderer _objArrow;
+
+        /// <summary>The moon-chevron that points at the current objective from the screen edge.
+        /// It lives under HudRoot (so it is fixed to the glass, not the world) and disappears
+        /// when the target is underfoot or inside a house: a compass that says "walk" only
+        /// ever shows while there is somewhere to walk to.</summary>
+        public void SetObjective(Vector2? target)
+        {
+            if (HudRoot == null) return;
+            if (_objArrow == null)
+            {
+                _objArrow = SpriteRendererUtil.Make(HudRoot, "objArrow", TexArt.Chevron(), 5002);
+                _objArrow.transform.localScale = Vector3.one * 1.7f;
+                _objArrow.color = new Color(1f, 0.93f, 0.55f, 0.95f);
+            }
+            if (!target.HasValue || !_textOn)
+            {
+                _objArrow.enabled = false;
+                return;
+            }
+            var dir = target.Value - HeroPos;
+            float dist = dir.magnitude;
+            if (dist < 3.5f)
+            {
+                _objArrow.enabled = false;
+                return;
+            }
+            _objArrow.enabled = true;
+            var n = dir.normalized;
+            // place the chevron on an ellipse just inside the frame, below the HUD bar:
+            // ray direction n scaled until it hits the ellipse edge
+            float rx = 7.4f, ry = HalfH - 5.8f;
+            float s = 1f / Mathf.Sqrt((n.x * n.x) / (rx * rx) + (n.y * n.y) / (ry * ry));
+            var p = n * s;
+            _objArrow.transform.localPosition = new Vector3(p.x, p.y + Mathf.Sin(_time * 4f) * 0.14f, 0f);
+            // the chevron glyph points left (-x) unrotated, so aim it along n with a 180 offset
+            _objArrow.transform.localEulerAngles = new Vector3(0f, 0f, Mathf.Atan2(n.y, n.x) * Mathf.Rad2Deg + 180f);
+        }
 
         // ---------------------------------------------------------------- update
 
@@ -1655,6 +1762,27 @@ namespace MoonThief
                     a.Root.localPosition = new Vector3(pos.x, pos.y, 0f);
                     if (a.Anim != null) a.Anim.Fps = 5.5f;
                 }
+            }
+
+            // respawn tickets: a felled monster comes back after its delay, and only while
+            // the hero is somewhere else - nothing materialises on top of the player
+            for (int i = _respawns.Count - 1; i >= 0; i--)
+            {
+                var r = _respawns[i];
+                r.T -= dt;
+                if (r.T > 0f) { _respawns[i] = r; continue; }
+                if (Vector2.Distance(r.Home, HeroPos) < 7f) { r.T = 4f; _respawns[i] = r; continue; }
+                var cell = Map.CellOf(r.Home);
+                if (!Map.Walkable(cell)) { r.T = 6f; _respawns[i] = r; continue; }
+                var a = MakeActor(Map.CellCenter(cell), WorldOrder(cell.y), isNpc: false);
+                a.Spec = r.Spec;
+                a.Speed = r.Spec.Speed * 0.55f;
+                a.HomeCell = new Vector2(cell.x, cell.y);
+                a.WanderCd = Random.value * 2f;
+                a.Anim.Play(MonsterClip(r.Spec.MapSheet, Dir.Down), 4f, true);
+                a.Sr.transform.localScale = Vector3.one * 0.75f;
+                Monsters.Add(a);
+                _respawns.RemoveAt(i);
             }
 
             // wild monster wander

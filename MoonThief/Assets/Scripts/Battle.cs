@@ -49,7 +49,8 @@ namespace MoonThief
         public readonly List<MenuCell> Menu = new List<MenuCell>();
 
         SpriteRenderer _backdrop, _floorTint, _hudPanel, _menuPanel, _msgPanel, _moonIcon, _targetChev;
-        PixelLabel _hudNight, _hudRound, _msg, _hint;
+        SpriteRenderer _autoChip;
+        PixelLabel _hudNight, _hudRound, _msg, _hint, _autoLabel;
         Transform _overlayRoot;
         SpriteRenderer _ovDim, _ovPanel;
         PixelLabel _ovTitle;
@@ -122,6 +123,15 @@ namespace MoonThief
             _hint.Set(Strings.Get("bt.hint"));
             _hint.gameObject.SetActive(false);
 
+            // AUTO chip: a standing toggle at the right end of the HUD bar. The 2x2 command
+            // grid has no room for a fifth cell, so auto-battle lives up here instead - one
+            // tap and the party fights itself until tapped again.
+            _autoChip = Sliced("bauto", TexArt.Panel(), 55);
+            Box(_autoChip, Right - 4.5f, Top - 2.28f, 3.6f, 1.5f, new Color(1f, 1f, 1f, 0.5f));
+            _autoLabel = Label("bautoLabel", 1, new Color(0.8f, 0.83f, 1f), TextAlign.Center, 56);
+            _autoLabel.transform.localPosition = new Vector3(Right - 2.7f, Top - 2.13f, 0f);
+            _autoLabel.Set("AUTO");
+
             _menuPanel = Sliced("bmenu", TexArt.Panel(), 54);
             Box(_menuPanel, Left + 0.3f, Bottom + 0.3f, 17.4f, MenuH - 0.5f, Color.white); // y Bottom+0.3 .. Bottom+5.9
 
@@ -177,20 +187,22 @@ namespace MoonThief
             for (int i = 0; i < specs.Length; i++)
             {
                 var spec = specs[i];
+                // levels and worn gear both count, otherwise the journal pages are a museum:
+                // a level adds health and edge (HeroStats), a blade attack, cloth hp, a charm both
+                BattleData.HeroStats(spec, Game.State.Level, out int hp, out int aMin, out int aMax);
                 Party[i] = new Fighter
                 {
                     Id = "p" + i,
                     Name = Strings.Get(spec.NameKey),
                     Side = Side.Party,
-                    // worn gear counts here, otherwise the equipment page is a museum: a blade
-                    // adds attack, cloth adds max hp, a charm a little of both
-                    MaxHp = spec.Hp + Game.State.BonusHp,
-                    Hp = spec.Hp + Game.State.BonusHp,
-                    AtkMin = spec.AtkMin + Game.State.BonusAtk,
-                    AtkMax = spec.AtkMax + Game.State.BonusAtk,
+                    MaxHp = hp + Game.State.BonusHp,
+                    Hp = hp + Game.State.BonusHp,
+                    AtkMin = aMin + Game.State.BonusAtk,
+                    AtkMax = aMax + Game.State.BonusAtk,
                     Speed = spec.Speed,
                     ColorDir = spec.ColorDir,
                     Look = spec.Look,
+                    Style = spec.Style,
                     BattlerPath = BattleData.ClipPath(spec.ColorDir, "breath_idle"),
                     Scale = 2
                 };
@@ -301,12 +313,15 @@ namespace MoonThief
             {
                 var spec = specs[i];
                 var battler = Bank.One(spec.Battler);
+                // wild things get a little tougher as the party levels, so levelling
+                // shortens a fight instead of making it meaningless
+                int elv = (Game.State.Level - 1) * 2;
                 var f = new Fighter
                 {
                     Id = "e" + i,
                     Name = Strings.Get(spec.Name),
                     Side = Side.Enemy,
-                    MaxHp = spec.Hp, Hp = spec.Hp,
+                    MaxHp = spec.Hp + elv, Hp = spec.Hp + elv,
                     AtkMin = spec.AtkMin, AtkMax = spec.AtkMax,
                     Speed = spec.Speed,
                     Boss = spec.Boss,
@@ -721,6 +736,21 @@ namespace MoonThief
         /// real finger takes can be tested instead of the shortcut.</summary>
         public Rect CardButtonRect(int i) => i >= 0 && i < _ovButtons.Count ? _ovButtons[i].rect : new Rect(0f, 0f, 0f, 0f);
 
+        /// <summary>The AUTO chip rect, matching the Box() it was built with.</summary>
+        public bool HitAuto(Vector2 w)
+        {
+            return new Rect(Right - 4.7f, Top - 2.45f, 4.0f, 1.9f).Contains(w);
+        }
+
+        /// <summary>Brighten the chip while the party fights itself.</summary>
+        public void SetAuto(bool on)
+        {
+            if (_autoChip != null)
+                _autoChip.color = on ? new Color(1f, 0.95f, 0.6f, 0.95f) : new Color(1f, 1f, 1f, 0.5f);
+            if (_autoLabel != null)
+                _autoLabel.SetColor(on ? new Color(1f, 0.95f, 0.6f) : new Color(0.8f, 0.83f, 1f));
+        }
+
         public Rig RigOf(Fighter f)
         {
             if (f.Side == Side.Party)
@@ -873,6 +903,23 @@ namespace MoonThief
         int _befriended;
         public bool AwaitingInput { get; private set; }
 
+        /// <summary>Auto-battle: the party picks its own moves. Persists between fights on
+        /// purpose - it is a stance, not a per-round wish.</summary>
+        public bool Auto { get; private set; }
+        int _levelAtStart = 1;
+
+        public void ToggleAuto()
+        {
+            Auto = !Auto;
+            View.SetAuto(Auto);
+            Sfx.Play("autoon");
+            View.SetMessage(Strings.Get(Auto ? "bt.auto.on" : "bt.auto.off"));
+            // turning it on mid-turn should feel immediate: if it is our fighter's move and
+            // nobody has picked yet, the party goes right away
+            if (Auto && AwaitingInput && Application.isPlaying)
+                StartCoroutine(Timer(0.35f, () => AutoPick(_queue[_qi])));
+        }
+
         // self-test diagnostics
         public string DebugPhase => _ph.ToString();
         public int DebugQi => _qi;
@@ -887,6 +934,7 @@ namespace MoonThief
             _qi = 0;
             _morselUsed = false;
             _befriended = 0;
+            _levelAtStart = Game.State.Level;
             AwaitingInput = false;
             View.SetBackdrop(Game.State.Chapter >= 3 ? "Art/Backgrounds/ForestA"
                 : Game.State.Chapter == 2 ? "Art/Backgrounds/PlainA" : "Art/Backgrounds/ForestA");
@@ -896,9 +944,13 @@ namespace MoonThief
             View.SetEncounter(specs);
             View.HideCard();
             View.SetMenuVisible(false);
+            View.SetAuto(Auto);
             View.IntroSlide();
             var first = Strings.Get(specs.Length > 1 ? "bt.two" : "bt.one", View.Enemies[0].Name);
             View.SetMessage(first);
+            bool hasBoss = false;
+            foreach (var s in specs) if (s.Boss) hasBoss = true;
+            Sfx.Mus.Play(hasBoss ? "boss" : "battle");
             if (Application.isPlaying) StartCoroutine(Timer(1.4f, RoundStart));
         }
 
@@ -953,6 +1005,31 @@ namespace MoonThief
             View.SetSelected(0);
             View.ShowHint(true);
             View.SetMessage(Strings.Get("bt.yourturn", f.Name));
+            // auto-battle acts after a short beat, so the player sees whose turn it was
+            if (Auto && Application.isPlaying)
+                StartCoroutine(Timer(0.45f, () => AutoPick(f)));
+        }
+
+        /// <summary>The auto-battle brain: mend anyone badly hurt if we still carry food,
+        /// otherwise strike the weakest standing foe. Deliberately simple - it should feel
+        /// like a sensible party, not a solver.</summary>
+        void AutoPick(Fighter actor)
+        {
+            if (!AwaitingInput || !Auto) return;   // a hand got there first
+            bool hurt = false;
+            foreach (var p in View.Party) if (p.Alive && p.Hp01 < 0.45f) hurt = true;
+            if (hurt && !_morselUsed && Game.State.BestFood() != null)
+            {
+                View.SetSelected(2);
+                Confirm();
+                return;
+            }
+            int ti = -1; float low = float.MaxValue;
+            for (int i = 0; i < View.Enemies.Length; i++)
+                if (View.Enemies[i].Alive && View.Enemies[i].Hp < low) { low = View.Enemies[i].Hp; ti = i; }
+            if (ti >= 0) View.SetTarget(ti);
+            View.SetSelected(0);
+            Confirm();
         }
 
         /// <summary>Back to the idle breathing clip after an action animation.</summary>
@@ -1044,6 +1121,9 @@ namespace MoonThief
             var cardBtn = View.HitCardButton(w);
             if (cardBtn != null) { cardBtn(); return; }
 
+            if (_ph == Ph.Idle || _ph == Ph.Card) return;
+            // the AUTO chip is tappable whenever the fight is on screen
+            if (View.HitAuto(w)) { ToggleAuto(); return; }
             if (_ph != Ph.Round && _ph != Ph.Acting) return;
 
             if (AwaitingInput)
@@ -1093,9 +1173,7 @@ namespace MoonThief
                     if (View.Enemies[i].Alive) { ti = i; break; }
             }
             if (ti < 0) { Win(); yield break; }
-            var target = View.Enemies[ti];
             var aRig = View.RigOf(actor);
-            var tRig = View.RigOf(target);
 
             // the hero's own swing: the pack ships a 7 frame attack clip per colour
             if (aRig != null && aRig.Anim != null)
@@ -1104,24 +1182,120 @@ namespace MoonThief
                 if (swing.Length > 0) aRig.Anim.Play(swing, 15f, false);
             }
 
-            yield return Lunge(aRig, tRig.Home, 0.35f);
-            int dmg = UnityEngine.Random.Range(actor.AtkMin, actor.AtkMax + 1);
-            target.Hp = Mathf.Max(0, target.Hp - dmg);
-            StartCoroutine(Fx.FlashTint(tRig.Anim, new Color(1f, 0.5f, 0.4f), 2, 0.07f, 0.07f));
-            StartCoroutine(Fx.Shake(tRig.Root, 0.12f, 0.22f));
-            View.FloatNumber(tRig.Home + new Vector3(0f, 1.2f, 0f), "-" + dmg, new Color(1f, 0.95f, 0.75f));
-            View.Refresh();
-            yield return Fx.Wait(0.45f);
-            yield return Lunge(aRig, aRig.Home, 0.3f);
-            PlayIdle(aRig);
-
-            if (!target.Alive)
+            // Each friend has a style, so ATTACK is three different moves on one button:
+            // amber lunges and sometimes finds the weak seam (crit), sea sweeps the whole
+            // field for less per hit, moss spends the turn mending the hurtest friend
+            // (or throws a pebble when everyone is fine).
+            if (actor.Style == 2)
             {
-                yield return FadeOut(tRig);
-                View.SetMessage(Strings.Get("bt.fainted", target.Name));
-                yield return Fx.Wait(0.6f);
+                Fighter weak = null;
+                foreach (var p in View.Party)
+                    if (p.Alive && p.Hp < p.MaxHp && (weak == null || p.Hp01 < weak.Hp01)) weak = p;
+                if (weak != null && weak.Hp01 < 0.9f)
+                {
+                    var wRig = View.RigOf(weak);
+                    yield return Lunge(aRig, wRig != null ? wRig.Home : aRig.Home, 0.3f);
+                    int heal = Mathf.Max(4, (actor.AtkMin + actor.AtkMax) / 2 + Game.State.Level);
+                    weak.Hp = Mathf.Min(weak.MaxHp, weak.Hp + heal);
+                    View.SetMessage(Strings.Get("bt.attack.2", actor.Name, weak.Name));
+                    if (wRig != null)
+                    {
+                        View.Sparkle(wRig.Home + new Vector3(0f, 1.1f, 0f), new Color(0.6f, 1f, 0.75f), 8);
+                        View.FloatNumber(wRig.Home + new Vector3(0f, 1.2f, 0f), Strings.Get("bt.heal", heal), new Color(0.7f, 1f, 0.7f));
+                    }
+                    Sfx.Play("heal");
+                    View.Refresh();
+                    yield return Fx.Wait(0.6f);
+                    yield return Lunge(aRig, aRig.Home, 0.3f);
+                    PlayIdle(aRig);
+                    EndTurn();
+                    yield break;
+                }
+                // nobody needs mending: moss throws a pebble for half damage
+                var target = View.Enemies[ti];
+                var tRig = View.RigOf(target);
+                View.SetMessage(Strings.Get("bt.attack.2b", actor.Name, target.Name));
+                yield return Lunge(aRig, tRig.Home, 0.3f);
+                int pebble = Mathf.Max(1, UnityEngine.Random.Range(actor.AtkMin, actor.AtkMax + 1) / 2);
+                HitFoe(target, pebble, false);
+                yield return Fx.Wait(0.4f);
+                yield return Lunge(aRig, aRig.Home, 0.3f);
+                PlayIdle(aRig);
+                if (!target.Alive)
+                {
+                    yield return FadeOut(tRig);
+                    View.SetMessage(Strings.Get("bt.fainted", target.Name));
+                    yield return Fx.Wait(0.6f);
+                }
+                EndTurn();
+                yield break;
             }
-            EndTurn();
+
+            if (actor.Style == 1)
+            {
+                // sea sweeps the field: every standing foe takes 65% of a roll
+                View.SetMessage(Strings.Get("bt.attack.1", actor.Name));
+                var firstRig = View.RigOf(View.Enemies[ti]);
+                yield return Lunge(aRig, firstRig != null ? firstRig.Home : aRig.Home, 0.35f);
+                int roll = UnityEngine.Random.Range(actor.AtkMin, actor.AtkMax + 1);
+                int dmg = Mathf.Max(1, Mathf.RoundToInt(roll * 0.65f));
+                for (int i = 0; i < View.Enemies.Length; i++)
+                    if (View.Enemies[i].Alive) HitFoe(View.Enemies[i], dmg, false);
+                View.Refresh();
+                yield return Fx.Wait(0.5f);
+                yield return Lunge(aRig, aRig.Home, 0.3f);
+                PlayIdle(aRig);
+                int felled = 0; string last = null;
+                for (int i = 0; i < View.Enemies.Length; i++)
+                {
+                    var e = View.Enemies[i];
+                    if (e.Alive) continue;
+                    var er = View.RigOf(e);
+                    if (er != null && er.Root.gameObject.activeSelf) { yield return FadeOut(er); felled++; last = e.Name; }
+                }
+                if (felled > 0)
+                {
+                    View.SetMessage(Strings.Get("bt.fainted", last));
+                    yield return Fx.Wait(0.6f);
+                }
+                EndTurn();
+                yield break;
+            }
+
+            // amber strikes: a single lunge with a quarter chance of a crit
+            {
+                var target = View.Enemies[ti];
+                var tRig = View.RigOf(target);
+                yield return Lunge(aRig, tRig.Home, 0.35f);
+                bool crit = UnityEngine.Random.value < 0.25f;
+                int dmg = Mathf.RoundToInt(UnityEngine.Random.Range(actor.AtkMin, actor.AtkMax + 1) * (crit ? 1.7f : 1f));
+                View.SetMessage(crit ? Strings.Get("bt.attack.crit", actor.Name, dmg) : Strings.Get("bt.attack.0", actor.Name));
+                HitFoe(target, dmg, crit);
+                View.Refresh();
+                yield return Fx.Wait(0.45f);
+                yield return Lunge(aRig, aRig.Home, 0.3f);
+                PlayIdle(aRig);
+                if (!target.Alive)
+                {
+                    yield return FadeOut(tRig);
+                    View.SetMessage(Strings.Get("bt.fainted", target.Name));
+                    yield return Fx.Wait(0.6f);
+                }
+                EndTurn();
+            }
+        }
+
+        /// <summary>Damage + feedback for one foe: tint flash, shake, the floating number.</summary>
+        void HitFoe(Fighter target, int dmg, bool crit)
+        {
+            target.Hp = Mathf.Max(0, target.Hp - dmg);
+            var tRig = View.RigOf(target);
+            if (tRig == null) return;
+            StartCoroutine(Fx.FlashTint(tRig.Anim, new Color(1f, 0.5f, 0.4f), 2, 0.07f, 0.07f));
+            StartCoroutine(Fx.Shake(tRig.Root, crit ? 0.2f : 0.12f, crit ? 0.3f : 0.22f));
+            View.FloatNumber(tRig.Home + new Vector3(0f, 1.2f, 0f), "-" + dmg,
+                crit ? new Color(1f, 0.85f, 0.3f) : new Color(1f, 0.95f, 0.75f));
+            Sfx.Play(crit ? "crit" : "hit");
         }
 
         IEnumerator FadeOut(BattleView.Rig rig)
@@ -1256,6 +1430,11 @@ namespace MoonThief
                 Strings.Get("card.xp", xp),
                 Strings.Get("card.gold", gold),
             };
+            if (Game.State.Level > _levelAtStart)
+            {
+                lines.Add(Strings.Get("card.levelup", Game.State.Level));
+                Sfx.Play("levelup");
+            }
             if (_befriended > 0) lines.Add(Strings.Get("card.befriended", _befriended, _specs.Length));
             lines.Add(_befriended > 0 ? Strings.Get("card.joined") : Strings.Get("card.moon"));
 

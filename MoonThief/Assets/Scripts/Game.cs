@@ -445,6 +445,7 @@ namespace MoonThief
             Director.OnDefeat = OnRunLost;
 
             Sfx.Init(transform);
+            Sfx.Mus.Init(transform);
             BuildFade();
             BuildJoy();
             BuildTitle();
@@ -459,8 +460,11 @@ namespace MoonThief
             Menus.OnResume = ClosePause;
             Menus.OnSaveGame = SaveRun;
             Menus.OnLeaveToTitle = LeaveToTitle;
-            Menus.OnSplashDone = ShowTitle;
+            Menus.OnSplashDone = SplashDone;
             Menus.OnIntroDone = OnScreenDone;
+            Menus.OnOnboardDone = OnboardDone;
+            Menus.OnShopClosed = ClosePause;
+            Menus.OnStory = ReplayStory;
         }
 
         void BuildTitle()
@@ -609,6 +613,30 @@ namespace MoonThief
             Menus.ShowSplash();
         }
 
+        /// <summary>Splash is done. The three onboarding cards play exactly once ever -
+        /// after that, the title screen is the door in.</summary>
+        void SplashDone()
+        {
+            if (!Prefs.OnbSeen) Menus.ShowOnboard();
+            else ShowTitle();
+        }
+
+        void OnboardDone()
+        {
+            Prefs.OnbSeen = true;
+            Prefs.Store();
+            ShowTitle();
+        }
+
+        /// <summary>STORY on the main menu replays the intro reel and returns to the menu.</summary>
+        void ReplayStory()
+        {
+            Phase = St.Cinema;
+            _afterScreen = ShowTitle;
+            Sfx.Mus.Play("cinema");
+            Menus.ShowCinema(1);
+        }
+
         /// <summary>The main menu (title art + the row list).</summary>
         public void ShowTitle()
         {
@@ -622,6 +650,7 @@ namespace MoonThief
             _dlgOpen = false;
             _paused = false;
             _titleTap.gameObject.SetActive(false);   // the menu rows replace the old tap hint
+            Sfx.Mus.Play("title");
             Menus.ShowMain();
         }
 
@@ -690,6 +719,7 @@ namespace MoonThief
             // a new run always opens with the story, even if it was seen before
             Phase = St.Cinema;
             _afterScreen = () => StartChapter(1);
+            Sfx.Mus.Play("cinema");
             Menus.ShowCinema(1);
         }
 
@@ -713,6 +743,7 @@ namespace MoonThief
             Phase = St.Cinema;
             SetCam(0f, 0f);
             _afterScreen = () => BuildChapterNow(chapter);
+            Sfx.Mus.Play("cinema");
             Menus.ShowChapterCard(chapter);
         }
 
@@ -750,6 +781,7 @@ namespace MoonThief
             _resumePos = null;
 
             World.ShowBanner(Strings.Get("zone.arrive." + Mathf.Clamp(chapter, 1, 3)));
+            Sfx.Mus.Play("explore");
             MakeHud();
             RefreshHud();
 
@@ -800,11 +832,30 @@ namespace MoonThief
 
         string _questText;
 
+        /// <summary>Where the compass arrow points tonight. It follows the same ladder the HUD's
+        /// quest line does: find Mira, find the chests, find the boss, find the cristal.
+        /// Indoors it is parked - a room that fits on one screen needs no compass.</summary>
+        Vector2? ObjectivePos()
+        {
+            if (World == null || World.Map == null || World.Map.Interior) return null;
+            if (!_metMira)
+            {
+                var mira = World.FindNpc("npc.elder");
+                if (mira != null && mira.Root != null) return mira.Root.localPosition;
+            }
+            if (State.MoonShards >= ShardsNeeded)
+                return _bossDown ? (Vector2?)World.Map.CristalPos : World.Map.BossPos;
+            var chest = World.NearestChest(World.HeroPos, 999f);
+            if (chest.HasValue) return chest.Value.Pos;
+            return World.Map.BossPos;
+        }
+
         // ------------------------------------------------------------ main loop
 
         void Update()
         {
             if (EditorMode || !Application.isPlaying) return;
+            Sfx.Mus.Tick();
 
             // ---- front-end screens (splash, menu, settings, credits, story cards)
             if (Phase == St.Splash || Phase == St.Menu || Phase == St.Cinema)
@@ -918,6 +969,7 @@ namespace MoonThief
 
             // camera follows the hero on both axes, clamped to the map; the HUD layer follows too
             FollowHero();
+            World.SetObjective(ObjectivePos());
 
             // encounters
             _encounterCooldown -= Time.deltaTime;
@@ -1007,6 +1059,20 @@ namespace MoonThief
             _paused = false;
             Menus.Hide();
             if (World != null && World.Ready) World.SetTextVisible(true);
+        }
+
+        /// <summary>Marn's card pauses the world exactly like the pause card does: same freeze,
+        /// same text hush, same way out through ClosePause.</summary>
+        void OpenShop()
+        {
+            if (_dlgOpen) CloseDialog();
+            _paused = true;
+            _joyTouch = false;
+            _tapPending = false;
+            _tapFinger = -1;
+            Sfx.Play("ui");
+            if (World != null && World.Ready) World.SetTextVisible(false);
+            Menus.ShowShop();
         }
 
         void IdleTitle()
@@ -1170,6 +1236,8 @@ namespace MoonThief
         /// offer says so, an NPC whose errand is done hands it over, and everyone else just talks.</summary>
         void TalkTo(NpcDef npc)
         {
+            // a shopkeeper's dialogue IS his stall: no small talk, straight to the wares
+            if (npc.Shop) { OpenShop(); return; }
             var quest = Quests.ForGiver(npc.NameKey, out bool ready);
             if (quest != null)
             {
@@ -1248,7 +1316,8 @@ namespace MoonThief
             _dlgText.Set(Strings.Get(_dlgLines[0]));
             if (_dlgPortrait != null)
             {
-                _dlgPortrait.sprite = TexArt.Chara(Folks.Sheet(npc), (int)Dir.Down, 1);
+                _dlgPortrait.sprite = TexArt.Face(Folks.Sheet(npc))
+                    ?? TexArt.Chara(Folks.Sheet(npc), (int)Dir.Down, 1);
                 _dlgPortrait.enabled = _dlgPortrait.sprite != null;
             }
             Sfx.Play("blip");
@@ -1308,6 +1377,7 @@ namespace MoonThief
 
         void OnEncounterWon()
         {
+            Sfx.Mus.Play("explore");
             BattleViewRef.gameObject.SetActive(false);
             BattleViewRef.HideCard();
             Phase = St.Explore;
@@ -1323,6 +1393,7 @@ namespace MoonThief
 
         void OnBossDefeated()
         {
+            Sfx.Mus.Play("explore");
             _bossDown = true;
             if (World != null) World.RemoveBoss();
             BattleViewRef.gameObject.SetActive(false);
@@ -1352,6 +1423,7 @@ namespace MoonThief
 
         void OnRunLost()
         {
+            Sfx.Mus.Play("explore");
             DoTransition(() =>
             {
                 BattleViewRef.HideCard();
@@ -1379,6 +1451,7 @@ namespace MoonThief
                 World.gameObject.SetActive(false);
                 if (_hudZone != null) _hudZone.enabled = false;
                 _endRoot.gameObject.SetActive(true);
+                Sfx.Mus.Play("end");
                 _endLines.RevealSpeed = 0f;
                 _endLines.Set(Strings.Get("end.text", State.Befriended));
                 SaveSystem.Erase();          // the tale is told; the menu offers a fresh night
@@ -1922,6 +1995,28 @@ namespace MoonThief
             Menus.SetAnchor(Cam.transform.localPosition);
         }
 
+        /// <summary>The first-boot onboarding card, middle page so the dots show progress.</summary>
+        public void EditorOnboard()
+        {
+            SetCam(0f, 0f);
+            _titleRoot.gameObject.SetActive(false);
+            World.gameObject.SetActive(false);
+            Menus.Hide();
+            Menus.ShowOnboard();
+        }
+
+        /// <summary>Marn's shop card with a purse worth spending: stock rows plus gold in the sub.</summary>
+        public void EditorShop()
+        {
+            CloseDialog();
+            State.NewRun();
+            State.Gold = 37;
+            _titleRoot.gameObject.SetActive(false);
+            if (World != null && World.Ready) World.SetTextVisible(false);
+            Menus.ShowShop();
+            Menus.SetAnchor(Cam.transform.localPosition);
+        }
+
         // ------------------------------------------------------------ self test
 
         IEnumerator SelfTest()
@@ -1940,10 +2035,35 @@ namespace MoonThief
             Shot("10-menu");
             Debug.Log("[selftest] front-end phase=" + Phase);
 
+            // the first-boot cards: page one, then tap through to the last page and out
+            Menus.ShowOnboard();
+            yield return new WaitForSeconds(0.4f);
+            Shot("10b-onboard");
+            Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);
+            yield return new WaitForSeconds(0.3f);
+            Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);
+            yield return new WaitForSeconds(0.3f);
+            Shot("10c-onboard-3");
+            Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);   // BEGIN -> title
+            yield return new WaitForSeconds(0.5f);
+            Debug.Log("[selftest] after onboard phase=" + Phase);
+
             BeginRun();
             yield return new WaitForSeconds(1.2f);
             Shot("11-village");
-            Debug.Log("[selftest] hero=" + World.HeroPos + " mons=" + World.Monsters.Count);
+            Debug.Log("[selftest] hero=" + World.HeroPos + " mons=" + World.Monsters.Count
+                + " respawns=" + World.PendingRespawns);
+
+            // Marn's stall: open the shop card for real, buy one thing, leave
+            State.Gold = 40;
+            OpenShop();
+            yield return new WaitForSeconds(0.5f);
+            Shot("21-shop");
+            Debug.Log("[selftest] shop rows=" + Menus.ActiveRowCount);
+            Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);   // buy first ware
+            yield return new WaitForSeconds(0.2f);
+            ClosePause();
+            yield return new WaitForSeconds(0.3f);
 
             // open the pause card and its settings page for real. The row layout used to be
             // wired to one shared list, so these two cards drew an empty frame on a device
@@ -2006,6 +2126,13 @@ namespace MoonThief
             {
                 yield return new WaitForSeconds(1.6f);
                 Shot("13-battle-" + battles);
+                // run one encounter on auto-battle so the AUTO chip path is exercised end to end
+                if (battles == 2 && !Director.Auto)
+                {
+                    Director.ToggleAuto();
+                    Shot("13b-battle-auto");
+                    Debug.Log("[selftest] auto battle on");
+                }
                 int t = 0;
                 float turnStart = Time.time;
                 while (Phase == St.Battle && Time.time - turnStart < 45f)

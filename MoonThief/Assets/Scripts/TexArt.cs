@@ -329,6 +329,25 @@ namespace MoonThief
         public static Sprite MapMonster(string sheet, int frame)
             => Cell(sheet, 48, frame % 3, frame / 3);
 
+        /// <summary>The speaker's face: the head of the first Down frame of their own chara
+        /// sheet. A portrait is a person, not a weather vane - cropping the head means every
+        /// villager keeps the face the pack drew for them, and no two speakers look alike.</summary>
+        public static Sprite Face(string sheet)
+        {
+            string key = sheet + "@face";
+            if (_sprite.TryGetValue(key, out var s)) return s;
+            var t = Tex(sheet);
+            if (t == null) { _sprite[key] = null; return null; }
+            const int CellW = 16, CellH = 20, HeadH = 12;
+            // the Down strip is the bottom row of cells; the head is the top of that cell
+            float cellY = Mathf.Max(0, t.height - 4 * CellH);
+            s = Sprite.Create(t, new Rect(0, cellY + CellH - HeadH, CellW, HeadH),
+                new Vector2(0.5f, 0.45f), G.PPU, 0, SpriteMeshType.FullRect);
+            s.name = key;
+            _sprite[key] = s;
+            return s;
+        }
+
         /// <summary>The step in front of a house door: a worn mat lying flat on the trigger cell.
         /// The house art paints its own door in the facade, so this - not a second door sprite - is
         /// what marks the tile a house is entered from.</summary>

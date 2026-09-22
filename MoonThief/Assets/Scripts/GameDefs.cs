@@ -871,6 +871,7 @@ namespace MoonThief
         public string BattlerPath;      // Resources path of the battler sprite
         public string ColorDir;         // party only: "color_1"
         public int Look = -1;           // party only: which headwear this friend wears (-1 = none)
+        public int Style;               // party only: 0 strike (crit), 1 sweep (hits all), 2 mend (heals)
         public int Scale = 2;
         public bool Alive => !Dead && Hp > 0;
         public float Hp01 => MaxHp > 0 ? Mathf.Clamp01((float)Hp / MaxHp) : 0f;
@@ -900,14 +901,28 @@ namespace MoonThief
             public string NameKey, ColorDir;
             public int Hp, AtkMin, AtkMax, Look;
             public float Speed;
+            public int Style;   // the friend's fighting style: 0 strike, 1 sweep, 2 mend
         }
 
         public static readonly HeroSpec[] Party =
         {
-            new HeroSpec{ NameKey="hero.amber", ColorDir="color_1", Hp=34, AtkMin=4, AtkMax=7, Speed=5.0f, Look=0 },
-            new HeroSpec{ NameKey="hero.sea",   ColorDir="color_2", Hp=28, AtkMin=5, AtkMax=9, Speed=4.4f, Look=1 },
-            new HeroSpec{ NameKey="hero.moss",  ColorDir="color_3", Hp=31, AtkMin=3, AtkMax=6, Speed=4.8f, Look=2 },
+            // amber lunges and finds weak seams (crit), sea sweeps the whole field,
+            // moss keeps everyone standing: three buttons worth of tactics on one ATTACK row
+            new HeroSpec{ NameKey="hero.amber", ColorDir="color_1", Hp=34, AtkMin=4, AtkMax=7, Speed=5.0f, Look=0, Style=0 },
+            new HeroSpec{ NameKey="hero.sea",   ColorDir="color_2", Hp=28, AtkMin=5, AtkMax=9, Speed=4.4f, Look=1, Style=1 },
+            new HeroSpec{ NameKey="hero.moss",  ColorDir="color_3", Hp=31, AtkMin=3, AtkMax=6, Speed=4.8f, Look=2, Style=2 },
         };
+
+        /// <summary>A hero's raw stats at a level: levels used to move only the journal number,
+        /// now each one adds real health and edge, so grinding the fields actually pays.
+        /// Equipment bonuses are added on top of this by the caller.</summary>
+        public static void HeroStats(HeroSpec spec, int level, out int hp, out int atkMin, out int atkMax)
+        {
+            int lv = Mathf.Max(1, level) - 1;
+            hp = spec.Hp + lv * 3;
+            atkMin = spec.AtkMin + lv;
+            atkMax = spec.AtkMax + lv;
+        }
 
         public static string ClipPath(string colorDir, string clip) => "Art/Hero/hero/" + colorDir + "/" + clip;
 
@@ -928,6 +943,11 @@ namespace MoonThief
             new MonsterSpec{ Name="mon.bones",   Battler="Art/Battlers/SkeletonA", MapSheet="Art/Mon/Monsters_05_0", Tier=3, Chapter=3, Hp=40, AtkMin=6, AtkMax=10, Speed=4.2f },
             new MonsterSpec{ Name="mon.hob",     Battler="Art/Battlers/ScorpionA", MapSheet="Art/Mon/Monsters_03_0", Tier=3, Chapter=3, Hp=46, AtkMin=7, AtkMax=11, Speed=3.6f },
             new MonsterSpec{ Name="mon.wisp",    Battler="Art/Battlers/GeniusA",  MapSheet="Art/Mon/Monsters_05_0", Tier=3, Chapter=3, Hp=38, AtkMin=8, AtkMax=12, Speed=4.8f },
+            // the deeper-cut species: same family silhouettes in the pack's other palettes,
+            // so the fields keep a face the player has not already befriended twice
+            new MonsterSpec{ Name="mon.palebell",Battler="Art/Battlers/GhostA",    MapSheet="Pack/Monsters/Monsters_02_5", Tier=3, Chapter=3, Hp=30, AtkMin=5, AtkMax=8, Speed=5.0f },
+            new MonsterSpec{ Name="mon.thick",   Battler="Art/Battlers/MushroomB", MapSheet="Pack/Monsters/Monsters_04_3", Tier=2, Chapter=2, Hp=36, AtkMin=6, AtkMax=9, Speed=3.4f },
+            new MonsterSpec{ Name="mon.thane",   Battler="Art/Battlers/MinotaurB", MapSheet="Pack/Monsters/Monsters_04_5", Tier=4, Chapter=3, Hp=58, AtkMin=7, AtkMax=12, Speed=3.8f },
         };
 
         public static readonly MonsterSpec Boss = new MonsterSpec
@@ -950,7 +970,19 @@ namespace MoonThief
             return new[] { a };
         }
 
-        public static MonsterSpec[] BossFight() => new[] { Boss };
+        /// <summary>The Pale Guard never walks alone: a lantern wisp screens it. The fight
+        /// used to be one big health bar, which made MORSEL and BEFRIEND pointless at the
+        /// climax - two targets keeps every command relevant to the last turn.</summary>
+        public static MonsterSpec[] BossFight()
+        {
+            var wisp = Boss;
+            wisp.Name = "mon.wisp";
+            wisp.Battler = "Art/Battlers/GeniusA";
+            wisp.MapSheet = "Art/Mon/Monsters_05_0";
+            wisp.Hp = 40; wisp.AtkMin = 6; wisp.AtkMax = 10; wisp.Speed = 5.2f;
+            wisp.Boss = false; wisp.Tier = 3;
+            return new[] { Boss, wisp };
+        }
     }
 
     // -------------------------------------------------------------------- npc + dialog
@@ -962,6 +994,7 @@ namespace MoonThief
         public Vector2 Pos;    // world position (cell center)
         public string NameKey; // string key of the name
         public string[] Lines; // string keys spoken in order
+        public bool Shop;      // tapping opens the shop instead of a dialog
     }
 
     public static class Folks
@@ -1014,6 +1047,9 @@ namespace MoonThief
                     Lines=new[]{ "dl.pip.1", "dl.pip.2" } },
                 new NpcDef{ Chara=0, Sheet="Pack/Chara/chara_21", Pos=new Vector2(28.5f,11.5f), NameKey="npc.prune",
                     Lines=new[]{ "dl.prune.1", "dl.prune.2" } },
+                // Marn keeps the stall: gold finally has somewhere to go
+                new NpcDef{ Chara=0, Sheet="Pack/Chara/chara_14", Pos=new Vector2(24.5f,9.5f), NameKey="npc.marn",
+                    Lines=new[]{ "dl.marn.1", "dl.marn.2" }, Shop=true },
             };
             if (chapter >= 2)
             {
