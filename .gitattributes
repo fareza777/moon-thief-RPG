@@ -1,0 +1,58 @@
+* text=auto
+
+# ---- Source ----
+*.cs text diff=csharp
+*.py text
+*.md text
+*.txt text
+*.json text
+*.xml text
+*.html text
+*.css text
+*.js text
+
+# ---- Unity YAML assets (diffable text) ----
+*.meta text
+*.unity text
+*.asset text
+*.anim text
+*.prefab text
+*.mat text
+*.controller text
+*.physicsMaterial2D text
+
+# ---- Unity / general binaries ----
+*.dll binary
+*.exe binary
+*.apk binary
+*.aab binary
+*.jar binary
+*.so binary
+*.a binary
+*.lib binary
+*.unitypackage binary
+
+# ---- Images ----
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.psd binary
+*.tga binary
+*.bmp binary
+*.webp binary
+*.ase binary
+*.aseprite binary
+
+# ---- Audio ----
+*.wav binary
+*.mp3 binary
+*.ogg binary
+*.flac binary
+
+# ---- Fonts ----
+*.ttf binary
+*.otf binary
+
+# ---- Docs ----
+*.pdf binary

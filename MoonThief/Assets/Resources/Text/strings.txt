@@ -1,0 +1,385 @@
+# THE MOON THIEF - all strings (english).   key|value, \n = line break
+
+# ---- title
+title.name|THE MOON THIEF
+title.tagline|The moon is gone. Find the shards and light it again.
+title.footer|a tale of three nights
+title.tap|TAP TO BEGIN
+
+# ---- splash
+splash.studio|F7 DEVELOPER GAMES
+splash.made|a hand-built night tale
+splash.presents|presents
+
+# ---- main menu
+menu.new|NEW NIGHT
+menu.continue|CONTINUE
+menu.settings|SETTINGS
+menu.credits|CREDITS
+menu.hint|TAP A ROW TO PICK
+cred.title|THE MOON THIEF
+cred.sub|a tale in three nights
+cred.body|studio      f7 developer games\npixel art   super retro collection\ncode        unity, built from scratch\nsound       chiptune written in code\nfont        5x8 bitmap, drawn by hand
+cred.thanks|thank you for playing
+menu.back|BACK
+
+# ---- settings
+set.title|SETTINGS
+set.hint|CHANGES APPLY RIGHT AWAY
+set.textspeed|TEXT SPEED
+set.speed.slow|SLOW
+set.speed.normal|NORMAL
+set.speed.fast|FAST
+set.speed.instant|INSTANT
+set.sound|SOUND
+set.shake|SCREEN SHAKE
+set.on|ON
+set.off|OFF
+set.saved|PROGRESS SAVED
+
+# ---- pause
+pause.title|PAUSED
+pause.hint|PROGRESS SAVES WHEN YOU TAP SAVE
+pause.resume|RESUME
+pause.save|SAVE PROGRESS
+pause.settings|SETTINGS
+pause.totitle|LEAVE TO TITLE
+
+# ---- cinematic intro
+ci.skip|TAP TO SKIP
+ci.1|Night came early.
+ci.2|The moon did not rise.
+ci.3|No one saw it go.
+ci.4|Only tracks, crossing\nall four roads.
+ci.5|Something walked out\ncarrying the sky\nin four pieces.
+ci.6|Mira kept the last\nlantern of Quiet Hollow.
+ci.7|She gives it to you.
+ci.8|Gather the shards.\nRaise three friends.\nClimb the dark wood.
+ci.9|Hang the moon back\nwhere it belongs.
+ci.ch.1|NIGHT ONE\nthe village of Quiet Hollow
+ci.ch.2|NIGHT TWO\nthe long fields
+ci.ch.3|NIGHT THREE\nthe dark wood
+
+# ---- hud
+hud.nightshort|NIGHT {0}
+hud.round|ROUND {0}
+hud.explore|NIGHT {0}    SHARD {1}/{2}
+hud.quest|NEXT: {0}
+
+# ---- quest chain (the clear workflow). Kept short: this line lives in the corner of the
+# ---- screen over the world, and a 39-character line ran most of the way across it.
+quest.1|Talk to Mira by the crystal.
+quest.2|Open night chests. {0} shards left.
+quest.3|Follow the lamps north.
+quest.4|Face the Pale Guard.
+quest.5|Raise the moon at the crystal.
+
+# ---- heroes
+hero.amber|AMBER
+hero.sea|SEA
+hero.moss|MOSS
+hero.you|YOU
+
+# ---- battle menu
+menu.attack|ATTACK
+menu.befriend|BEFRIEND
+menu.morsel|MORSEL
+menu.run|LET GO
+
+# ---- battle messages
+bt.one|A wild {0} blocks the way!
+bt.two|{0} and a friend appear!
+bt.yourturn|{0} - your move.
+bt.enemyturn|{0} strikes!
+bt.herodown|{0} falls...
+bt.fainted|{0} fades into mist.
+bt.trybefriend|{0} looks at you...
+bt.befriended|{0} joins you!
+bt.befriendfail|{0} is not ready yet.
+bt.morsel|You lay down a moonlit morsel.
+bt.nomore|The bag is empty.
+bt.hint|tap a command, then a foe
+
+# ---- monsters
+mon.slime|DEW SLIME
+mon.slime2|MOSS SLIME
+mon.imp|CAP CAP
+mon.slimeB|NIGHT SLIME
+mon.gloop|BOG SLIME
+mon.impB|OLD CAP
+mon.wasp|WICK BEE
+mon.wasp2|DUSK BEE
+mon.shade|SHADE
+mon.bones|HOLLOW BONES
+mon.hob|STONE HOB
+mon.wisp|LANTERN WISP
+mon.minotaur|PALE GUARD
+
+# ---- result cards
+card.wintitle|THE WAY IS CLEAR
+card.bosstitle|THE GUARD FALLS
+card.losstitle|THE NIGHT WINS
+card.bossline|The last shard slips out of its hands.
+card.lossline|The party wakes by the crystal. The moon is still gone.
+card.xp|XP {0}
+card.gold|GOLD {0}
+card.befriended|FRIENDS {0}/{1}
+card.joined|They wanted to come.
+card.moon|The moon is still gone.
+
+# ---- buttons
+btn.continue|CONTINUE
+btn.retry|TRY AGAIN
+btn.title|BACK TO TITLE
+
+# ---- world zones. Two lines: the night in the big face, the place in the small one.
+zone.arrive.1|NIGHT ONE\nquiet hollow
+zone.arrive.2|NIGHT TWO\nthe long fields
+zone.arrive.3|NIGHT THREE\nthe dark wood
+zone.chapdone|THE ROAD OPENS...
+zone.bossdown|THE LAST SHARD IS YOURS
+zone.retreat|You fall back to the village.
+zone.shard|A MOON SHARD hums in your hands
+
+# ---- interact / loot
+loot.moonshard|A MOON SHARD hums in your hands
+loot.herbbread|Herbed bread. The party shares it.
+loot.oldcoin|Old coins from a kinder night.
+
+# ---- tutorial hints
+onb.move|Drag anywhere to walk.
+onb.talk|Walk up to a villager and tap.
+onb.chest|Tap a chest to open it.
+onb.quest|Your goal is written in the corner.
+
+# ---- npcs
+npc.elder|MIRA
+npc.kid|TOBBE
+npc.smith|HARL
+npc.hunter|WREN
+npc.bard|OSK
+npc.grandma|GRANNY ASH
+npc.finn|FINN
+npc.pip|PIP
+npc.oda|ODA
+npc.nail|NAIL
+npc.prune|PRUNE
+
+# ---- dialog: Mira, the keeper of the lantern
+dl.elder.1.1|The moon did not rise. Not one cloud, and still dark.
+dl.elder.1.2|Tracks crossed all four roads. Something carried the sky away.
+dl.elder.1.3|Four shards of moonlight are out there. Take the lantern.
+dl.elder.2.1|Two nights gone, and the fields grow bold. You carry shards.
+dl.elder.2.2|Befriend what you can. Two hearts walk further than one.
+dl.elder.2.3|The road north opens at the far gate. Follow the lamps.
+dl.elder.3.1|This is the last night, child. The wood has no dawn.
+dl.elder.3.2|The Pale Guard wears the last shard. It does not sleep.
+dl.elder.3.3|Sing to the crystal when you return. The sky listens.
+
+# ---- dialog: Tobbe, the kid
+dl.kid.1|The slimes glow a little at night. They miss the moon too.
+dl.kid.2|When it comes back, will the fields turn gold again?
+
+# ---- dialog: Harl, the smith
+dl.smith.1|Befriend one beast and you carry two hearts. That is how we live.
+dl.smith.2|Offer a morsel first. Nobody listens on an empty stomach.
+
+# ---- dialog: Wren, the hunter
+dl.hunter.1|I saw the Pale Guard on the ridge. It does not blink.
+dl.hunter.2|Its hide is old stone. Strike until the cracks show.
+
+# ---- dialog: Osk, the bard
+dl.bard.1|There is an old song. The moon was not stolen...
+dl.bard.2|...it was TAKEN BACK. Sing it at the crystal.
+
+# ---- dialog: Granny Ash
+dl.grandma.1|I packed your bread. Eat before the second bridge.
+dl.grandma.2|Your grandfather chased that light once. Come home.
+dl.finn.1|The pond froze the night the moon left. I still cast. Habit.
+dl.finn.2|If you hook something that glows, put it back. That is somebody.
+dl.pip.1|I caught forty fireflies in a jar. They went out one by one.
+dl.pip.2|I did not squish them! They just stopped being lights.
+dl.oda.1|The crops grew the wrong way up. Roots in the air. Rude.
+dl.oda.2|I turned one around. It screamed. I did not turn another.
+dl.nail.1|I dig by feel now. Every hole I open, the dark is already in it.
+dl.nail.2|If I do not come back up tonight, my lantern is yours.
+dl.prune.1|I am the queen of this square. Four days now. Nobody argued.
+dl.prune.2|When the moon comes back I will knight the first person who finds it.
+
+# ---- battle messages, part two
+bt.morsel2|{0} is shared out. The party gains {1} HP.
+bt.nofood|The bag has nothing left to eat.
+
+# ---- interact, part two
+onb.door|Step on the mat to go back outside.
+loot.found|You found {0} and {1} gold.
+
+# ---- the journal
+pause.journal|JOURNAL
+jr.title|JOURNAL
+jr.hint|TAP A ROW TO OPEN, BACK TO RETURN
+jr.pagehint|TAP A ROW, BACK RETURNS TO THE JOURNAL
+jr.sub|LEVEL {0}    {1} GOLD
+jr.character|CHARACTER
+jr.items|BAG
+jr.equip|EQUIPMENT
+jr.bestiary|BESTIARY
+jr.quests|QUESTS
+jr.count|QUESTS {0}/{1}
+jr.level|LEVEL
+jr.xp|EXPERIENCE
+jr.shards|MOON SHARDS
+jr.befriended|BEFRIENDED
+jr.felled|BEASTS FELLED
+jr.chests|CHESTS OPENED
+jr.gold|GOLD
+jr.atk|ATK
+jr.hp|HP
+jr.maxhp|MAX HP
+jr.all|ALL
+jr.key|KEEPSAKE
+jr.slot.blade|BLADE
+jr.slot.cloth|CLOTH
+jr.slot.charm|CHARM
+jr.none|nothing
+jr.worn|WORN
+jr.empty|Bag empty.
+jr.keyitem|A keepsake for somebody in the village.
+jr.usefight|Save it for a hard fight.
+jr.items.sub|{0} THINGS CARRIED
+jr.equip.sub|Tap a slot to swap it.
+jr.equip.tip|Bonus applies to the party.
+jr.bestiary.sub|MET {0} OF {1}
+jr.beast|HP {0}   ATK {1}-{2}
+jr.unknown|?????
+jr.unseen|Nobody has met this one yet.
+jr.quests.sub|ACTIVE {0}   DONE {1}
+jr.main|MAIN
+jr.active|ACTIVE
+jr.ready|READY
+jr.done|DONE
+jr.page|NEXT PAGE {0}/{1}
+jr.newquest|NEW QUEST: {0}
+jr.questdone|QUEST DONE: {0}
+q.goal|It is written down in your journal.
+q.reward|Gold in hand, and something to carry.
+
+# ---- things in the bag
+item.morsel|MOON MORSEL
+item.berry|EMBER BERRY
+item.honey|WILD HONEY
+item.soup|MUSHROOM SOUP
+item.tea|MOON TEA
+item.spoon|BENT SPOON
+item.knife|KITCHEN KNIFE
+item.sickle|OLD SICKLE
+item.blade|MOON BLADE
+item.cloak|MOTH CLOAK
+item.vest|HIDE VEST
+item.mail|CHAIN MAIL
+item.charm.bell|BELL CHARM
+item.charm.leaf|LEAF CHARM
+item.charm.moon|MOON CHARM
+item.charm.thread|THREAD CHARM
+item.axe|AN OLD AXE
+item.doll|A RED DOLL
+item.note|A FOLDED NOTE
+item.mushroom|NIGHT CAPS
+item.keepsake|A KEEPSAKE
+
+# ---- the villagers behind the six doors
+npc.house.0|ILSE
+npc.house.1|BRAM
+npc.house.2|MARA
+npc.house.3|SABLE
+npc.house.4|TAVI
+npc.house.5|JUNO
+house.0|ILSE'S SHRINE
+house.1|BRAM'S ROOM
+house.2|COLD FORGE
+house.3|SABLE'S WALL
+house.4|TAVI'S ROOM
+house.5|THE KITCHEN
+dl.home.0.1|The lantern in the shrine never goes out. Not even now.
+dl.home.0.2|Somebody has to stay awake. Tonight it is my turn.
+dl.home.1.1|I have a toy for every night of the week. This night has none left.
+dl.home.1.2|If you find a red one out there, that one is mine.
+dl.home.2.1|Three nights cold and the iron has gone sullen on me.
+dl.home.2.2|Bring me anything broken. Fixing things is what I do instead of sleeping.
+dl.home.3.1|Every horn on that wall came off something that was not friendly.
+dl.home.3.2|I am out of nails and out of stories. Both matter more than the dark.
+dl.home.4.1|Osk sleeps here when the inn is full. He snores in rhyme.
+dl.home.4.2|I dreamt the moon came back and asked this village for directions.
+dl.home.5.1|Sit. Eat. The bread is three nights old, but the honey is not.
+dl.home.5.2|My hen has opinions. Do not take them personally.
+
+# ---- quest log: the main line
+q.mq1.title|LAST LANTERN
+q.mq1.step|Take the lantern and step outside.
+q.mq1.offer|So the sky is short one moon, and Mira is short one thief.
+q.mq1.done|Go on. The chests the village left shut are worth opening now.
+q.mq2.title|FOUR SHARDS
+q.mq2.step|Open night chests for shards. {0} left.
+q.mq2.offer|Four shards of moonlight fell with the moon. The chests have them.
+q.mq2.done|Three, and then the road north does the rest. Follow the lamps.
+q.mq3.title|PALE GUARD
+q.mq3.step|Break the Pale Guard. {0} left.
+q.mq3.offer|The guard on the ridge wears the last shard like a crown.
+q.mq3.done|The way to the crystal is open. Sing to it.
+
+# ---- quest log: the side errands (funny, odd, and a few that are not)
+q.axe.title|LENT AXE
+q.axe.step|Find my axe in a chest. {0} left.
+q.axe.offer|I lent my axe to a neighbour, and then the neighbour went out into the dark.
+q.axe.done|That is my axe. Take the thread charm - it never snaps.
+q.mush.title|MUSHROOMS
+q.mush.step|Gather night mushrooms. {0} left.
+q.mush.offer|Three mushrooms, dear. The ones that grow under the trees and glow a little.
+q.mush.done|Now sit down, and no arguing about the soup.
+q.doll.title|RED DOLL
+q.doll.step|Look for the doll. {0} left.
+q.doll.offer|I dropped her somewhere in the fields. She is red. She is not scary.
+q.doll.done|She is not even wet! Where did you find her? Never mind - thank you.
+q.chicken.title|THE HEN
+q.chicken.step|Talk the hen down off the roof.
+q.chicken.offer|My hen is on the roof again. She only ever listens to strangers.
+q.chicken.done|You said one word and she came down. One word! What was it?
+q.toll.title|BRIDGE TOLL
+q.toll.step|Pay the boy his toll. {0} gold left.
+q.toll.offer|A boy has put a toll on the old bridge. Pay him before I do something I regret.
+q.toll.done|Good. And here is a bell. Ring it when the dark gets close.
+q.kettle.title|KETTLES
+q.kettle.step|Open night chests for kettles. {0} left.
+q.kettle.offer|I need three kettles, and the only stock left in this village is inside the chests.
+q.kettle.done|Three kettles. Now the forge can at least boil water at night.
+q.rhyme.title|THREE PLACES
+q.rhyme.step|Walk somewhere new. {0} left.
+q.rhyme.offer|Go to the village, the fields, and the wood, and bring me back what the wind said.
+q.rhyme.done|No, no - the wind said it wrong. Still. Here is a leaf charm for the trip.
+q.watch.title|NIGHT WATCH
+q.watch.step|Fell beasts for the watch. {0} left.
+q.watch.offer|Five beasts down and I might sleep again. That is the whole of my plan.
+q.watch.done|Five. I will sleep tonight with the light on, just the same.
+q.grave.title|EMPTY CHAIR
+q.grave.step|Find Wren and speak about the chair. {0} left.
+q.grave.offer|My brother's chair is still set for supper. If you meet a hunter called Wren, tell him.
+q.grave.done|He came home. He does not remember me. Take this - he would have wanted it given away.
+q.ledger.title|THE LEDGER
+q.ledger.step|Open night chests for the ledger. {0} left.
+q.ledger.offer|My father kept a ledger of everything the dark was owed. Six lines are still unpaid.
+q.ledger.done|Six lines closed. Now take the blade - it was always meant to leave this house.
+
+# ---- one-off things on the road
+ev.hen|A hen looks at you, coughs, and drops a coin she has plainly swallowed twice. There is no arguing with her.
+ev.toll|A boy holds out a stick. Toll, he says, and takes six coins out of your pocket himself.
+ev.laundry|Somebody has hung the night's washing on the fog. It is dry. Nobody is anywhere.
+ev.rock|You sit on a warm rock and feel better. The rock is humming an old marching song.
+ev.moth|A moth the size of your hand lands on the lantern and leaves a small charm inside. It seems to expect nothing.
+ev.bell|You ring a bell nobody hung, and something in the dark rings back. It sounds insulted.
+ev.grave|A grave in the meadow has fresh bread on it and no name. Somebody still comes here every night.
+ev.lantern|An old lantern burns alone on the ridge. Nobody lit it. Fifteen coins lie inside, and there are no footprints.
+ev.dog|A hunting dog will not leave the gate. It has waited long enough to forget what for.
+
+# ---- ending
+end.notyet|The crystal is cold. {0} shards are still missing.
+end.text|The shards rise\nfrom your hands and\nclimb the sky.\n\nThe moon takes\nits old place over\nthe fields.\n{0} friends walk\nhome beside you.\n\nThe village wakes\nto its first gold\nmorning.

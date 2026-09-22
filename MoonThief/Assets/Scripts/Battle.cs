@@ -1,0 +1,1293 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace MoonThief
+{
+    /// <summary>
+    /// Battle presentation, rebuilt for the full game: measured 2x2 command menu, animated
+    /// lunges/flash/shakes, floating numbers, capture sparkles, and the same measured result
+    /// cards that survived the slice. Layout is anchored to the portrait frame, not hardcoded.
+    /// </summary>
+    public class BattleView : MonoBehaviour
+    {
+        public class Rig
+        {
+            public Fighter F;
+            public Transform Root, Body, SpriteT;
+            public SpriteRenderer Sr;
+            public Anim Anim;
+            public SpriteRenderer Shadow, BarBg, BarFill, NameChip, Hat;
+            public PixelLabel Name;
+            public Vector3 Home;
+            public float BodyHeight, BobPhase;
+            public bool CapturedFx;
+        }
+
+        public class MenuCell
+        {
+            public string Label;
+            public SpriteRenderer Panel, Chevron;
+            public PixelLabel Text;
+            public Rect Hit;
+        }
+
+        // ---- layout
+        public float HalfH = 16f;
+        // MsgH is the log box. It is 3.9 rather than 3.3 so a two line message at scale 2 has a
+        // clear 0.45 units of plate above and below it instead of 0.19: on a phone the old box
+        // read as text glued to the top border, which is the one thing a message box may not do.
+        public const float HudH = 2.4f, MenuH = 6.2f, MsgH = 3.9f;
+        public float Left, Right, Top, Bottom, HudBottom, MenuTop, MsgTop, ArenaTop, PartyFeet;
+
+        public Transform Stage;
+        public Fighter[] Party;
+        public Fighter[] Enemies = new Fighter[0];
+        public Rig[] PartyRigs = new Rig[0];
+        public Rig[] EnemyRigs = new Rig[0];
+        public readonly List<MenuCell> Menu = new List<MenuCell>();
+
+        SpriteRenderer _backdrop, _floorTint, _hudPanel, _menuPanel, _msgPanel, _moonIcon, _targetChev;
+        PixelLabel _hudNight, _hudRound, _msg, _hint;
+        Transform _overlayRoot;
+        SpriteRenderer _ovDim, _ovPanel;
+        PixelLabel _ovTitle;
+        List<PixelLabel> _ovLines = new List<PixelLabel>();
+        List<(SpriteRenderer panel, PixelLabel text, Rect rect, Action act)> _ovButtons = new List<(SpriteRenderer, PixelLabel, Rect, Action)>();
+        float _time;
+        bool _menuOn;
+        int _selCell;
+
+        public bool MenuOn => _menuOn;
+        public int SelectedCell => _selCell;
+        public int OverlayButtonCount => _ovButtons.Count;
+
+        // ---------------------------------------------------------------- build
+
+        public void Build(float halfH, Transform parent)
+        {
+            HalfH = halfH;
+            Stage = new GameObject("battleStage").transform;
+            // parent to OUR transform, not the game stage: toggling this GameObject
+            // (title/explore/ending) must hide every battle element - menu, message,
+            // party bars, overlay. Parenting to the stage leaked the menu onto the title.
+            Stage.SetParent(transform, false);
+            Left = G.Left; Right = G.Right; Top = halfH; Bottom = -halfH;
+            HudBottom = Top - HudH;
+            MenuTop = Bottom + MenuH;
+            MsgTop = MenuTop + MsgH;
+            ArenaTop = HudBottom - 0.4f;
+            // 1.35, not 1.1: the party name chip hangs 1.15 units under the feet, and at 1.1 the
+            // bottom of every chip sat one pixel off the top border of the log box
+            PartyFeet = MenuTop + MsgH + 1.35f;
+
+            _floorTint = SpriteRendererUtil.Make(Stage, "bfloor", TexArt.Solid(), -2);
+            _floorTint.transform.localPosition = new Vector3(0f, (Top + Bottom) * 0.5f, 0f);
+            _floorTint.transform.localScale = new Vector3(18f * 16f, (Top - Bottom) * 16f, 1f);
+            _floorTint.color = new Color32(17, 14, 30, 255);
+
+            _backdrop = SpriteRendererUtil.Make(Stage, "bbackdrop", null, -1);
+            _backdrop.transform.localPosition = new Vector3(0f, HudBottom - 7.5f, 0f);
+
+            _hudPanel = Sliced("hud", TexArt.Panel(), 46);
+            Box(_hudPanel, Left, HudBottom, 18f, HudH, Color.white);
+
+            _hudNight = Label("hudNight", 2, new Color(1f, 0.93f, 0.72f), TextAlign.Left, 50);
+            _hudNight.transform.localPosition = new Vector3(Left + 0.45f, Top - 0.42f, 0f);
+
+            _hudRound = Label("hudRound", 2, new Color(0.75f, 0.73f, 0.88f), TextAlign.Right, 50);
+            _hudRound.transform.localPosition = new Vector3(Right - 1.8f, Top - 0.42f, 0f);
+
+            _moonIcon = SpriteRendererUtil.Make(Stage, "bmoon", Game.State.Chapter >= 3 ? TexArt.MoonFull() : TexArt.MoonEmpty(), 50);
+            _moonIcon.transform.localPosition = new Vector3(Right - 0.9f, Top - 0.85f, 0f);
+            _moonIcon.transform.localScale = Vector3.one * 2f;
+
+            _msgPanel = Sliced("msgPanel", TexArt.Panel(), 51);
+            Box(_msgPanel, Left + 0.3f, MenuTop + 0.12f, 17.4f, MsgH - 0.24f, new Color(1f, 1f, 1f, 0.9f));
+
+            // the log box is taller than a single line on purpose: two lines are the common case
+            // ("CAP CAP looks at you...") and three lines have to fit too, because SetMessage
+            // scales the text down rather than letting it run over the border
+            _msg = Label("bmsg", 2, new Color(1f, 0.96f, 0.82f), TextAlign.Left, 53);
+            _msg.MaxWidthUnits = 15.2f;
+            _msg.RevealSpeed = 60f;
+            _msg.transform.localPosition = new Vector3(Left + 0.75f, MenuTop + MsgH - 0.48f, 0f);
+
+            // Control hint. It lives in the HUD bar, on its own line under NIGHT, instead of
+            // inside the message box: there it sat on the same line as the battle message and
+            // the two printed over each other whenever the message wrapped to two lines.
+            _hint = Label("bhint", 1, new Color(0.76f, 0.82f, 1f), TextAlign.Left, 50);
+            _hint.transform.localPosition = new Vector3(Left + 0.45f, Top - 1.62f, 0f);
+            _hint.Set(Strings.Get("bt.hint"));
+            _hint.gameObject.SetActive(false);
+
+            _menuPanel = Sliced("bmenu", TexArt.Panel(), 54);
+            Box(_menuPanel, Left + 0.3f, Bottom + 0.3f, 17.4f, MenuH - 0.5f, Color.white); // y Bottom+0.3 .. Bottom+5.9
+
+            BuildMenu();
+            BuildParty();
+
+            _targetChev = SpriteRendererUtil.Make(Stage, "bchev", TexArt.Chevron(), 36);
+            _targetChev.transform.localEulerAngles = new Vector3(0f, 0f, -90f);
+            _targetChev.enabled = false;
+
+            _overlayRoot = new GameObject("boverlay").transform;
+            _overlayRoot.SetParent(Stage, false);
+            _overlayRoot.gameObject.SetActive(false);
+
+            Refresh();
+        }
+
+        void BuildMenu()
+        {
+            // two rows must fit INSIDE the menu panel (Bottom+0.3 .. Bottom+5.9):
+            // row 1 spans Bottom+3.3..5.6, row 2 spans Bottom+0.5..2.8.
+            string[] keys = { "menu.attack", "menu.befriend", "menu.morsel", "menu.run" };
+            const float cellW = 8.1f, cellH = 2.3f;
+            float x0 = Left + 0.75f, yTop = MenuTop - 0.6f;
+            for (int i = 0; i < 4; i++)
+            {
+                int col = i % 2, row = i / 2;
+                float x = x0 + col * (cellW + 0.55f);
+                float y = yTop - row * (cellH + 0.5f);
+                var cell = new MenuCell { Label = Strings.Get(keys[i]) };
+                cell.Panel = Sliced("mcell" + i, TexArt.Panel(), 55);
+                Box(cell.Panel, x, y - cellH, cellW, cellH, Color.white);
+                cell.Chevron = SpriteRendererUtil.Make(Stage, "mchev" + i, TexArt.Chevron(), 60);
+                cell.Chevron.transform.localPosition = new Vector3(x + 0.55f, y - cellH * 0.5f, 0f);
+                cell.Chevron.transform.localScale = Vector3.one * 1.6f;
+                cell.Chevron.enabled = false;
+                cell.Text = Label("mlabel" + i, 2, Color.white, TextAlign.Left, 58);
+                cell.Text.transform.localPosition = new Vector3(x + 1.0f, y - (cellH - PixelFont.GlyphHUnits(2)) * 0.5f, 0f);
+                cell.Text.Set(cell.Label);
+                // the painted cell, plus a thin margin. HitMenu() also accepts a near miss
+                // (nearest centre) so a thumb does not have to be pixel accurate
+                cell.Hit = new Rect(x - 0.3f, y - cellH - 0.3f, cellW + 0.6f, cellH + 0.6f);
+                Menu.Add(cell);
+            }
+        }
+
+        void BuildParty()
+        {
+            var specs = BattleData.Party;
+            Party = new Fighter[specs.Length];
+            PartyRigs = new Rig[specs.Length];
+            float[] xs = { -4.2f, 0f, 4.2f };
+            for (int i = 0; i < specs.Length; i++)
+            {
+                var spec = specs[i];
+                Party[i] = new Fighter
+                {
+                    Id = "p" + i,
+                    Name = Strings.Get(spec.NameKey),
+                    Side = Side.Party,
+                    // worn gear counts here, otherwise the equipment page is a museum: a blade
+                    // adds attack, cloth adds max hp, a charm a little of both
+                    MaxHp = spec.Hp + Game.State.BonusHp,
+                    Hp = spec.Hp + Game.State.BonusHp,
+                    AtkMin = spec.AtkMin + Game.State.BonusAtk,
+                    AtkMax = spec.AtkMax + Game.State.BonusAtk,
+                    Speed = spec.Speed,
+                    ColorDir = spec.ColorDir,
+                    Look = spec.Look,
+                    BattlerPath = BattleData.ClipPath(spec.ColorDir, "breath_idle"),
+                    Scale = 2
+                };
+                var home = new Vector3(xs[i], PartyFeet, 0f);
+                var rig = MakeRig(Party[i], home, 20 + i);
+                // The party footer is a tight stack between the fighters' feet and the message
+                // panel: HP bar first, then the name plate. The bar used to sit at
+                // PartyFeet - 1.55, which is under the message panel, so nobody ever saw their
+                // own HP in battle.
+                rig.Name = Label("pname" + i, 1, new Color(0.92f, 0.94f, 1f), TextAlign.Center, 24);
+                rig.Name.transform.localPosition = new Vector3(home.x, PartyFeet - 0.53f, 0f);
+                rig.Name.Set(Party[i].Name);
+                rig.NameChip = SpriteRendererUtil.Make(Stage, "pnameChip" + i, TexArt.Solid(), 23);
+                Plate(rig.NameChip, rig.Name, Party[i].Name);
+                rig.BarBg = SpriteRendererUtil.Make(Stage, "pbg" + i, TexArt.Solid(), 22);
+                rig.BarFill = SpriteRendererUtil.Make(Stage, "pfill" + i, TexArt.Solid(), 23);
+                rig.Anim.Play(Bank.Frames(BattleData.ClipPath(spec.ColorDir, "breath_idle")), 6f, true);
+                PartyRigs[i] = rig;
+            }
+        }
+
+        Rig MakeRig(Fighter f, Vector3 home, int sorting)
+        {
+            var rig = new Rig { F = f, Home = home };
+            var root = new GameObject(f.Id).transform;
+            root.SetParent(Stage, false);
+            root.localPosition = home;
+            rig.Root = root;
+            rig.BobPhase = UnityEngine.Random.Range(0f, 6.28f);
+
+            rig.Shadow = SpriteRendererUtil.Make(root, "sh", TexArt.Shadow(), sorting - 1);
+            rig.Shadow.transform.localPosition = new Vector3(0f, 0.12f, 0f);
+            rig.Shadow.transform.localScale = new Vector3(1.2f, 1f, 1f);
+
+            var body = new GameObject("body").transform;
+            body.SetParent(root, false);
+            rig.Body = body;
+
+            var go = new GameObject("spr");
+            go.transform.SetParent(body, false);
+            go.transform.localScale = Vector3.one * f.Scale;
+            rig.SpriteT = go.transform;
+            rig.Sr = go.AddComponent<SpriteRenderer>();
+            rig.Sr.sortingOrder = sorting;
+            rig.Anim = go.AddComponent<Anim>();
+            rig.Anim.Setup(rig.Sr, true, 0f);
+            rig.Anim.AnchorScale = f.Scale;
+
+            // The three friends are one sprite in three palettes, so each one wears something of
+            // their own. It hangs off the sprite transform, which already carries the rig scale,
+            // and it is anchored to the head from the bottom (the sprite is feet-anchored, so the
+            // head sits a fixed distance above the ground, not a fixed distance from the top).
+            if (f.Look >= 0)
+            {
+                var hat = SpriteRendererUtil.Make(go.transform, "headwear", TexArt.Headwear(f.Look), sorting + 1);
+                hat.transform.localPosition = new Vector3(0f, 0.46f, 0f);
+                rig.Hat = hat;
+            }
+            return rig;
+        }
+
+        static int FitScale(Sprite s, float maxW, int pref)
+        {
+            if (s == null) return 1;
+            for (int k = pref; k >= 1; k--)
+                if (s.bounds.size.x * k <= maxW) return k;
+            return 1;
+        }
+
+        public void SetBackdrop(string path)
+        {
+            var sp = Bank.One(path);
+            _backdrop.sprite = sp;
+            if (sp != null)
+            {
+                // cover the WHOLE portrait frame (was: only the arena) so no flat band
+                // is left above the art
+                float kx = 18f / sp.bounds.size.x;
+                float ky = (Top - Bottom) / sp.bounds.size.y;
+                float k = Mathf.Max(kx, ky);
+                _backdrop.transform.localScale = Vector3.one * k;
+                _backdrop.transform.localPosition = new Vector3(0f, (Top + Bottom) * 0.5f, 0f);
+            }
+        }
+
+        public void SetMoonIcon(bool full)
+        {
+            _moonIcon.sprite = full ? TexArt.MoonFull() : TexArt.MoonEmpty();
+        }
+
+        public void SetEncounter(MonsterSpec[] specs)
+        {
+            for (int i = 0; i < EnemyRigs.Length; i++)
+            {
+                if (EnemyRigs[i] == null) continue;
+                if (EnemyRigs[i].Root != null) UtilDestroy(EnemyRigs[i].Root.gameObject);
+                // bars and the name label are made directly under Stage - destroy them
+                // explicitly or they orphan and pile up over the arena every encounter
+                if (EnemyRigs[i].BarBg != null) UtilDestroy(EnemyRigs[i].BarBg.gameObject);
+                if (EnemyRigs[i].BarFill != null) UtilDestroy(EnemyRigs[i].BarFill.gameObject);
+                if (EnemyRigs[i].Name != null) UtilDestroy(EnemyRigs[i].Name.gameObject);
+                if (EnemyRigs[i].NameChip != null) UtilDestroy(EnemyRigs[i].NameChip.gameObject);
+            }
+
+            Enemies = new Fighter[specs.Length];
+            EnemyRigs = new Rig[specs.Length];
+            for (int i = 0; i < specs.Length; i++)
+            {
+                var spec = specs[i];
+                var battler = Bank.One(spec.Battler);
+                var f = new Fighter
+                {
+                    Id = "e" + i,
+                    Name = Strings.Get(spec.Name),
+                    Side = Side.Enemy,
+                    MaxHp = spec.Hp, Hp = spec.Hp,
+                    AtkMin = spec.AtkMin, AtkMax = spec.AtkMax,
+                    Speed = spec.Speed,
+                    Boss = spec.Boss,
+                    BattlerPath = spec.Battler,
+                    Scale = FitScale(battler, spec.Boss ? 8.5f : 5.6f, 2)
+                };
+                Enemies[i] = f;
+                float x = specs.Length == 1 ? 0f : (i == 0 ? -4.4f : 4.4f);
+                float y = HudBottom - (spec.Boss ? 8.6f : 6.2f);
+                var home = new Vector3(x, y, 0f);
+                var rig = MakeRig(f, home, 10 + i);
+                rig.Shadow.transform.localScale = new Vector3(Mathf.Max(1f, f.Scale * 0.8f), 1f, 1f);
+                rig.Anim.Play(new[] { battler }, 1f, true);
+                rig.Sr.enabled = battler != null;
+                rig.BodyHeight = battler != null ? battler.bounds.size.y * f.Scale : 2f;
+
+                rig.BarBg = SpriteRendererUtil.Make(Stage, "ebg" + i, TexArt.Solid(), 6);
+                rig.BarFill = SpriteRendererUtil.Make(Stage, "efill" + i, TexArt.Solid(), 7);
+                rig.Name = Label("ename" + i, 1, new Color(1f, 0.86f, 0.86f), TextAlign.Center, 8);
+                rig.Name.transform.localPosition = new Vector3(home.x, home.y + rig.BodyHeight + 0.45f, 0f);
+                rig.Name.Set(f.Name);
+                // dark plate behind the name: the arena art has flat bright patches and light
+                // text lying straight on top of them read as a smear
+                rig.NameChip = SpriteRendererUtil.Make(Stage, "enameChip" + i, TexArt.Solid(), 7);
+                Plate(rig.NameChip, rig.Name, f.Name);
+                EnemyRigs[i] = rig;
+            }
+            SetTarget(0);
+            Refresh();
+        }
+
+        public void ResetPartyHp()
+        {
+            foreach (var rig in PartyRigs)
+            {
+                rig.F.Hp = rig.F.MaxHp;
+                rig.F.Dead = false;
+                rig.Root.localPosition = rig.Home;
+                rig.Body.localPosition = Vector3.zero;
+                rig.Sr.enabled = true;
+                rig.Anim.SetTint(Color.white);
+                rig.Anim.Play(Bank.Frames(BattleData.ClipPath(rig.F.ColorDir, "breath_idle")), 6f, true);
+            }
+            Refresh();
+        }
+
+        /// <summary>Intro flourish: party and foes slide in from the frame edges
+        /// (play mode only; the editor preview keeps the static layout).</summary>
+        public void IntroSlide()
+        {
+            if (!Application.isPlaying) return;
+            foreach (var rig in PartyRigs)
+            {
+                rig.Root.localPosition = rig.Home + new Vector3(-2.5f, 0f, 0f);
+                StartCoroutine(Fx.MoveLocal(rig.Root, rig.Home, 0.35f));
+            }
+            for (int i = 0; i < EnemyRigs.Length; i++)
+            {
+                var off = new Vector3(i == 0 ? 4f : -4f, 0.8f, 0f);
+                EnemyRigs[i].Root.localPosition = EnemyRigs[i].Home + off;
+                StartCoroutine(Fx.MoveLocal(EnemyRigs[i].Root, EnemyRigs[i].Home, 0.4f));
+            }
+        }
+
+        /// <summary>Golden sparkle shower over the result card panel.</summary>
+        public void CardSparkle()
+        {
+            if (!Application.isPlaying) return;
+            for (int i = 0; i < 12; i++)
+            {
+                var go = new GameObject("cardspark");
+                go.transform.SetParent(Stage, false);
+                go.transform.localPosition = new Vector3(UnityEngine.Random.Range(Left + 1.5f, Right - 1.5f), Top - 1f, 0f);
+                go.transform.localScale = Vector3.one * 2f;
+                var sr = go.AddComponent<SpriteRenderer>();
+                sr.sprite = TexArt.Spark();
+                sr.color = new Color(1f, 0.95f, 0.7f, 1f);
+                sr.sortingOrder = 90;
+                StartCoroutine(CardSparkRoutine(go.transform, UnityEngine.Random.Range(0.9f, 1.6f)));
+            }
+        }
+
+        IEnumerator CardSparkRoutine(Transform t, float dur)
+        {
+            var start = t.localPosition;
+            float e = 0f;
+            while (e < dur)
+            {
+                e += Time.deltaTime;
+                float k = e / dur;
+                t.localPosition = start + new Vector3(Mathf.Sin(k * 9f) * 0.3f, -2.5f * k, 0f);
+                var c = t.GetComponent<SpriteRenderer>().color;
+                c.a = 1f - k;
+                t.GetComponent<SpriteRenderer>().color = c;
+                yield return null;
+            }
+            UtilDestroy(t.gameObject);
+        }
+
+        public void SetNight(int chapter)
+        {
+            _hudNight.Set(Strings.Get("hud.nightshort", chapter));
+        }
+
+        public void SetRound(int round) => _hudRound.Set(Strings.Get("hud.round", round));
+
+        public void SetMessage(string text)
+        {
+            // One panel, and the text picks the largest scale that fits inside it: two lines at
+            // scale 2, three at scale 1. The old version always drew at scale 2 with the anchor a
+            // flat 0.48 units under the plate's top edge, so a wrapped message sat glued to the
+            // border above it -- which is exactly what a two line log looked like on a phone.
+            float plateTop = MenuTop + MsgH - 0.12f;        // matches the Box() in Build()
+            float inner = MsgH - 0.24f - 0.125f;            // inside the 1 px frame of the plate
+            // The plate is drawn from its own measured text, so the padding has a floor: a single
+            // short line ("AMBER - your move.") lands dead centre of a 3.9 unit box, not at the top.
+            _msg.Scale = 2;
+            _msg.Set(text);
+            if (_msg.MeasureHeight(text) > inner + 0.02f)
+            {
+                _msg.Scale = 1;
+                _msg.Set(text);
+            }
+            float th = _msg.MeasureHeight(text);
+            float pad = Mathf.Max(0.45f, (inner - th) * 0.5f);
+            if (pad * 2f + th > inner) pad = Mathf.Max(0.18f, (inner - th) * 0.5f);
+            _msg.transform.localPosition = new Vector3(Left + 0.8f, Fx.Snap(plateTop - 0.125f - pad), 0f);
+        }
+
+        public void ShowHint(bool on)
+        {
+            if (_hint != null) _hint.gameObject.SetActive(on);
+        }
+
+        public void SetMenuVisible(bool on)
+        {
+            _menuOn = on;
+            if (!on) ShowHint(false);
+            _menuPanel.enabled = on;
+            foreach (var c in Menu)
+            {
+                c.Panel.enabled = on;
+                c.Text.gameObject.SetActive(on);
+            }
+            if (on) SetSelected(_selCell);
+        }
+
+        public void SetSelected(int cell)
+        {
+            _selCell = Mathf.Clamp(cell, 0, Menu.Count - 1);
+            for (int i = 0; i < Menu.Count; i++)
+            {
+                bool sel = i == _selCell && _menuOn;
+                Menu[i].Chevron.enabled = sel;
+                Menu[i].Text.SetColor(sel ? new Color(1f, 0.95f, 0.7f) : new Color(0.85f, 0.86f, 0.96f));
+                Menu[i].Panel.color = sel ? new Color(1f, 1f, 0.92f, 1f) : new Color(1f, 1f, 1f, 0.62f);
+            }
+        }
+
+        int _target = -1;
+        public int Target => _target;
+
+        public void SetTarget(int i)
+        {
+            _target = i;
+            bool ok = i >= 0 && i < EnemyRigs.Length && Enemies[i].Alive;
+            _targetChev.enabled = ok;
+            if (!ok) return;
+            _targetChev.transform.localScale = Vector3.one * (Enemies[i].Boss ? 2.4f : 1.8f);
+            PlaceTargetChev(EnemyRigs[i], 0f);
+        }
+
+        /// <summary>The aim arrow sits beside the foe's feet, pointing at it. It used to sit 0.7
+        /// units over its head, which is exactly where the name plate is: every encounter printed
+        /// the arrow through the name of the foe it was aiming at.</summary>
+        void PlaceTargetChev(Rig rig, float bob)
+        {
+            _targetChev.transform.localPosition = new Vector3(
+                rig.Home.x - BodyWidth(rig) * 0.5f - 0.75f, rig.Home.y + 0.25f + bob, 0f);
+        }
+
+        /// <summary>Rendered width of a rig, for anything that has to stand beside it.</summary>
+        static float BodyWidth(Rig rig)
+        {
+            if (rig == null || rig.Sr == null || rig.Sr.sprite == null) return 2f;
+            return rig.Sr.sprite.bounds.size.x * rig.F.Scale;
+        }
+
+        void Update()
+        {
+            _time += Time.deltaTime;
+            // foes bob on the spot; the party breathes, so the arena is never a still frame
+            foreach (var rig in EnemyRigs)
+            {
+                if (rig?.Body == null || !rig.F.Alive) continue;
+                rig.Body.localPosition = new Vector3(0f, Mathf.Sin(_time * 2.1f + rig.BobPhase) * 0.06f, 0f);
+            }
+            foreach (var rig in PartyRigs)
+            {
+                if (rig?.Body == null || !rig.F.Alive) continue;
+                rig.Body.localPosition = new Vector3(0f, Mathf.Sin(_time * 1.5f + rig.BobPhase) * 0.035f, 0f);
+            }
+            if (_targetChev.enabled && _target >= 0 && _target < EnemyRigs.Length)
+                PlaceTargetChev(EnemyRigs[_target], Mathf.Sin(_time * 5f) * 0.08f);
+        }
+
+        public void Refresh()
+        {
+            float[] xs = { -4.2f, 0f, 4.2f };
+            for (int i = 0; i < PartyRigs.Length; i++)
+            {
+                var rig = PartyRigs[i];
+                float left = xs[i] - 1.1f;
+                bool alive = rig.F.Alive;
+                rig.BarBg.enabled = alive;
+                Box(rig.BarBg, left, PartyFeet - 0.45f, 2.2f, 0.20f, new Color32(12, 10, 22, 255));
+                var c = rig.F.Hp01 > 0.5f ? new Color32(126, 226, 143, 255)
+                    : rig.F.Hp01 > 0.22f ? new Color32(240, 208, 110, 255) : new Color32(232, 106, 106, 255);
+                float w = 2.2f * rig.F.Hp01;
+                rig.BarFill.enabled = alive && w > 0.03f;
+                if (rig.BarFill.enabled) Box(rig.BarFill, left + 0.0625f, PartyFeet - 0.43f, w - 0.0625f, 0.1f, c);
+                rig.Name.SetColor(alive ? new Color(0.92f, 0.94f, 1f) : new Color(0.5f, 0.46f, 0.56f));
+                if (rig.NameChip != null) Plate(rig.NameChip, rig.Name, rig.F.Name);
+            }
+            for (int i = 0; i < EnemyRigs.Length; i++)
+            {
+                var rig = EnemyRigs[i];
+                if (rig == null) continue;
+                bool show = rig.F.Alive;
+                rig.BarBg.enabled = show;
+                rig.BarFill.enabled = false;
+                if (show)
+                {
+                    float left = rig.Home.x - 1.3f;
+                    Box(rig.BarBg, left, rig.Home.y - 0.55f, 2.6f, 0.2f, new Color32(12, 10, 22, 255));
+                    float w = 2.6f * rig.F.Hp01;
+                    if (w > 0.03f)
+                        Box(rig.BarFill, left + 0.0625f, rig.Home.y - 0.49f, w - 0.0625f, 0.08f,
+                            rig.F.Boss ? new Color32(255, 150, 110, 255) : new Color32(232, 196, 120, 255));
+                }
+            }
+        }
+
+        // ---------------------------------------------------------------- overlay cards
+
+        /// <summary>Shows or hides the party footer (HP bar + name tag under each hero).
+        /// A result card is opaque and its buttons land exactly where the footer sits, so the
+        /// names showed through under the CONTINUE button - text on text, the one thing a player
+        /// reads as a bug. The footer belongs to the fight, and the fight is over while a card
+        /// is up.</summary>
+        void SetFooterVisible(bool on)
+        {
+            for (int i = 0; i < PartyRigs.Length; i++)
+            {
+                var r = PartyRigs[i];
+                if (r == null) continue;
+                if (r.Name != null) r.Name.gameObject.SetActive(on);
+                if (r.NameChip != null) r.NameChip.enabled = on;
+                if (r.BarBg != null) r.BarBg.enabled = on;
+                if (r.BarFill != null) r.BarFill.enabled = on;
+            }
+        }
+
+        public void ShowCard(string title, string[] lines, string[] buttons, Action[] actions, Color titleColor)
+        {
+            HideCard();
+            _overlayRoot.gameObject.SetActive(true);
+            SetFooterVisible(false);
+
+            if (_ovDim == null)
+            {
+                _ovDim = SpriteRendererUtil.Make(_overlayRoot, "ovDim", TexArt.Solid(), 80);
+                _ovDim.transform.localPosition = new Vector3(0f, (Top + Bottom) * 0.5f, 0f);
+                _ovDim.transform.localScale = new Vector3(18f * 16f, (Top - Bottom) * 16f, 1f);
+                _ovDim.color = new Color32(8, 6, 18, 215);
+            }
+            if (_ovPanel == null) _ovPanel = SlicedUnder(_overlayRoot, "ovPanel", TexArt.Panel(), 81);
+
+            float innerW = 15.0f;
+
+            if (_ovTitle == null) _ovTitle = LabelUnder(_overlayRoot, "ovTitle", 3, Color.white, TextAlign.Center, 82);
+            int scale = 3; float titleH;
+            while (true)
+            {
+                _ovTitle.Configure(scale, titleColor, TextAlign.Center, 82);
+                _ovTitle.MaxWidthUnits = innerW;
+                _ovTitle.Set(title);
+                titleH = _ovTitle.MeasureHeight(title);
+                if (scale <= 2 || _ovTitle.LineCount(title) <= 2) break;
+                scale--;
+            }
+
+            var lineH = new float[lines.Length];
+            float linesH = 0f;
+            while (_ovLines.Count < lines.Length)
+                _ovLines.Add(LabelUnder(_overlayRoot, "ovLine" + _ovLines.Count, 2, new Color(0.92f, 0.94f, 1f), TextAlign.Center, 82));
+            for (int i = 0; i < lines.Length; i++)
+            {
+                var l = _ovLines[i];
+                l.Configure(2, new Color(0.92f, 0.94f, 1f), TextAlign.Center, 82);
+                l.MaxWidthUnits = innerW;
+                l.Set(lines[i]);
+                lineH[i] = string.IsNullOrEmpty(lines[i]) ? 0f : l.MeasureHeight(lines[i]);
+                if (lineH[i] > 0f) linesH += lineH[i] + (linesH > 0f ? 0.3f : 0f);
+            }
+
+            int btnN = buttons.Length;
+            const float BtnW = 13.2f, BtnH = 1.75f, BtnGap = 0.5f;
+            float buttonsH = btnN > 0 ? btnN * BtnH + (btnN - 1) * BtnGap : 0f;
+
+            float total = 1.4f * 2f + titleH + linesH + buttonsH
+                        + (titleH > 0f && (linesH > 0f || buttonsH > 0f) ? 0.8f : 0f)
+                        + (linesH > 0f && buttonsH > 0f ? 1.0f : 0f);
+            // The card lives between the HUD strip and the log box. It used to be allowed down to
+            // the bottom of the frame, so a tall result card (night end, level up) overlapped the
+            // message panel by a few pixels -- two framed cards fighting for the same strip, with
+            // the last line of the fight half covered. The last log line stays readable instead.
+            float room = (Top - 1.2f) - (MsgTop + 0.35f);
+            float h = Mathf.Min(total, room);
+            float panelBottom = Mathf.Clamp(0.4f - h * 0.5f, MsgTop + 0.35f, Top - 1.2f - h);
+            Box(_ovPanel, Left + 0.9f, panelBottom, 16.2f, h, Color.white);
+
+            float y = Fx.Snap(panelBottom + h - 1.4f);
+            if (titleH > 0f)
+            {
+                _ovTitle.transform.localPosition = new Vector3(0f, y, 0f);
+                y = Fx.Snap(y - titleH - 0.8f);
+            }
+            for (int i = 0; i < lines.Length; i++)
+            {
+                if (lineH[i] <= 0f) continue;
+                _ovLines[i].transform.localPosition = new Vector3(0f, y, 0f);
+                y = Fx.Snap(y - lineH[i] - 0.3f);
+            }
+            if (btnN > 0) y -= 1.0f;
+            for (int i = 0; i < btnN; i++)
+            {
+                var panel = SlicedUnder(_overlayRoot, "ovBtn" + i, TexArt.Panel(), 83);
+                Box(panel, -BtnW * 0.5f, y - BtnH, BtnW, BtnH, new Color(1f, 1f, 0.95f, 0.95f));
+                var text = LabelUnder(_overlayRoot, "ovBtnT" + i, 2, new Color(1f, 0.96f, 0.8f), TextAlign.Center, 84);
+                text.transform.localPosition = new Vector3(0f, y - (BtnH - PixelFont.GlyphHUnits(2)) * 0.5f, 0f);
+                text.Set(buttons[i]);
+                _ovButtons.Add((panel, text, new Rect(-BtnW * 0.5f, y - BtnH, BtnW, BtnH), actions[i]));
+                y -= BtnH + BtnGap;
+            }
+
+        }
+
+        public void HideCard()
+        {
+            foreach (var b in _ovButtons)
+            {
+                if (b.panel != null) UtilDestroy(b.panel.gameObject);
+                if (b.text != null) UtilDestroy(b.text.gameObject);
+            }
+            _ovButtons.Clear();
+            if (_ovTitle != null) _ovTitle.Set("");
+            foreach (var l in _ovLines) l.Set("");
+            _overlayRoot.gameObject.SetActive(false);
+            SetFooterVisible(true);
+        }
+
+        // a tap just outside a cell still aims at a command: on a phone a thumb misses the
+        // painted rectangle often, and "nothing happened" reads as a broken menu
+        // 1.2 units is a ring a thumb can miss by (~4% of the screen height) while staying
+        // well inside the gap between the two menu rows, so a tap in the gap commits nothing
+        const float MenuTouchSlop = 1.2f;
+
+        public int HitMenu(Vector2 w)
+        {
+            if (!_menuOn) return -1;
+            // an exact cell wins outright, so the near-miss search can never steal a row
+            for (int i = 0; i < Menu.Count; i++)
+                if (Menu[i].Hit.Contains(w)) return i;
+            int best = -1; float bd = MenuTouchSlop;
+            for (int i = 0; i < Menu.Count; i++)
+            {
+                var c = Menu[i].Hit.center;
+                float d = Mathf.Abs(c.x - w.x) + Mathf.Abs(c.y - w.y);
+                if (d < bd) { bd = d; best = i; }
+            }
+            return best;
+        }
+
+        public int HitEnemy(Vector2 w)
+        {
+            int best = -1; float bd = float.MaxValue;
+            for (int i = 0; i < EnemyRigs.Length; i++)
+            {
+                var rig = EnemyRigs[i];
+                if (rig == null || !rig.F.Alive || rig.Sr.sprite == null) continue;
+                var b = rig.Sr.bounds;
+                var pad = new Bounds(b.center, b.size + new Vector3(0.6f, 0.6f, 0f));
+                if (!pad.Contains(w)) continue;
+                float d = Mathf.Abs(w.x - b.center.x) + Mathf.Abs(w.y - b.center.y);
+                if (d < bd) { bd = d; best = i; }
+            }
+            return best;
+        }
+
+        public Action HitCardButton(Vector2 w)
+        {
+            foreach (var b in _ovButtons)
+                if (b.rect.Contains(w)) return b.act;
+            return null;
+        }
+
+        /// <summary>Self-test / automation hook: invoke a card button without hit-testing.</summary>
+        public Action CardButtonAt(int i) => i >= 0 && i < _ovButtons.Count ? _ovButtons[i].act : null;
+
+        /// <summary>Self-test hook: the screen rect of a card button, so the tap path that a
+        /// real finger takes can be tested instead of the shortcut.</summary>
+        public Rect CardButtonRect(int i) => i >= 0 && i < _ovButtons.Count ? _ovButtons[i].rect : new Rect(0f, 0f, 0f, 0f);
+
+        public Rig RigOf(Fighter f)
+        {
+            if (f.Side == Side.Party)
+            {
+                foreach (var pr in PartyRigs) if (pr.F == f) return pr;
+            }
+            else
+            {
+                foreach (var er in EnemyRigs) if (er != null && er.F == f) return er;
+            }
+            return null;
+        }
+
+        public Vector2 BodyCenter(Fighter f)
+        {
+            var r = RigOf(f);
+            return r == null ? Vector2.zero : new Vector2(r.Home.x, r.Home.y + r.BodyHeight * 0.6f);
+        }
+
+        public void FloatNumber(Vector2 pos, string text, Color color)
+        {
+            var go = new GameObject("floatn");
+            go.transform.SetParent(Stage, false);
+            go.transform.localPosition = new Vector3(pos.x, pos.y, 0f);
+            var label = go.AddComponent<PixelLabel>();
+            label.Configure(2, color, TextAlign.Center, 40);
+            label.SnapToPixelGrid = false;
+            // damage numbers drift over whatever art the arena uses; without a shadow they
+            // vanish into the light patches
+            label.Shadow = true;
+            label.Set(text, true);
+            if (!Application.isPlaying) return;
+            StartCoroutine(FloatRoutine(go.transform, label, color));
+        }
+
+        IEnumerator FloatRoutine(Transform t, PixelLabel label, Color color)
+        {
+            float e = 0f;
+            var y0 = t.localPosition.y;
+            while (e < 0.9f)
+            {
+                e += Time.deltaTime;
+                float k = 1f - (1f - Mathf.Clamp01(e / 0.9f)) * (1f - Mathf.Clamp01(e / 0.9f));
+                t.localPosition = new Vector3(t.localPosition.x, y0 + 1.5f * k, 0f);
+                var c = color; c.a = 1f - Mathf.Clamp01((e / 0.9f - 0.55f) / 0.45f);
+                label.SetColor(c);
+                yield return null;
+            }
+            UtilDestroy(t.gameObject);
+        }
+
+        public void Sparkle(Vector2 pos, Color color, int count = 10)
+        {
+            if (!Application.isPlaying) return;
+            for (int i = 0; i < count; i++)
+            {
+                var go = new GameObject("spark");
+                go.transform.SetParent(Stage, false);
+                go.transform.localPosition = new Vector3(pos.x, pos.y, 0f);
+                go.transform.localScale = Vector3.one * 2f;
+                var sr = go.AddComponent<SpriteRenderer>();
+                sr.sprite = TexArt.Spark();
+                sr.color = color;
+                sr.sortingOrder = 42;
+                float ang = Mathf.PI * 2f * i / count + UnityEngine.Random.Range(-0.2f, 0.2f);
+                StartCoroutine(SparkRoutine(go.transform, sr, new Vector3(Mathf.Cos(ang), Mathf.Sin(ang) * 0.85f, 0f) * 1.7f, color));
+            }
+        }
+
+        IEnumerator SparkRoutine(Transform t, SpriteRenderer sr, Vector3 off, Color color)
+        {
+            var start = t.localPosition;
+            float e = 0f;
+            while (e < 0.55f)
+            {
+                e += Time.deltaTime;
+                float k = Mathf.Clamp01(e / 0.55f);
+                t.localPosition = start + off * (1f - (1f - k) * (1f - k));
+                var c = color; c.a = 1f - k;
+                sr.color = c;
+                yield return null;
+            }
+            UtilDestroy(t.gameObject);
+        }
+
+        // ---------------------------------------------------------------- helpers
+
+        SpriteRenderer Sliced(string name, Sprite sprite, int sorting) => SlicedUnder(Stage, name, sprite, sorting);
+
+        static SpriteRenderer SlicedUnder(Transform parent, string name, Sprite sprite, int sorting)
+        {
+            var sr = SpriteRendererUtil.Make(parent, name, sprite, sorting);
+            sr.drawMode = SpriteDrawMode.Sliced;
+            sr.size = new Vector2(1f, 1f);
+            return sr;
+        }
+
+        /// <summary>Fits a dark plate to the measured name above it, so a short name and a
+        /// long one both get a plate that matches.</summary>
+        void Plate(SpriteRenderer chip, PixelLabel label, string text)
+        {
+            var at = label.transform.localPosition;
+            float w = Mathf.Max(1.0f, label.MeasureWidth(text) + 0.46f);
+            float h = PixelFont.GlyphHUnits(1) + 0.16f;
+            Box(chip, at.x - w * 0.5f, at.y - h + 0.05f, w, h, new Color32(10, 8, 20, 205));
+        }
+
+        static void Box(SpriteRenderer sr, float left, float bottom, float wUnits, float hUnits, Color color)
+        {
+            left = G.Snap(left); bottom = G.Snap(bottom);
+            float w = Mathf.Max(G.Pixel, G.Snap(wUnits));
+            float h = Mathf.Max(G.Pixel, G.Snap(hUnits));
+            sr.drawMode = SpriteDrawMode.Sliced;
+            sr.size = new Vector2(w, h);
+            sr.transform.localPosition = new Vector3(left + w * 0.5f, bottom + h * 0.5f, 0f);
+            sr.transform.localScale = Vector3.one;
+            sr.color = color;
+            sr.enabled = true;
+        }
+
+        // instance method: labels must live under Stage so hiding the battle view
+        // hides them too (scene-root labels leaked onto the title/explore screens).
+        PixelLabel Label(string name, int scale, Color color, TextAlign align, int sorting)
+            => PixelLabelUtil.Make(Stage, name, scale, color, align, sorting);
+
+        static PixelLabel LabelUnder(Transform parent, string name, int scale, Color color, TextAlign align, int sorting)
+            => PixelLabelUtil.Make(parent, name, scale, color, align, sorting);
+
+        static void UtilDestroy(GameObject go)
+        {
+            if (go == null) return;
+            if (Application.isPlaying) Destroy(go); else DestroyImmediate(go);
+        }
+    }
+
+    /// <summary>Turn-based flow: speed queue, attacks, befriend attempts, rewards, boss gate.</summary>
+    public class BattleDirector : MonoBehaviour
+    {
+        public BattleView View;
+        public Action OnBattleWon;          // normal encounter cleared
+        public Action OnBossWon;            // chapter boss defeated
+        public Action OnDefeat;             // party wiped
+
+        enum Ph { Idle, Intro, Round, Acting, Card }
+        Ph _ph = Ph.Idle;
+        readonly List<Fighter> _queue = new List<Fighter>();
+        int _qi, _round = 1;
+        MonsterSpec[] _specs;
+        bool _morselUsed;
+        int _befriended;
+        public bool AwaitingInput { get; private set; }
+
+        // self-test diagnostics
+        public string DebugPhase => _ph.ToString();
+        public int DebugQi => _qi;
+        public int DebugRound => _round;
+        public int DebugQueue => _queue.Count;
+
+        public void StartBattle(MonsterSpec[] specs)
+        {
+            _specs = specs;
+            _ph = Ph.Intro;
+            _round = 1;
+            _qi = 0;
+            _morselUsed = false;
+            _befriended = 0;
+            AwaitingInput = false;
+            View.SetBackdrop(Game.State.Chapter >= 3 ? "Art/Backgrounds/ForestA"
+                : Game.State.Chapter == 2 ? "Art/Backgrounds/PlainA" : "Art/Backgrounds/ForestA");
+            View.SetNight(Game.State.Chapter);
+            View.SetMoonIcon(Game.State.Chapter >= 3);
+            View.ResetPartyHp();
+            View.SetEncounter(specs);
+            View.HideCard();
+            View.SetMenuVisible(false);
+            View.IntroSlide();
+            var first = Strings.Get(specs.Length > 1 ? "bt.two" : "bt.one", View.Enemies[0].Name);
+            View.SetMessage(first);
+            if (Application.isPlaying) StartCoroutine(Timer(1.4f, RoundStart));
+        }
+
+        IEnumerator Timer(float t, Action done)
+        {
+            yield return Fx.Wait(t);
+            done();
+        }
+
+        void RoundStart()
+        {
+            _ph = Ph.Round;
+            _queue.Clear();
+            var all = new List<Fighter>(View.Party.Length + View.Enemies.Length);
+            foreach (var f in View.Party) if (f.Alive) all.Add(f);
+            foreach (var f in View.Enemies) if (f.Alive) all.Add(f);
+            all.Sort((a, b) => b.Speed.CompareTo(a.Speed));
+            _queue.AddRange(all);
+            _qi = 0;
+            View.SetRound(_round);
+            NextTurn();
+        }
+
+        void NextTurn()
+        {
+            if (AllEnemiesGone()) { Win(); return; }
+            if (PartyWiped()) { Lose(); return; }
+
+            int guard = 0;
+            while (guard++ < 20)
+            {
+                if (_qi >= _queue.Count)
+                {
+                    _round++;
+                    RoundStart();
+                    return;
+                }
+                var f = _queue[_qi];
+                if (f.Alive) break;
+                _qi++;
+            }
+            var cur = _queue[_qi];
+            if (cur.Side == Side.Party) BeginPlayerTurn(cur);
+            else if (Application.isPlaying) StartCoroutine(EnemyTurn(cur));
+            else EnemyTurnImmediate(cur);
+        }
+
+        void BeginPlayerTurn(Fighter f)
+        {
+            AwaitingInput = true;
+            View.SetMenuVisible(true);
+            View.SetSelected(0);
+            View.ShowHint(true);
+            View.SetMessage(Strings.Get("bt.yourturn", f.Name));
+        }
+
+        /// <summary>Back to the idle breathing clip after an action animation.</summary>
+        void PlayIdle(BattleView.Rig rig)
+        {
+            if (rig?.Anim == null) return;
+            if (rig.F.Side == Side.Party)
+                rig.Anim.Play(Bank.Frames(BattleData.ClipPath(rig.F.ColorDir, "breath_idle")), 6f, true);
+        }
+
+        IEnumerator EnemyTurn(Fighter e)
+        {
+            _ph = Ph.Acting;
+            View.SetMessage(Strings.Get("bt.enemyturn", e.Name));
+            yield return Fx.Wait(0.5f);
+
+            // pick the toughest standing hero
+            Fighter target = null;
+            foreach (var p in View.Party)
+                if (p.Alive && (target == null || p.Hp > target.Hp)) target = p;
+            if (target == null) { Lose(); yield break; }
+
+            var eRig = View.RigOf(e);
+            var tRig = View.RigOf(target);
+            yield return Lunge(eRig, tRig.Home, 0.3f);
+
+            int dmg = UnityEngine.Random.Range(e.AtkMin, e.AtkMax + 1);
+            target.Hp = Mathf.Max(0, target.Hp - dmg);
+            var stagger = Bank.Frames(BattleData.ClipPath(target.ColorDir, "hit"));
+            if (stagger.Length > 0) tRig.Anim.Play(stagger, 14f, false);
+            else StartCoroutine(Fx.FlashTint(tRig.Anim, new Color(1f, 0.45f, 0.45f), 2, 0.08f, 0.08f));
+            StartCoroutine(Fx.Shake(tRig.Root, 0.14f, 0.25f));
+            View.FloatNumber(tRig.Home + new Vector3(0f, 1.4f, 0f), "-" + dmg, new Color(1f, 0.6f, 0.55f));
+            View.Refresh();
+            yield return Fx.Wait(0.4f);
+            yield return Lunge(eRig, eRig.Home, 0.3f);
+
+            if (!target.Alive)
+            {
+                tRig.Sr.enabled = false;
+                View.SetMessage(Strings.Get("bt.herodown", target.Name));
+                yield return Fx.Wait(0.8f);
+            }
+            else PlayIdle(tRig);
+            EndTurn();
+        }
+
+        void EnemyTurnImmediate(Fighter e)
+        {
+            // deterministic path for static previews
+            Fighter target = null;
+            foreach (var p in View.Party) if (p.Alive && (target == null || p.Hp > target.Hp)) target = p;
+            if (target != null)
+            {
+                int dmg = UnityEngine.Random.Range(e.AtkMin, e.AtkMax + 1);
+                target.Hp = Mathf.Max(0, target.Hp - dmg);
+            }
+            EndTurn();
+        }
+
+        IEnumerator Lunge(BattleView.Rig rig, Vector3 toward, float dur)
+        {
+            if (rig?.Root == null) yield break;
+            var from = rig.Root.localPosition;
+            var dir = (toward - from) * 0.35f;
+            yield return Fx.MoveLocal(rig.Root, from + dir, dur * 0.4f);
+            yield return Fx.MoveLocal(rig.Root, from, dur * 0.6f);
+        }
+
+        // ------------------------------------------------------------ edit-mode driving
+
+        /// <summary>Coroutines do not run outside play mode, so the timed round start that
+        /// reveals the command menu never fires in editor previews. Drive it by hand.</summary>
+        public void EditorTick()
+        {
+            if (Application.isPlaying || _ph != Ph.Intro) return;
+            RoundStart();
+        }
+
+        // ------------------------------------------------------------ player actions
+
+        /// <summary>True while the result card owns the screen.</summary>
+        public bool CardUp => _ph == Ph.Card;
+
+        public void TapAt(Vector2 w)
+        {
+            // the card is checked before the phase guard: while it is up it owns the
+            // screen, and its buttons were unreachable when the guard came first
+            var cardBtn = View.HitCardButton(w);
+            if (cardBtn != null) { cardBtn(); return; }
+
+            if (_ph != Ph.Round && _ph != Ph.Acting) return;
+
+            if (AwaitingInput)
+            {
+                int cell = View.HitMenu(w);
+                if (cell >= 0) { View.SetSelected(cell); Confirm(); return; }
+                int enemy = View.HitEnemy(w);
+                if (enemy >= 0) View.SetTarget(enemy);
+            }
+        }
+
+        public void SelectCell(int d) => View.SetSelected(View.SelectedCell + d);
+
+        public void CycleTarget(int d)
+        {
+            int n = View.EnemyRigs.Length;
+            for (int k = 1; k <= n; k++)
+            {
+                int i = (View.Target + d * k + n * 4) % n;
+                if (View.Enemies[i].Alive) { View.SetTarget(i); return; }
+            }
+        }
+
+        public void Confirm()
+        {
+            if (!AwaitingInput) return;
+            AwaitingInput = false;
+            View.SetMenuVisible(false);
+            View.ShowHint(false);
+            var actor = _queue[_qi];
+            switch (View.SelectedCell)
+            {
+                case 0: StartCoroutine(PlayerAttack(actor)); break;
+                case 1: StartCoroutine(PlayerBefriend(actor)); break;
+                case 2: StartCoroutine(PlayerMorsel(actor)); break;
+                default: EndTurn(); break;   // run: skip, village never traps you
+            }
+        }
+
+        IEnumerator PlayerAttack(Fighter actor)
+        {
+            _ph = Ph.Acting;
+            int ti = View.Target;
+            if (ti < 0 || !View.Enemies[ti].Alive)
+            {
+                for (int i = 0; i < View.Enemies.Length; i++)
+                    if (View.Enemies[i].Alive) { ti = i; break; }
+            }
+            if (ti < 0) { Win(); yield break; }
+            var target = View.Enemies[ti];
+            var aRig = View.RigOf(actor);
+            var tRig = View.RigOf(target);
+
+            // the hero's own swing: the pack ships a 7 frame attack clip per colour
+            if (aRig != null && aRig.Anim != null)
+            {
+                var swing = Bank.Frames(BattleData.ClipPath(actor.ColorDir, "attack"));
+                if (swing.Length > 0) aRig.Anim.Play(swing, 15f, false);
+            }
+
+            yield return Lunge(aRig, tRig.Home, 0.35f);
+            int dmg = UnityEngine.Random.Range(actor.AtkMin, actor.AtkMax + 1);
+            target.Hp = Mathf.Max(0, target.Hp - dmg);
+            StartCoroutine(Fx.FlashTint(tRig.Anim, new Color(1f, 0.5f, 0.4f), 2, 0.07f, 0.07f));
+            StartCoroutine(Fx.Shake(tRig.Root, 0.12f, 0.22f));
+            View.FloatNumber(tRig.Home + new Vector3(0f, 1.2f, 0f), "-" + dmg, new Color(1f, 0.95f, 0.75f));
+            View.Refresh();
+            yield return Fx.Wait(0.45f);
+            yield return Lunge(aRig, aRig.Home, 0.3f);
+            PlayIdle(aRig);
+
+            if (!target.Alive)
+            {
+                yield return FadeOut(tRig);
+                View.SetMessage(Strings.Get("bt.fainted", target.Name));
+                yield return Fx.Wait(0.6f);
+            }
+            EndTurn();
+        }
+
+        IEnumerator FadeOut(BattleView.Rig rig)
+        {
+            yield return Fx.Fade(rig.Anim, new Color(1f, 1f, 1f, 0f), 0.45f);
+            rig.Sr.enabled = false;
+            rig.Anim.SetTint(Color.white);
+            rig.Root.gameObject.SetActive(false);
+        }
+
+        IEnumerator PlayerBefriend(Fighter actor)
+        {
+            _ph = Ph.Acting;
+            int ti = View.Target;
+            if (ti < 0 || !View.Enemies[ti].Alive) { EndTurn(); yield break; }
+            var target = View.Enemies[ti];
+            var tRig = View.RigOf(target);
+
+            float chance = Mathf.Clamp01(0.12f + (1f - target.Hp01) * 0.55f + (_morselUsed ? 0.2f : 0f));
+            View.SetMessage(Strings.Get("bt.trybefriend", target.Name));
+            View.Sparkle(tRig.Home + new Vector3(0f, tRig.BodyHeight * 0.5f, 0f), new Color(0.85f, 0.9f, 1f), 8);
+            yield return Fx.Wait(0.9f);
+
+            if (UnityEngine.Random.value < chance && _befriended + PartyStanding() < 2)
+            {
+                target.Captured = true;
+                _befriended++;
+                Game.State.Befriended++;
+                View.Sparkle(tRig.Home + new Vector3(0f, tRig.BodyHeight * 0.5f, 0f), new Color(1f, 0.95f, 0.6f), 14);
+                View.SetMessage(Strings.Get("bt.befriended", target.Name));
+                yield return FadeOut(tRig);
+                yield return Fx.Wait(0.5f);
+            }
+            else
+            {
+                View.SetMessage(Strings.Get("bt.befriendfail", target.Name));
+                StartCoroutine(Fx.Shake(tRig.Root, 0.1f, 0.2f));
+                yield return Fx.Wait(0.8f);
+            }
+            EndTurn();
+        }
+
+        int PartyStanding()
+        {
+            int n = 0;
+            foreach (var f in View.Party) if (f.Alive) n++;
+            return n;
+        }
+
+        /// <summary>Morsel: the party shares the best food in the bag. It used to be a line of
+        /// flavour text with no effect at all, which made the whole item list pointless.</summary>
+        IEnumerator PlayerMorsel(Fighter actor)
+        {
+            _ph = Ph.Acting;
+            if (_morselUsed)
+            {
+                View.SetMessage(Strings.Get("bt.nomore"));
+                yield return Fx.Wait(0.7f);
+                EndTurn();
+                yield break;
+            }
+            string food = Game.State.BestFood();
+            if (food == null)
+            {
+                View.SetMessage(Strings.Get("bt.nofood"));
+                yield return Fx.Wait(0.8f);
+                EndTurn();
+                yield break;
+            }
+            _morselUsed = true;
+            Game.State.RemoveBag(food);
+            Game.State.MorselsUsed++;
+            var def = Items.Get(food);
+            View.SetMessage(Strings.Get("bt.morsel2", Strings.Get(food), def.Power));
+            foreach (var p in View.Party)
+            {
+                if (!p.Alive || p.Hp >= p.MaxHp) continue;
+                var rig = View.RigOf(p);
+                p.Hp = Mathf.Min(p.MaxHp, p.Hp + def.Power);
+                if (rig != null) View.FloatNumber(rig.Home + new Vector3(0f, 1.2f, 0f), "+" + def.Power,
+                    new Color(0.7f, 1f, 0.7f));
+            }
+            View.Refresh();
+            yield return Fx.Wait(0.9f);
+            EndTurn();
+        }
+
+        void EndTurn()
+        {
+            _ph = Ph.Round;
+            if (AllEnemiesGone()) { Win(); return; }
+            if (PartyWiped()) { Lose(); return; }
+            _qi++;
+            NextTurn();
+        }
+
+        bool AllEnemiesGone()
+        {
+            foreach (var e in View.Enemies) if (e.Alive) return false;
+            return true;
+        }
+
+        bool PartyWiped()
+        {
+            foreach (var p in View.Party) if (p.Alive) return false;
+            return true;
+        }
+
+        void Win()
+        {
+            _ph = Ph.Card;
+            AwaitingInput = false;
+            View.SetMenuVisible(false);
+
+            bool boss = false;
+            foreach (var s in _specs) if (s.Boss) boss = true;
+
+            int xp = 0, gold = 0;
+            foreach (var e in View.Enemies)
+            {
+                xp += 45 * Mathf.Max(1, e.Boss ? 4 : 1);
+                gold += UnityEngine.Random.Range(18, 40);
+                Game.State.Defeats++;   // one step for the nightwatch
+            }
+            // the bestiary is keyed by the species, not its printed name
+            foreach (var s in _specs) Game.State.MarkSeen(s.Name);
+            Game.State.Xp += xp;
+            Game.State.Gold += gold;
+
+            var lines = new List<string>
+            {
+                Strings.Get("card.xp", xp),
+                Strings.Get("card.gold", gold),
+            };
+            if (_befriended > 0) lines.Add(Strings.Get("card.befriended", _befriended, _specs.Length));
+            lines.Add(_befriended > 0 ? Strings.Get("card.joined") : Strings.Get("card.moon"));
+
+            if (boss)
+            {
+                lines.Add(Strings.Get("card.bossline"));
+                View.ShowCard(Strings.Get("card.bosstitle"), lines.ToArray(),
+                    new[] { Strings.Get("btn.continue") },
+                    new Action[] { () => OnBossWon?.Invoke() },
+                    new Color(1f, 0.9f, 0.55f));
+            }
+            else
+            {
+                View.ShowCard(Strings.Get("card.wintitle"), lines.ToArray(),
+                    new[] { Strings.Get("btn.continue") },
+                    new Action[] { () => OnBattleWon?.Invoke() },
+                    new Color(1f, 0.95f, 0.7f));
+            }
+            Sfx.Play("win");
+            View.CardSparkle();
+        }
+
+        void Lose()
+        {
+            _ph = Ph.Card;
+            AwaitingInput = false;
+            View.SetMenuVisible(false);
+            View.ShowCard(Strings.Get("card.losstitle"),
+                new[] { Strings.Get("card.lossline") },
+                new[] { Strings.Get("btn.retry") },
+                new Action[] { () => StartBattle(_specs) },
+                new Color(1f, 0.6f, 0.6f));
+        }
+    }
+}

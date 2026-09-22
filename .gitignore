@@ -1,0 +1,44 @@
+# ============ Unity generated ============
+[Mm]oon[Tt]hief/[Ll]ibrary/
+[Mm]oon[Tt]hief/[Tt]emp/
+[Mm]oon[Tt]hief/[Oo]bj/
+[Mm]oon[Tt]hief/[Bb]uild/
+[Mm]oon[Tt]hief/[Bb]uilds/
+[Mm]oon[Tt]hief/.utmp/
+[Mm]oon[Tt]hief/[Ll]ogs/
+[Mm]oon[Tt]hief/[Uu]ser[Ss]ettings/
+[Mm]oon[Tt]hief/[Mm]emory[Cc]aptures/
+[Mm]oon[Tt]hief/[Rr]ecordings/
+
+# Never commit build artifacts
+*.apk
+*.aab
+*.unitypackage
+
+# Unity crash / debugger files
+sysinfo.txt
+*.stackdump
+*.pidb
+*.pidb.meta
+*.pdb
+*.pdb.meta
+*.mdb
+*.mdb.meta
+crashlytics-build.properties
+
+# ============ Workspace build/test logs ============
+*.log
+*.err
+*.out
+
+# ============ Agent state ============
+.freebuff/
+
+# ============ Python ============
+__pycache__/
+*.pyc
+
+# ============ OS junk ============
+Thumbs.db
+desktop.ini
+.DS_Store

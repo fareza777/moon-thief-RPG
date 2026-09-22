@@ -1,0 +1,2207 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace MoonThief
+{
+    /// <summary>
+    /// Entry point of THE MOON THIEF, the full game. Owns the render target (288 px wide,
+    /// point-filtered), the game states (Splash / Menu / Cinema / Explore / Battle / End),
+    /// touch + keyboard input, dialog boxes, the quest chain and the self-test that plays
+    /// the whole loop by itself.
+    /// </summary>
+    public class Game : MonoBehaviour
+    {
+        public enum St { Splash, Menu, Cinema, Explore, Battle, End }
+
+        // ------------------------------------------------------------ global run state
+        public static class State
+        {
+            public static int Chapter = 1;
+            public static int MoonShards;      // shards needed to call the moon back
+            public static int Befriended;      // beasts that joined across the run
+            public static int HeldItems;
+            public static int MorselsUsed;
+            public static int Gold;
+            public static int Xp;
+            public static int ChestsOpened;    // the first few drops are always shards
+            public static int Defeats;         // wild beasts put down (drives the nightwatch quests)
+
+            // ---- the journal: the bag, what is worn, what has been seen, what has been done ----
+            public static readonly List<string> Bag = new List<string>();          // item keys, repeats allowed
+            public static readonly string[] Worn = new string[3];                  // blade, cloth, charm
+            public static readonly List<string> Zones = new List<string>();        // places walked into
+            public static readonly Dictionary<string, int> Seen = new Dictionary<string, int>();
+
+            public static int Level => 1 + Xp / 40;
+            public static int NextLevelAt => 40 * Level;
+
+            public static void NewRun()
+            {
+                Chapter = 1; MoonShards = 0; Befriended = 0; HeldItems = 0; MorselsUsed = 0;
+                Gold = 0; Xp = 0; ChestsOpened = 0; Defeats = 0;
+                Bag.Clear(); Worn[0] = Worn[1] = Worn[2] = null;
+                Zones.Clear(); Seen.Clear();
+                Quests.Reset();
+            }
+
+            // ---- bag helpers ----
+            public static void AddBag(string key, int n = 1)
+            {
+                if (string.IsNullOrEmpty(key)) return;
+                for (int i = 0; i < n; i++) Bag.Add(key);
+                HeldItems = Bag.Count;
+            }
+
+            public static void RemoveBag(string key, int n = 1)
+            {
+                for (int i = 0; i < n; i++)
+                {
+                    int at = Bag.IndexOf(key);
+                    if (at < 0) break;
+                    Bag.RemoveAt(at);
+                }
+                HeldItems = Bag.Count;
+            }
+
+            public static int BagCount(string key)
+            {
+                int n = 0;
+                foreach (var b in Bag) if (b == key) n++;
+                return n;
+            }
+
+            /// <summary>Records a place the hero has walked into (drives the bard's quest).</summary>
+            public static void NoteZone(string key)
+            {
+                if (!string.IsNullOrEmpty(key) && !Zones.Contains(key)) Zones.Add(key);
+            }
+
+            /// <summary>The most filling food in the bag, or null. The battle's Morsel command eats
+            /// this one, so the party always gets the best of what they carry.</summary>
+            public static string BestFood()
+            {
+                string best = null;
+                int power = 0;
+                foreach (var b in Bag)
+                {
+                    var d = Items.Get(b);
+                    if (d.Kind != ItemKind.Food || d.Power <= power) continue;
+                    best = b; power = d.Power;
+                }
+                return best;
+            }
+
+            public static void MarkSeen(string monKey)
+            {
+                if (string.IsNullOrEmpty(monKey)) return;
+                Seen[monKey] = (Seen.TryGetValue(monKey, out var v) ? v : 0) + 1;
+            }
+
+            /// <summary>Equipment bonuses, read by the battle so the journal is not decoration.</summary>
+            public static int BonusAtk
+            {
+                get
+                {
+                    int n = 0;
+                    for (int i = 0; i < 3; i++)
+                    {
+                        if (string.IsNullOrEmpty(Worn[i])) continue;
+                        var d = Items.Get(Worn[i]);
+                        if (d.Kind == ItemKind.Blade) n += d.Power;
+                        if (d.Kind == ItemKind.Charm) n += d.Power / 2;
+                    }
+                    return n;
+                }
+            }
+
+            public static int BonusHp
+            {
+                get
+                {
+                    int n = 0;
+                    for (int i = 0; i < 3; i++)
+                    {
+                        if (string.IsNullOrEmpty(Worn[i])) continue;
+                        var d = Items.Get(Worn[i]);
+                        if (d.Kind == ItemKind.Cloth) n += d.Power;
+                        if (d.Kind == ItemKind.Charm) n += d.Power / 2;
+                    }
+                    return n;
+                }
+            }
+
+            public static SaveData Capture(float heroX, float heroY) => new SaveData
+            {
+                chapter = Chapter, shards = MoonShards, befriended = Befriended,
+                gold = Gold, xp = Xp, morsels = MorselsUsed, items = HeldItems,
+                chestsOpened = ChestsOpened, heroX = heroX, heroY = heroY,
+                defeats = Defeats, bag = Bag.ToArray(), worn = (string[])Worn.Clone(),
+                zones = Zones.ToArray(), quests = Quests.Capture(),
+                seen = SeenKeys(),
+            };
+
+            static string[] SeenKeys()
+            {
+                var list = new List<string>();
+                foreach (var kv in Seen) list.Add(kv.Key + ":" + kv.Value);
+                return list.ToArray();
+            }
+
+            public static void Apply(SaveData d)
+            {
+                if (d == null) return;
+                Chapter = Mathf.Clamp(d.chapter, 1, 3);
+                MoonShards = Mathf.Max(0, d.shards);
+                Befriended = Mathf.Max(0, d.befriended);
+                Gold = Mathf.Max(0, d.gold);
+                Xp = Mathf.Max(0, d.xp);
+                MorselsUsed = Mathf.Max(0, d.morsels);
+                HeldItems = Mathf.Max(0, d.items);
+                ChestsOpened = Mathf.Max(0, d.chestsOpened);
+                Defeats = Mathf.Max(0, d.defeats);
+
+                Bag.Clear();
+                if (d.bag != null) foreach (var b in d.bag) if (!string.IsNullOrEmpty(b)) Bag.Add(b);
+                HeldItems = Bag.Count;
+                for (int i = 0; i < 3; i++)
+                    Worn[i] = d.worn != null && i < d.worn.Length && !string.IsNullOrEmpty(d.worn[i]) ? d.worn[i] : null;
+                Zones.Clear();
+                if (d.zones != null) foreach (var z in d.zones) if (!string.IsNullOrEmpty(z) && !Zones.Contains(z)) Zones.Add(z);
+                Seen.Clear();
+                if (d.seen != null)
+                    foreach (var raw in d.seen)
+                    {
+                        var p = raw.Split(':');
+                        int n;
+                        if (p.Length == 2 && int.TryParse(p[1], out n)) Seen[p[0]] = n;
+                    }
+                Quests.Apply(d.quests);
+            }
+        }
+
+        public const int ShardsNeeded = 4;
+
+        public St Phase { get; private set; } = St.Splash;
+        public bool EditorMode;
+        public static bool SelfTestMode;
+        public static string SelfTestDir;
+
+        public Camera Cam, BlitCam;
+        public RenderTexture Target;
+        public Transform StageRoot;
+        public WorldView World;
+        public BattleView BattleViewRef;
+        public BattleDirector Director;
+        public MenuView Menus;
+        public float HalfH { get; private set; }
+
+        bool _paused;
+        bool _metMira;
+        bool _hintTalk = true, _hintChest = true;
+        PixelLabel _hudQuest;
+        Vector2? _resumePos;
+        System.Action _afterScreen;
+
+        Transform _titleRoot, _endRoot;
+        PixelLabel _titleName, _titleTag, _titleTap, _titleEnd, _endLines, _tapHint;
+        Transform _titleMoon, _endMoon;
+        SpriteRenderer _endGlow;
+        Transform _fadeRoot;
+        SpriteRenderer _fade;
+        Transform _joyRoot;
+        SpriteRenderer _joyBase, _joyKnob;
+        Vector2 _joyCur;
+        readonly List<SpriteRenderer> _twinkles = new List<SpriteRenderer>();
+        GameMap _map;
+        Vector2 _joyCenter;
+        bool _joyTouch;
+        int _joyFinger = -1;
+        float _joyRadius = 1.6f;
+        Vector2 _joyVec;
+        // a deliberate tap on the world: pressed and released without dragging
+        bool _tapPending;
+        Vector2 _tapStage;
+        int _tapFinger = -1;
+        Vector2 _tapStart;
+        float _tapTime;
+        bool _tapMoved;
+        PixelLabel _dlgText, _dlgName, _hudZone, _hudShards;
+        SpriteRenderer _dlgPanel, _dlgPanelName, _dlgPortrait;
+        bool _dlgOpen;
+        string[] _dlgLines;
+        int _dlgIndex;
+        NpcDef _dlgNpc;
+        float _encounterCooldown = 3f;
+        bool _bossDown;
+        bool _ending;
+
+        // ---- houses: a second WorldView for the room, kept alive while the street waits ----
+        WorldView _houseView;
+        Transform _houseRoot;
+        GameMap _houseMap;
+        bool _inHouse;
+        int _houseIndex = -1;
+        Vector2 _doorReturn;          // where to stand when the door closes behind you
+        float _doorCooldown;
+        string _questLineRaw;         // the last objective line, kept while indoors
+
+        int _selDialog = 0;   // 0 = talk, 1 = close
+
+        // ------------------------------------------------------------ lifecycle
+
+        void Awake()
+        {
+            var args = System.Environment.GetCommandLineArgs();
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (args[i] == "-selftest") SelfTestMode = true;
+                else if (args[i] == "-screenshotdir" && i + 1 < args.Length) SelfTestDir = args[i + 1];
+            }
+            if (SelfTestDir == null)
+                SelfTestDir = System.IO.Path.Combine(Application.persistentDataPath, "SelfTest");
+            Prefs.Load();
+        }
+
+        void Start()
+        {
+            if (EditorMode) return;
+            if (!Application.isMobilePlatform && !Application.isEditor)
+                Screen.SetResolution(576, 1024, false);
+            BuildAll(Application.isMobilePlatform ? ComputeHalfHeight() : 16f);
+            ShowSplash();
+            if (SelfTestMode) StartCoroutine(SelfTest());
+        }
+
+        /// <summary>Full-screen fade quad; scene changes dissolve through black.</summary>
+        void BuildFade()
+        {
+            _fadeRoot = new GameObject("fade").transform;
+            _fadeRoot.SetParent(StageRoot, false);
+            _fade = SpriteRendererUtil.Make(_fadeRoot, "fadeQuad", TexArt.Solid(), 20000);
+            _fade.transform.localPosition = Vector3.zero;
+            _fade.transform.localScale = new Vector3(288f * 16f, 1024f * 16f, 1f);
+            _fade.color = new Color(0f, 0f, 0f, 0f);
+        }
+
+        void SetFade(float a)
+        {
+            if (_fade == null) return;
+            var c = _fade.color; c.a = Mathf.Clamp01(a); _fade.color = c;
+        }
+
+        /// <summary>How black the screen currently is, 0..1. The self-test waits this out
+        /// before it takes a frame: a dissolve through black is a fine transition to ship and a
+        /// useless screenshot, and one of the captured frames came out solid black.</summary>
+        public float FadeAlpha => _fade != null ? _fade.color.a : 0f;
+
+        IEnumerator CoFade(bool toBlack, float dur)
+        {
+            if (_fade == null) yield break;
+            _fadeRoot.gameObject.SetActive(true);
+            float start = _fade.color.a;
+            float end = toBlack ? 1f : 0f;
+            float e = 0f;
+            while (e < dur)
+            {
+                e += Time.deltaTime;
+                SetFade(Mathf.Lerp(start, end, Mathf.Clamp01(e / dur)));
+                yield return null;
+            }
+            SetFade(end);
+            if (!toBlack) _fadeRoot.gameObject.SetActive(false);
+        }
+
+        /// <summary>Dip to black, run the scene switch, dissolve back in.</summary>
+        void DoTransition(System.Action middle, float outDur = 0.25f, float inDur = 0.35f)
+        {
+            if (!Application.isPlaying || _fadeRoot == null) { middle?.Invoke(); return; }
+            StartCoroutine(CoTransition(middle, outDur, inDur));
+        }
+
+        IEnumerator CoTransition(System.Action middle, float outDur, float inDur)
+        {
+            yield return CoFade(true, outDur);
+            middle?.Invoke();
+            yield return CoFade(false, inDur);
+        }
+
+        /// <summary>Individual 3x3 stars at 1:1 pixel scale (a stretched star sheet renders
+        /// each texel as a huge solid block — never do that). They twinkle in Update.</summary>
+        void BuildStars(Transform root, int sorting)
+        {
+            var rng = new System.Random(99);
+            for (int i = 0; i < 34; i++)
+            {
+                var sr = SpriteRendererUtil.Make(root, "star" + i, TexArt.Star(), sorting);
+                float x = (float)rng.NextDouble() * 17.2f - 8.6f;
+                float y = (float)rng.NextDouble() * (HalfH * 2f - 3f) - HalfH + 1.5f;
+                sr.transform.localPosition = new Vector3(G.Snap(x), G.Snap(y), 0f);
+                sr.color = new Color(1f, 1f, 1f, 0.35f + (float)rng.NextDouble() * 0.45f);
+                _twinkles.Add(sr);
+            }
+        }
+
+        void TwinkleStars()
+        {
+            for (int i = 0; i < _twinkles.Count; i++)
+            {
+                var s = _twinkles[i];
+                if (s == null) continue;
+                float ph = i * 12.9898f;
+                var c = s.color;
+                c.a = 0.3f + 0.4f * (0.5f + 0.5f * Mathf.Sin(Time.time * (1.1f + (i % 5) * 0.23f) + ph));
+                s.color = c;
+            }
+        }
+
+        /// <summary>Touch joystick visual: soft ring at the touch origin, knob that follows.</summary>
+        void BuildJoy()
+        {
+            _joyRoot = new GameObject("joy").transform;
+            _joyRoot.SetParent(StageRoot, false);
+            _joyBase = SpriteRendererUtil.Make(_joyRoot, "joyBase", TexArt.Ring(), 4500);
+            _joyBase.color = new Color(1f, 1f, 1f, 0.30f);
+            _joyBase.transform.localScale = Vector3.one * 1.7f;
+            _joyKnob = SpriteRendererUtil.Make(_joyRoot, "joyKnob", TexArt.Dot(), 4501);
+            _joyKnob.color = new Color(1f, 1f, 1f, 0.55f);
+            _joyKnob.transform.localScale = Vector3.one * 1.3f;
+            _joyRoot.gameObject.SetActive(false);
+        }
+
+        void UpdateJoyVisual(bool active)
+        {
+            if (_joyRoot == null) return;
+            bool show = active && _joyTouch;
+            _joyRoot.gameObject.SetActive(show);
+            if (!show) return;
+            var cam = Cam.transform.localPosition;
+            var basePos = cam + (Vector3)ScreenToStage(_joyCenter);
+            _joyBase.transform.localPosition = new Vector3(basePos.x, basePos.y, 0f);
+            var curPos = cam + (Vector3)ScreenToStage(_joyCur);
+            var d = Vector2.ClampMagnitude(curPos - basePos, 1.6f);
+            _joyKnob.transform.localPosition = new Vector3(basePos.x + d.x, basePos.y + d.y, 0f);
+        }
+
+        public static float ComputeHalfHeight()
+        {
+            float aspect = Screen.height > 0 ? (float)Screen.width / Screen.height : 0.5625f;
+            int rtH = Mathf.Clamp(Mathf.RoundToInt(G.RtWidth / Mathf.Max(0.2f, aspect) / 2f) * 2, 480, 720);
+            return Mathf.Max(G.MinHalfHeight, rtH / 32f);
+        }
+
+        // ------------------------------------------------------------ construction
+
+        public void BuildAll(float halfH)
+        {
+            HalfH = halfH;
+            var stage = new GameObject("Stage").transform;
+            stage.SetParent(transform, false);
+            StageRoot = stage;
+
+            var camGo = new GameObject("MainCam");
+            camGo.transform.SetParent(transform, false);
+            camGo.transform.localPosition = new Vector3(0f, 0f, -10f);
+            Cam = camGo.AddComponent<Camera>();
+            Cam.orthographic = true;
+            Cam.orthographicSize = halfH;
+            Cam.clearFlags = CameraClearFlags.SolidColor;
+            Cam.backgroundColor = new Color(0.03f, 0.025f, 0.06f, 1f);
+            Cam.nearClipPlane = -20f;
+            Cam.farClipPlane = 40f;
+            int rtH = Mathf.RoundToInt(halfH * 32f);
+            Cam.aspect = G.RtWidth / (float)rtH;
+
+            var rt = new RenderTexture(G.RtWidth, rtH, 16, RenderTextureFormat.ARGB32)
+            { name = "PortraitTarget", filterMode = FilterMode.Point, antiAliasing = 1 };
+            rt.Create();
+            Target = rt;
+            Cam.targetTexture = rt;
+
+            var blitGo = new GameObject("BlitCam");
+            blitGo.transform.SetParent(transform, false);
+            BlitCam = blitGo.AddComponent<Camera>();
+            BlitCam.orthographic = true;
+            BlitCam.orthographicSize = 1f;
+            BlitCam.clearFlags = CameraClearFlags.SolidColor;
+            BlitCam.backgroundColor = new Color(0.02f, 0.02f, 0.04f, 1f);
+            BlitCam.cullingMask = 0;
+            BlitCam.depth = -10f;
+
+            BattleViewRef = new GameObject("BattleView").AddComponent<BattleView>();
+            BattleViewRef.transform.SetParent(stage, false);
+            BattleViewRef.Build(halfH, stage);
+            BattleViewRef.gameObject.SetActive(false);
+
+            World = new GameObject("WorldView").AddComponent<WorldView>();
+            World.transform.SetParent(stage, false);
+            World.gameObject.SetActive(false);
+
+            Director = new GameObject("Director").AddComponent<BattleDirector>();
+            Director.transform.SetParent(transform, false);
+            Director.View = BattleViewRef;
+            Director.OnBattleWon = OnEncounterWon;
+            Director.OnBossWon = OnBossDefeated;
+            Director.OnDefeat = OnRunLost;
+
+            Sfx.Init(transform);
+            BuildFade();
+            BuildJoy();
+            BuildTitle();
+            BuildEndScreen();
+            BuildDialogBox();
+
+            Menus = new GameObject("Menus").AddComponent<MenuView>();
+            Menus.transform.SetParent(stage, false);
+            Menus.Build(this, halfH, stage);
+            Menus.OnStartNew = BeginRun;
+            Menus.OnLoadSave = ContinueRun;
+            Menus.OnResume = ClosePause;
+            Menus.OnSaveGame = SaveRun;
+            Menus.OnLeaveToTitle = LeaveToTitle;
+            Menus.OnSplashDone = ShowTitle;
+            Menus.OnIntroDone = OnScreenDone;
+        }
+
+        void BuildTitle()
+        {
+            _titleRoot = new GameObject("Title").transform;
+            _titleRoot.SetParent(StageRoot, false);
+
+            var bg = SpriteRendererUtil.Make(_titleRoot, "bg", TexArt.Whole("Art/Backgrounds/ForestA"), 90);
+            bg.transform.localPosition = new Vector3(0f, 0f, 0f);
+            bg.transform.localScale = Vector3.one * (18f / 20f * 2f);
+            bg.color = new Color(0.62f, 0.66f, 0.95f, 1f);
+
+            var dim = SpriteRendererUtil.Make(_titleRoot, "dim", TexArt.Solid(), 91);
+            dim.transform.localPosition = Vector3.zero;
+            dim.transform.localScale = new Vector3(18f * 16f, (HalfH * 2f + 2f) * 16f, 1f);
+            dim.color = new Color(0.04f, 0.03f, 0.09f, 0.62f);
+
+            var moon = SpriteRendererUtil.Make(_titleRoot, "moonEmpty", TexArt.MoonEmpty(), 92);
+            moon.transform.localPosition = new Vector3(0f, HalfH - 3.2f, 0f);
+            moon.transform.localScale = Vector3.one * 4.5f;
+            _titleMoon = moon.transform;
+
+            var halo = SpriteRendererUtil.Make(_titleRoot, "moonHalo", TexArt.Glow(), 92);
+            halo.transform.localPosition = moon.transform.localPosition;
+            halo.transform.localScale = Vector3.one * 9f;
+            halo.color = new Color(0.75f, 0.8f, 1f, 0.30f);
+
+            BuildStars(_titleRoot, 93);
+
+            _titleName = PixelLabelUtil.Make(_titleRoot, "tName", 3, new Color(1f, 0.95f, 0.75f), TextAlign.Center, 94);
+            _titleName.transform.localPosition = new Vector3(0f, HalfH - 5.6f, 0f);
+            _titleName.Set(Strings.Get("title.name"));
+
+            _titleTag = PixelLabelUtil.Make(_titleRoot, "tTag", 2, new Color(0.88f, 0.9f, 1f), TextAlign.Center, 94);
+            _titleTag.transform.localPosition = new Vector3(0f, HalfH - 9.6f, 0f);
+            _titleTag.MaxWidthUnits = 15f;
+            _titleTag.Set(Strings.Get("title.tagline"));
+
+            _titleTap = PixelLabelUtil.Make(_titleRoot, "tTap", 2, new Color(1f, 0.88f, 0.5f), TextAlign.Center, 94);
+            _titleTap.transform.localPosition = new Vector3(0f, -HalfH + 5.4f, 0f);
+            _titleTap.Set(Strings.Get("title.tap"));
+
+            _titleEnd = PixelLabelUtil.Make(_titleRoot, "tEnd", 1, new Color(0.62f, 0.6f, 0.75f), TextAlign.Center, 94);
+            _titleEnd.transform.localPosition = new Vector3(0f, -HalfH + 1.4f, 0f);
+            _titleEnd.Set(Strings.Get("title.footer"));
+        }
+
+        void BuildEndScreen()
+        {
+            _endRoot = new GameObject("EndScreen").transform;
+            _endRoot.SetParent(StageRoot, false);
+
+            var sky = SpriteRendererUtil.Make(_endRoot, "sky", TexArt.Solid(), 96);
+            sky.transform.localPosition = new Vector3(0f, 0f, 0f);
+            sky.transform.localScale = new Vector3(18f * 16f, (HalfH * 2f + 2f) * 16f, 1f);
+            sky.color = new Color(0.09f, 0.09f, 0.2f, 1f);
+
+            var moon = SpriteRendererUtil.Make(_endRoot, "moonFull", TexArt.MoonFull(), 98);
+            moon.transform.localPosition = new Vector3(0f, HalfH - 4.2f, 0f);
+            moon.transform.localScale = Vector3.one * 6f;
+            _endMoon = moon.transform;
+
+            var glow = SpriteRendererUtil.Make(_endRoot, "moonGlow", TexArt.Glow(), 97);
+            glow.transform.localPosition = moon.transform.localPosition;
+            glow.transform.localScale = Vector3.one * 14f;
+            glow.color = new Color(1f, 0.95f, 0.75f, 0.5f);
+            _endGlow = glow;
+
+            BuildStars(_endRoot, 96);
+
+            _endLines = PixelLabelUtil.Make(_endRoot, "endLines", 2, new Color(1f, 0.97f, 0.88f), TextAlign.Center, 100);
+            _endLines.transform.localPosition = new Vector3(0f, HalfH - 10f, 0f);
+            _endLines.MaxWidthUnits = 15.5f;
+
+            _tapHint = PixelLabelUtil.Make(_endRoot, "endTap", 2, new Color(1f, 0.88f, 0.5f), TextAlign.Center, 100);
+            _tapHint.transform.localPosition = new Vector3(0f, -HalfH + 4.2f, 0f);
+            _tapHint.Set(Strings.Get("title.tap"));
+            _endRoot.gameObject.SetActive(false);
+        }
+
+        void BuildDialogBox()
+        {
+            var root = new GameObject("Dialog").transform;
+            root.SetParent(StageRoot, false);
+            _dlgPanel = SpriteRendererUtil.Make(root, "dlgPanel", TexArt.Panel(), 3000);
+            _dlgPanel.drawMode = SpriteDrawMode.Sliced;
+            _dlgPanel.transform.localScale = Vector3.one;
+            _dlgPanel.size = new Vector2(17.4f, DialogMinH);
+
+            _dlgName = PixelLabelUtil.Make(root, "dlgName", 1, new Color(1f, 0.9f, 0.6f), TextAlign.Left, 3002);
+            _dlgText = PixelLabelUtil.Make(root, "dlgText", 2, new Color(1f, 0.97f, 0.88f), TextAlign.Left, 3002);
+            // 14.4 units of body: 19 characters per line at scale 2, and no line ever reaches the
+            // box edge. The old 13.2 packed 17 characters into every row and the box was a fixed
+            // 5.6 units tall, so a four-line line of dialog ended exactly on the bottom border and
+            // a five-line one ran off the frame.
+            _dlgText.MaxWidthUnits = 14.4f;
+            _dlgText.RevealSpeed = 55f;
+
+            // speaker portrait: the NPC's own overworld sheet, scaled up inside the box
+            _dlgPortrait = SpriteRendererUtil.Make(root, "dlgPortrait", null, 3001);
+            // 3.0, not 3.4: the pack's chara cell is 16 px wide, so 3.4 grew the portrait to 54 px
+            // and its right edge landed 3 px *past* the first letter of the line it introduces.
+            _dlgPortrait.transform.localScale = Vector3.one * 3f;
+
+            LayoutDialogBox("");
+            root.gameObject.SetActive(false);
+            DialogRoot = root;
+        }
+
+        const float DialogMinH = 5.2f;
+
+        /// <summary>Sizes the box to the line it is about to show, and stacks the name, the body
+        /// and the portrait inside it. Called for every line, because the lines of one
+        /// conversation are not all the same length.</summary>
+        void LayoutDialogBox(string body)
+        {
+            float bottom = -HalfH + 0.4f;
+            float bodyH = _dlgText.MeasureHeight(body);
+            float h = Mathf.Max(DialogMinH, bodyH + 2.1f);          // name line + padding
+            float top = bottom + h;
+            _dlgPanel.size = new Vector2(17.4f, h);
+            _dlgPanel.transform.localPosition = new Vector3(0f, bottom + h * 0.5f, 0f);
+            // the portrait owns the left column (G.Left+0.3 .. G.Left+3.3) and the text starts
+            // 0.2 units clear of its edge, whatever NPC is speaking
+            _dlgName.transform.localPosition = new Vector3(G.Left + 3.5f, top - 0.5f, 0f);
+            _dlgText.transform.localPosition = new Vector3(G.Left + 3.5f, top - 1.15f, 0f);
+            _dlgPortrait.transform.localPosition = new Vector3(G.Left + 1.75f, bottom + 2.1f, 0f);
+        }
+
+        Transform DialogRoot { get; set; }
+
+        // ------------------------------------------------------------ flow
+
+        /// <summary>Studio card, shown once on boot.</summary>
+        public void ShowSplash()
+        {
+            Phase = St.Splash;
+            SetCam(0f, 0f);
+            _titleRoot.gameObject.SetActive(false);
+            _endRoot.gameObject.SetActive(false);
+            BattleViewRef.gameObject.SetActive(false);
+            World.gameObject.SetActive(false);
+            DialogRoot.gameObject.SetActive(false);
+            _dlgOpen = false;
+            _paused = false;
+            Menus.ShowSplash();
+        }
+
+        /// <summary>The main menu (title art + the row list).</summary>
+        public void ShowTitle()
+        {
+            Phase = St.Menu;
+            SetCam(0f, 0f);
+            _titleRoot.gameObject.SetActive(true);
+            _endRoot.gameObject.SetActive(false);
+            BattleViewRef.gameObject.SetActive(false);
+            World.gameObject.SetActive(false);
+            DialogRoot.gameObject.SetActive(false);
+            _dlgOpen = false;
+            _paused = false;
+            _titleTap.gameObject.SetActive(false);   // the menu rows replace the old tap hint
+            Menus.ShowMain();
+        }
+
+        void SetCamY(float y) => SetCam(0f, y);
+
+        void SetCam(float x, float y)
+        {
+            // The render target is exactly 16 px per unit, so a camera parked on a whole pixel
+            // is what keeps the art sharp. Following the hero at its raw position left every
+            // sprite - and every glyph of the bitmap font - straddling two pixels, which reads
+            // as a soft, uneven, "cheap" image no amount of redrawing fixes.
+            x = Fx.Snap(x);
+            y = Fx.Snap(y);
+            if (Cam != null) Cam.transform.localPosition = new Vector3(x, y, -10f);
+            if (World != null && World.HudRoot != null)
+                World.HudRoot.localPosition = new Vector3(x, y, 0f);
+            if (World != null) World.ViewCenter = new Vector2(x, y);
+            // the dialog box is laid out around the camera origin, so it rides along;
+            // otherwise it is left behind whenever the exploration camera scrolls.
+            if (DialogRoot != null) DialogRoot.localPosition = new Vector3(x, y, 0f);
+        }
+
+        float _camEx, _camEy;
+
+        void FollowHero()
+        {
+            if (World?.Map == null) return;
+            float tx = Mathf.Clamp(World.HeroPos.x, 9f, GameMap.W - 9f);
+            float ty = Mathf.Clamp(World.HeroPos.y, HalfH - 2f, GameMap.H - HalfH + 2f);
+            // The camera trails the hero instead of being welded to her. A hard follow turns every
+            // step into a screen-wide snap (the whole village jumps one pixel with her), and the
+            // ease is what makes a walk read as walking. SetCam still snaps the result to the
+            // pixel grid, so the ease can never soften a sprite; in the editor frames it is a pure
+            // snap, so a still is always framed exactly where the scene asked for it.
+            if (!Application.isPlaying) { _camEx = tx; _camEy = ty; }
+            else
+            {
+                float k = 1f - Mathf.Exp(-9f * Time.deltaTime);
+                _camEx = Mathf.Lerp(_camEx, tx, k);
+                _camEy = Mathf.Lerp(_camEy, ty, k);
+            }
+            SetCam(_camEx, _camEy);
+            // the camera moved, so which name plates are framed changed with it. Without this the
+            // decision was only ever made at spawn or on a teleport, and a plate could stay lit
+            // while its owner was off screen (or sit on the hero's head after a walk).
+            World.UiBlock = Menus != null ? Menus.ToastRect : new Rect(0f, 0f, 0f, 0f);
+            World.RefreshNamePlates();
+        }
+
+        void BeginRun()
+        {
+            State.NewRun();
+            _metMira = false;
+            _hintTalk = true;
+            _hintChest = true;
+            _bossDown = false;
+            _ending = false;
+            _resumePos = null;
+            Menus.Hide();
+            SetCam(0f, 0f);
+            World.gameObject.SetActive(false);
+
+            // the self-test drives the world directly, it must not sit through the story
+            if (SelfTestMode || !Application.isPlaying) { StartChapter(1); return; }
+
+            // a new run always opens with the story, even if it was seen before
+            Phase = St.Cinema;
+            _afterScreen = () => StartChapter(1);
+            Menus.ShowCinema(1);
+        }
+
+        /// <summary>Chapter intro card, then the world. The card is skipped in the editor
+        /// preview and the self-test, which drive the world directly.</summary>
+        void StartChapter(int chapter)
+        {
+            State.Chapter = chapter;
+            _bossDown = false;
+            _ending = false;
+
+            if (SelfTestMode || EditorMode || !Application.isPlaying)
+            {
+                BuildChapterNow(chapter);
+                return;
+            }
+
+            Menus.Hide();
+            World.gameObject.SetActive(false);
+            if (_hudZone != null) _hudZone.enabled = false;
+            Phase = St.Cinema;
+            SetCam(0f, 0f);
+            _afterScreen = () => BuildChapterNow(chapter);
+            Menus.ShowChapterCard(chapter);
+        }
+
+        void OnApplicationQuit()
+        {
+            // a clean shutdown must always be explainable; the stack says who asked for it
+            Debug.Log("[game] quitting. phase=" + Phase + "\n" + System.Environment.StackTrace);
+        }
+
+        void BuildChapterNow(int chapter)
+        {
+            Debug.Log("[game] build chapter " + chapter);
+            Phase = St.Explore;
+            _paused = false;
+
+            _titleRoot.gameObject.SetActive(false);
+            _endRoot.gameObject.SetActive(false);
+            Menus.Hide();
+            BattleViewRef.gameObject.SetActive(false);
+            World.gameObject.SetActive(true);
+
+            if (World.Ready && World.MapChapter == chapter)
+            {
+                World.ResetForChapter();
+            }
+            else
+            {
+                if (World.Ready) World.Teardown();
+                _map = GameMap.Build(chapter);
+                World.Build(_map, StageRoot, HalfH);
+                World.MapChapter = chapter;
+                _overworld = World;
+            }
+            World.PlaceHero(_resumePos ?? World.Map.VillageCenter);
+            _resumePos = null;
+
+            World.ShowBanner(Strings.Get("zone.arrive." + Mathf.Clamp(chapter, 1, 3)));
+            MakeHud();
+            RefreshHud();
+
+            FollowHero();
+            _encounterCooldown = 3.5f;
+            SaveRun();
+
+            if (chapter == 1) Menus.ShowToast(Strings.Get("onb.move"), 4.5f);
+            else if (chapter == 3) Menus.ShowToast(Strings.Get("quest.4"), 4.0f);
+        }
+
+        void RefreshHud()
+        {
+            if (_hudZone != null)
+                _hudZone.Set(Strings.Get("hud.explore", State.Chapter, State.MoonShards, ShardsNeeded));
+            RefreshQuest();
+        }
+
+        /// <summary>The goal line under the night counter. Recomputed from the world state,
+        /// and only re-rendered when the text actually changes.</summary>
+        void RefreshQuest()
+        {
+            if (_hudQuest == null) return;
+            string raw = QuestText();
+            if (raw == null) return;
+            _questLineRaw = raw;
+            string text = Strings.Get("hud.quest", raw);
+            if (text == _questText) return;
+            _questText = text;
+            _hudQuest.Set(text);
+        }
+
+        string QuestText()
+        {
+            // indoors the line would be recomputed from a room with one chest in it, so the
+            // objective from the street is simply kept on the HUD -- unless the hero walked into
+            // a house before any objective was set, and then it is better to work one out than to
+            // go blank
+            if (World != null && World.Map != null && World.Map.Interior && !string.IsNullOrEmpty(_questLineRaw))
+                return _questLineRaw;
+            if (!_metMira) return Strings.Get("quest.1");
+            if (_bossDown && State.MoonShards >= ShardsNeeded) return Strings.Get("quest.5");
+            if (State.MoonShards >= ShardsNeeded) return Strings.Get("quest.3");
+            if (World != null && World.ChestsLeft > 0 && State.Chapter < 3)
+                return Strings.Get("quest.2", ShardsNeeded - State.MoonShards);
+            return Strings.Get("quest.4");
+        }
+
+        string _questText;
+
+        // ------------------------------------------------------------ main loop
+
+        void Update()
+        {
+            if (EditorMode || !Application.isPlaying) return;
+
+            // ---- front-end screens (splash, menu, settings, credits, story cards)
+            if (Phase == St.Splash || Phase == St.Menu || Phase == St.Cinema)
+            {
+                if (Phase == St.Menu) IdleTitle();
+                Menus.Tick(Time.deltaTime, StagePos(), TapPressed(), KeyStep(), KeyConfirm(), KeyCancel());
+                Menus.SetAnchor(Cam.transform.localPosition);
+                UpdateJoyVisual(false);
+                return;
+            }
+
+            if (Phase == St.End)
+            {
+                float a = 0.55f + 0.45f * Mathf.PingPong(Time.time * 0.9f, 1f);
+                _tapHint.SetColor(new Color(1f, 0.88f, 0.5f, a));
+                if (_endMoon != null)
+                    _endMoon.localPosition = new Vector3(0f, HalfH - 4.2f + Mathf.Sin(Time.time * 0.7f) * 0.3f, 0f);
+                if (_endGlow != null)
+                {
+                    var gc = _endGlow.color;
+                    gc.a = 0.42f + 0.14f * Mathf.Sin(Time.time * 1.3f);
+                    _endGlow.color = gc;
+                }
+                TwinkleStars();
+                UpdateJoyVisual(false);
+                if (TapPressed() || KeyConfirm()) DoTransition(() => ShowTitle());
+                return;
+            }
+
+            // ---- the pause card freezes the world
+            if (_paused)
+            {
+                Menus.Tick(Time.deltaTime, StagePos(), TapPressed(), KeyStep(), KeyConfirm(), KeyCancel());
+                Menus.SetAnchor(Cam.transform.localPosition);
+                UpdateJoyVisual(false);
+                return;
+            }
+
+            // ---- battles: taps and the keyboard drive the command menu. Without this
+            // the battle only ever ran from the self-test, so the menus looked dead.
+            if (Phase == St.Battle)
+            {
+                HandleBattleInput();
+                return;
+            }
+
+            if (_dlgOpen)
+            {
+                Menus.SetAnchor(Cam.transform.localPosition);
+                UpdateDialog();
+                UpdateJoyVisual(false);
+                return;
+            }
+
+            // One lane, one message at a time. A notice now hangs off the HUD bar, and the zone
+            // card (NIGHT TWO / the long fields) is drawn in that same strip for its two seconds,
+            // so a notice that arrives while the card is up waits for it - exactly like the one
+            // that arrives during a conversation. The runtime audit caught the pair printing over
+            // each other on the first village frame, which no editor frame ever showed.
+            bool holdNotice = _dlgOpen || (World != null && World.BannerUp);
+            if (holdNotice != Menus.HoldToasts)
+            {
+                Menus.HoldToasts = holdNotice;
+                if (!holdNotice) Menus.FlushToast();
+            }
+            if (Phase != St.Explore)
+            {
+                Menus.SetAnchor(Cam.transform.localPosition);
+                UpdateJoyVisual(false);
+                return;
+            }
+
+            Menus.SetAnchor(Cam.transform.localPosition);
+
+            // the moon tile in the corner doubles as the pause button on touch screens
+            if (KeyCancel()) { OpenPause(); return; }
+            if (TapPressed() && StagePos().x > G.Right - 2.6f && StagePos().y > HalfH - 2.2f) { OpenPause(); return; }
+
+            var move = ReadMoveInput();
+            World.DriveHero(move, Time.deltaTime);
+            UpdateJoyVisual(true);
+            PollWorldTap();
+
+            // doors. Walking into one opens it, and the doormat inside leads back out; the
+            // cooldown stops the hero from bouncing straight back through the door he just used.
+            _doorCooldown = Mathf.Max(0f, _doorCooldown - Time.deltaTime);
+            if (_doorCooldown <= 0f)
+            {
+                if (_inHouse)
+                {
+                    if (Vector2.Distance(World.HeroPos, World.Map.ExitPos) < 0.85f) { LeaveHouse(); return; }
+                }
+                else if (World.NearDoor(World.HeroPos, out int doorIdx))
+                {
+                    EnterHouse(doorIdx);
+                    return;
+                }
+            }
+
+            // where we are, and the one-off things that happen when you get there
+            if (_inHouse)
+            {
+                State.NoteZone("zone.house." + World.Map.HouseIndex);
+            }
+            else
+            {
+                State.NoteZone(World.HeroPos.y > 58f ? "zone.wood"
+                    : World.HeroPos.y > 26f ? "zone.fields" : "zone.village");
+                if (TryWorldEvent()) return;
+            }
+
+            // camera follows the hero on both axes, clamped to the map; the HUD layer follows too
+            FollowHero();
+
+            // encounters
+            _encounterCooldown -= Time.deltaTime;
+            var touched = World.TouchedMonster();
+            if (touched != null && _encounterCooldown <= 0f)
+            {
+                var spec = touched.Spec;
+                World.RemoveMonster(touched);
+                StartBattle(new[] { spec });
+                return;
+            }
+            if (_encounterCooldown <= 0f && move.sqrMagnitude > 0.01f && World.HeroPos.y > 20f
+                && Random.value < 0.0006f)
+            {
+                // rare ambient encounter while walking in the wild
+                StartBattle(BattleData.Roll(State.Chapter, new System.Random()));
+                return;
+            }
+
+            // first chest in reach: one nudge, then never again
+            if (_hintChest && World.ChestsLeft > 0 && World.NearestChest(World.HeroPos, 3f).HasValue)
+            {
+                _hintChest = false;
+                Menus.ShowToast(Strings.Get("onb.chest"), 3.6f);
+            }
+            if (_hintTalk && !_metMira && World.Npcs.Count > 0)
+            {
+                var npc = World.NearestNpc(World.HeroPos, 4f);
+                if (npc.NameKey != null)
+                {
+                    _hintTalk = false;
+                    Menus.ShowToast(Strings.Get("onb.talk"), 3.6f);
+                }
+            }
+
+            // interactions: a deliberate short tap, never a joystick drag
+            if (_tapPending) { _tapPending = false; TryInteract(); }
+        }
+
+        /// <summary>One-off encounters on the road, from Quests.Events. Each fires once per run at
+        /// its own spot; the tones run from a hen that has swallowed a coin to a hunter's dog that
+        /// will not leave the grave.</summary>
+        bool TryWorldEvent()
+        {
+            if (_dlgOpen || _paused || World == null || World.Map == null) return false;
+            foreach (var ev in Quests.Events)
+            {
+                if (ev.Chapter > State.Chapter || Quests.FiredAlready(ev.Id)) continue;
+                if (Vector2.Distance(World.HeroPos, ev.Pos) > ev.Radius) continue;
+                Quests.MarkFired(ev.Id);
+                if (ev.Gold > 0) State.Gold += ev.Gold;
+                if (!string.IsNullOrEmpty(ev.Gift)) State.AddBag(ev.Gift);
+                Sfx.Play(ev.Tragic ? "faint" : "chest");
+                Menus.ShowToast(Strings.Get(ev.TextKey), ev.Tragic ? 5.4f : 4.4f);
+                _encounterCooldown = Mathf.Max(_encounterCooldown, 2.5f);
+                RefreshHud();
+                SaveRun();
+                if (!string.IsNullOrEmpty(ev.Fight))
+                {
+                    foreach (var m in BattleData.Bestiary)
+                        if (m.Name == ev.Fight) { StartBattle(new[] { m }); break; }
+                }
+                return true;
+            }
+            return false;
+        }
+
+        void OpenPause()
+        {
+            // a card replaces the screen, so nothing from the world stays behind it -- not the
+            // dialog box, not a name plate, not the banner
+            if (_dlgOpen) CloseDialog();
+            _paused = true;
+            _joyTouch = false;
+            _tapPending = false;
+            _tapFinger = -1;
+            Sfx.Play("ui");
+            // the card covers most of the screen: world text behind an opaque panel is just
+            // clutter, so the world's own text steps out of the way while a card is up
+            if (World != null && World.Ready) World.SetTextVisible(false);
+            Menus.ShowPause();
+        }
+
+        void ClosePause()
+        {
+            if (!_paused) return;
+            _paused = false;
+            Menus.Hide();
+            if (World != null && World.Ready) World.SetTextVisible(true);
+        }
+
+        void IdleTitle()
+        {
+            // the empty moon hangs and sways behind the title
+            if (_titleMoon != null)
+                _titleMoon.localPosition = new Vector3(Mathf.Sin(Time.time * 0.5f) * 0.4f,
+                    HalfH - 3.2f + Mathf.Sin(Time.time * 0.9f) * 0.25f, 0f);
+            TwinkleStars();
+        }
+
+        // ------------------------------------------------------------ battle input
+
+        void HandleBattleInput()
+        {
+            if (Director == null || BattleViewRef == null) return;
+
+            if (TapPressed())
+            {
+                Sfx.Play("ui");
+                Director.TapAt(StagePos());     // menu cells, foe picking and card buttons
+                return;
+            }
+
+            int step = BattleStep();
+            if (step != 0 && Director.AwaitingInput) { Sfx.Play("ui"); Director.SelectCell(step); return; }
+            if (Input.GetKeyDown(KeyCode.Tab) && Director.AwaitingInput) { Sfx.Play("ui"); Director.CycleTarget(1); return; }
+            if (KeyConfirm())
+            {
+                Sfx.Play("ui");
+                if (Director.AwaitingInput) Director.Confirm();
+                else if (BattleViewRef.OverlayButtonCount > 0) BattleViewRef.CardButtonAt(0)?.Invoke();
+            }
+        }
+
+        /// <summary>The command grid is 2 x 2, so the keyboard walks it in both axes.</summary>
+        int BattleStep()
+        {
+            if (Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A)) return -1;
+            if (Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D)) return 1;
+            if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W)) return -2;
+            if (Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.S)) return 2;
+            return 0;
+        }
+
+        void TryInteract()
+        {
+            var npc = World.NearestNpc(World.HeroPos);
+            var chest = World.NearestChest(World.HeroPos);
+
+            if (npc.NameKey != null)
+            {
+                if (npc.NameKey == "npc.elder") _metMira = true;   // the quest giver
+                TalkTo(npc);
+                RefreshQuest();
+                return;
+            }
+            if (chest.HasValue)
+            {
+                World.OpenChest(chest.Value);
+                Sfx.Play("chest");
+                World.ShowBanner(World.LastLootText);
+                RefreshHud();
+                SaveRun();
+                return;
+            }
+
+            // indoors the only way out is the mat by the door
+            if (_inHouse)
+            {
+                if (Vector2.Distance(World.HeroPos, World.Map.ExitPos) < 1.6f) LeaveHouse();
+                return;
+            }
+
+            if (World.NearDoor(World.HeroPos, out var doorAt))
+            {
+                EnterHouse(doorAt);
+                return;
+            }
+            if (World.NearBoss && !_bossDown)
+            {
+                StartBattle(BattleData.BossFight());
+                return;
+            }
+            if (Vector2.Distance(World.HeroPos, World.Map.CristalPos) < 2f)
+            {
+                if (State.MoonShards >= ShardsNeeded) TriggerEnding();
+                else World.ShowBanner(Strings.Get("end.notyet", ShardsNeeded - State.MoonShards));
+            }
+        }
+
+        // ------------------------------------------------------------ houses
+
+        /// <summary>Walks in through the front door. The room is its own map in a WorldView of its
+        /// own, so the street behind is left exactly as it was - position, opened chests and all -
+        /// and stepping out again is instant.</summary>
+        void EnterHouse(int houseIndex)
+        {
+            if (_inHouse || _doorCooldown > 0f) return;
+            _houseIndex = houseIndex;
+            _doorReturn = World.HeroPos + new Vector2(0f, -1.1f);
+            _inHouse = true;
+            _doorCooldown = 1.4f;
+            Sfx.Play("ui");
+            DoTransition(() =>
+            {
+                World.gameObject.SetActive(false);
+                if (_houseRoot == null)
+                {
+                    _houseRoot = new GameObject("house").transform;
+                    _houseRoot.SetParent(StageRoot, false);
+                }
+                if (_houseView != null) Fx.Kill(_houseView.gameObject);
+                _houseView = new GameObject("houseView").AddComponent<WorldView>();
+                _houseView.transform.SetParent(_houseRoot, false);
+                _houseMap = GameMap.BuildRoom(houseIndex);
+                _houseView.Build(_houseMap, _houseRoot, HalfH);
+                World = _houseView;
+                World.PlaceHero(new Vector2(10.5f, 10.5f));
+                MakeHud();
+                State.NoteZone("zone.house." + _houseMap.HouseIndex);
+                RefreshHud();
+                World.ShowBanner(Strings.Get(_houseMap.InteriorNameKey));
+                FollowHero();
+                Menus.ShowToast(Strings.Get("onb.door"), 3.2f);
+            }, 0.2f, 0.3f);
+        }
+
+        void LeaveHouse()
+        {
+            if (!_inHouse) return;
+            _inHouse = false;
+            _doorCooldown = 1.4f;
+            Sfx.Play("ui");
+            DoTransition(() =>
+            {
+                if (_houseView != null) Fx.Kill(_houseView.gameObject);
+                _houseView = null;
+                if (World != null && World != _houseView) World = null;
+                World = FindOverworld();
+                if (World != null)
+                {
+                    World.gameObject.SetActive(true);
+                    World.PlaceHero(_doorReturn);
+                }
+                RefreshHud();
+                FollowHero();
+            }, 0.2f, 0.3f);
+        }
+
+        WorldView _overworld;
+
+        /// <summary>The street view, remembered when the hero steps indoors. It is not torn down
+        /// to enter a house: the room is a second WorldView, so the street keeps its position,
+        /// its opened chests and its monsters while the hero is inside.</summary>
+        WorldView FindOverworld() => _overworld != null ? _overworld : World;
+
+        // ------------------------------------------------------------ conversation
+
+        /// <summary>Talking is where the quest book meets the player: an NPC with something to
+        /// offer says so, an NPC whose errand is done hands it over, and everyone else just talks.</summary>
+        void TalkTo(NpcDef npc)
+        {
+            var quest = Quests.ForGiver(npc.NameKey, out bool ready);
+            if (quest != null)
+            {
+                if (Quests.Step(quest.Id) == 0)
+                {
+                    Quests.Accept(quest);
+                    OpenDialog(npc, new[]
+                    {
+                        quest.OfferKey,
+                        "q.goal",
+                    });
+                    Menus.ShowToast(Strings.Get("jr.newquest", Strings.Get(quest.TitleKey)), 3.6f);
+                    Sfx.Play("chest");
+                    return;
+                }
+                if (ready)
+                {
+                    Quests.Complete(quest);
+                    OpenDialog(npc, new[] { quest.DoneKey, "q.reward" });
+                    Menus.ShowToast(Strings.Get("jr.questdone", Strings.Get(quest.TitleKey)), 3.6f);
+                    Sfx.Play("chest");
+                    SaveRun();
+                    return;
+                }
+                OpenDialog(npc, new[] { quest.OfferKey, Quests.Line(quest) });
+                return;
+            }
+            OpenDialog(npc);
+        }
+
+        void OpenDialog(NpcDef npc, string[] lines)
+        {
+            _dlgNpc = npc;
+            _dlgLines = lines;
+            _dlgIndex = 0;
+            _dlgOpen = true;
+            DialogRoot.gameObject.SetActive(true);
+            _dlgText.RevealSpeed = Prefs.RevealSpeed;
+            _dlgName.Set(Strings.Get(npc.NameKey));
+            string body = FormatLine(lines[0]);
+            LayoutDialogBox(body);
+            _dlgText.Set(body);
+            if (_dlgPortrait != null)
+            {
+                _dlgPortrait.sprite = TexArt.Chara(Folks.Sheet(npc), (int)Dir.Down, 1);
+                _dlgPortrait.enabled = _dlgPortrait.sprite != null;
+            }
+            Sfx.Play("blip");
+        }
+
+        /// <summary>A dialog line is a string key, or a literal pair "key|arg" when a quest line
+        /// needs a number in it ("3 more shards").</summary>
+        string FormatLine(string key)
+        {
+            if (string.IsNullOrEmpty(key)) return "";
+            int bar = key.IndexOf('|');
+            if (bar < 0) return Strings.Get(key);
+            var parts = key.Substring(bar + 1).Split(',');
+            var args = new object[parts.Length];
+            for (int i = 0; i < parts.Length; i++) args[i] = parts[i];
+            return Strings.Get(key.Substring(0, bar), args);
+        }
+
+        // ------------------------------------------------------------ dialog
+
+        void OpenDialog(NpcDef npc)
+        {
+            _dlgNpc = npc;
+            _dlgLines = npc.Lines;
+            _dlgIndex = 0;
+            _dlgOpen = true;
+            DialogRoot.gameObject.SetActive(true);
+            _dlgText.RevealSpeed = Prefs.RevealSpeed;
+            _dlgName.Set(Strings.Get(npc.NameKey));
+            LayoutDialogBox(Strings.Get(_dlgLines[0]));
+            _dlgText.Set(Strings.Get(_dlgLines[0]));
+            if (_dlgPortrait != null)
+            {
+                _dlgPortrait.sprite = TexArt.Chara(Folks.Sheet(npc), (int)Dir.Down, 1);
+                _dlgPortrait.enabled = _dlgPortrait.sprite != null;
+            }
+            Sfx.Play("blip");
+        }
+
+        void UpdateDialog()
+        {
+            if (_dlgText.IsRevealing)
+            {
+                if (TapPressed()) _dlgText.Set(_dlgText.Text, true);
+                return;
+            }
+            if (TapPressed())
+            {
+                _dlgIndex++;
+                if (_dlgIndex < _dlgLines.Length)
+                {
+                    string next = FormatLine(_dlgLines[_dlgIndex]);
+                    LayoutDialogBox(next);
+                    _dlgText.Set(next);
+                }
+                else CloseDialog();
+            }
+        }
+
+        void CloseDialog()
+        {
+            _dlgOpen = false;
+            // The notice lane is released by the frame's own pass in Update(): it holds while a
+            // dialog box is open or while the zone card is up, and a notice that waited is shown
+            // the moment neither is on screen.
+            DialogRoot.gameObject.SetActive(false);
+            _encounterCooldown = Mathf.Max(_encounterCooldown, 1.5f);
+        }
+
+        // ------------------------------------------------------------ battles
+
+        public void StartBattle(MonsterSpec[] specs)
+        {
+            Phase = St.Battle;
+            _encounterCooldown = 4f;
+            SetCamY(0f);
+            Menus.Hide();
+            _paused = false;
+            _tapPending = false;
+            _tapFinger = -1;
+            _joyTouch = false;
+            World.gameObject.SetActive(false);
+            if (_hudZone != null) _hudZone.enabled = false;
+            if (_hudQuest != null) _hudQuest.enabled = false;
+            BattleViewRef.gameObject.SetActive(true);
+            Director.StartBattle(specs);
+            bool boss = false;
+            foreach (var s in specs) if (s.Boss) boss = true;
+            Sfx.Play(boss ? "boss" : "blip");
+        }
+
+        void OnEncounterWon()
+        {
+            BattleViewRef.gameObject.SetActive(false);
+            BattleViewRef.HideCard();
+            Phase = St.Explore;
+            World.gameObject.SetActive(true);
+            if (_hudZone != null) _hudZone.enabled = true;
+            if (_hudQuest != null) _hudQuest.enabled = true;
+            _paused = false;
+            FollowHero();
+            World.ResetForChapter();
+            RefreshHud();
+            SaveRun();
+        }
+
+        void OnBossDefeated()
+        {
+            _bossDown = true;
+            if (World != null) World.RemoveBoss();
+            BattleViewRef.gameObject.SetActive(false);
+            BattleViewRef.HideCard();
+            Phase = St.Explore;
+            World.gameObject.SetActive(true);
+            if (_hudZone != null) _hudZone.enabled = true;
+            if (_hudQuest != null) _hudQuest.enabled = true;
+            FollowHero();
+
+            if (State.Chapter >= 3)
+            {
+                // the guard wore the last shard; the way to the cristal is open
+                State.MoonShards = Mathf.Max(State.MoonShards, ShardsNeeded);
+                World.ShowBanner(Strings.Get("zone.bossdown"));
+                RefreshHud();
+                SaveRun();
+            }
+            else
+            {
+                World.ShowBanner(Strings.Get("zone.chapdone"));
+                int next = State.Chapter + 1;
+                SaveRun();
+                DoTransition(() => StartChapter(next), 2.2f, 0.4f);
+            }
+        }
+
+        void OnRunLost()
+        {
+            DoTransition(() =>
+            {
+                BattleViewRef.HideCard();
+                BattleViewRef.gameObject.SetActive(false);
+                Phase = St.Explore;
+                World.gameObject.SetActive(true);
+                if (_hudZone != null) _hudZone.enabled = true;
+                if (_hudQuest != null) _hudQuest.enabled = true;
+                _paused = false;
+                World.ResetForChapter();
+                World.PlaceHero(World.Map.VillageCenter);
+                FollowHero();
+                World.ShowBanner(Strings.Get("zone.retreat"));
+                RefreshHud();
+            }, 0.3f, 0.4f);
+        }
+
+        void TriggerEnding()
+        {
+            DoTransition(() =>
+            {
+                _ending = true;
+                Phase = St.End;
+                SetCamY(0f);
+                World.gameObject.SetActive(false);
+                if (_hudZone != null) _hudZone.enabled = false;
+                _endRoot.gameObject.SetActive(true);
+                _endLines.RevealSpeed = 0f;
+                _endLines.Set(Strings.Get("end.text", State.Befriended));
+                SaveSystem.Erase();          // the tale is told; the menu offers a fresh night
+            }, 0.4f, 0.6f);
+        }
+
+        IEnumerator CoWait(float t, System.Action done)
+        {
+            yield return Fx.Wait(t);
+            done();
+        }
+
+        // ------------------------------------------------------------ input
+
+        bool TapPressed()
+        {
+            // only a finger that JUST landed counts. Any touch used to count, so a thumb
+            // parked on the glass (walking, resting) swallowed presses meant for the
+            // command menu, and the tap resolved to that thumb's position instead --
+            // the reason the battle menus looked dead on a phone but worked in the self-test
+            // (which only ever had one pointer).
+            if (Input.touchCount > 0)
+            {
+                foreach (var t in Input.touches)
+                    if (t.phase == TouchPhase.Began) return true;
+                return false;
+            }
+            return Input.GetMouseButtonDown(0);
+        }
+
+        /// <summary>Where the pointer is, in stage units. The finger that just landed wins over
+        /// any finger merely resting on the screen, and over the mouse, so the joystick thumb and
+        /// the menu thumb never get mixed up.</summary>
+        Vector2 StagePos()
+        {
+            Vector3 p = Input.mousePosition;
+            if (Input.touchCount > 0)
+            {
+                bool found = false;
+                foreach (var t in Input.touches)
+                    if (t.phase == TouchPhase.Began) { p = t.position; found = true; break; }
+                if (!found)
+                    foreach (var t in Input.touches)
+                        if (t.phase == TouchPhase.Moved || t.phase == TouchPhase.Stationary) { p = t.position; break; }
+            }
+            return ScreenToStage(p);
+        }
+
+        /// <summary>Book-keeping for a deliberate tap on the world: the finger has to stay put
+        /// and lift quickly. Dragging the joystick no longer trips every NPC, chest and gate near
+        /// the hero, which is what made walking around feel like it kept opening things.</summary>
+        void PollWorldTap()
+        {
+            if (Input.touchCount > 0)
+            {
+                foreach (var t in Input.touches)
+                {
+                    if (t.phase == TouchPhase.Began)
+                    {
+                        _tapFinger = t.fingerId;
+                        _tapStart = t.position;
+                        _tapTime = Time.unscaledTime;
+                        _tapMoved = false;
+                    }
+                    else if (t.fingerId == _tapFinger)
+                    {
+                        if (t.phase == TouchPhase.Moved || t.phase == TouchPhase.Stationary)
+                        {
+                            if (Vector2.Distance(t.position, _tapStart) > 18f) _tapMoved = true;
+                        }
+                        else if (t.phase == TouchPhase.Ended)
+                        {
+                            if (!_tapMoved && Time.unscaledTime - _tapTime < 0.45f)
+                            {
+                                _tapStage = ScreenToStage(t.position);
+                                _tapPending = true;
+                            }
+                            _tapFinger = -1;
+                        }
+                        else if (t.phase == TouchPhase.Canceled) _tapFinger = -1;
+                    }
+                }
+            }
+            else
+            {
+                _tapFinger = -1;
+                // desktop helper: a plain left click taps (the mouse joystick needs Ctrl or RMB)
+                if (Input.GetMouseButtonDown(0) && !Input.GetKey(KeyCode.LeftControl))
+                {
+                    _tapStage = ScreenToStage(Input.mousePosition);
+                    _tapPending = true;
+                }
+            }
+        }
+
+        bool KeyDown(KeyCode a) => Input.GetKeyDown(a);
+
+        /// <summary>-1 / +1 for menu rows.</summary>
+        int KeyStep()
+        {
+            if (KeyDown(KeyCode.UpArrow) || KeyDown(KeyCode.W)) return -1;
+            if (KeyDown(KeyCode.DownArrow) || KeyDown(KeyCode.S)) return 1;
+            if (KeyDown(KeyCode.LeftArrow) || KeyDown(KeyCode.A)) return -1;
+            if (KeyDown(KeyCode.RightArrow) || KeyDown(KeyCode.D)) return 1;
+            return 0;
+        }
+
+        bool KeyConfirm() => KeyDown(KeyCode.Return) || KeyDown(KeyCode.KeypadEnter)
+            || KeyDown(KeyCode.Space) || KeyDown(KeyCode.Z);
+
+        bool KeyCancel() => KeyDown(KeyCode.Escape) || KeyDown(KeyCode.Backspace);
+
+        // ------------------------------------------------------------ screens & saves
+
+        /// <summary>Called when a story card or chapter card is dismissed.</summary>
+        void OnScreenDone()
+        {
+            var act = _afterScreen;
+            _afterScreen = null;
+            if (act != null) act();
+            else ShowTitle();
+        }
+
+        public void SaveRun()
+        {
+            float hx = 0f, hy = 0f;
+            if (World != null && World.Ready && World.Hero != null)
+            {
+                hx = World.HeroPos.x;
+                hy = World.HeroPos.y;
+            }
+            SaveSystem.Write(State.Capture(hx, hy));
+        }
+
+        public void ContinueRun()
+        {
+            var d = SaveSystem.Read();
+            if (d == null) { BeginRun(); return; }
+            State.Apply(d);
+            _metMira = true;                       // the save is past the first conversation
+            _hintTalk = false;
+            _hintChest = false;
+            _bossDown = false;
+            _ending = false;
+            _resumePos = new Vector2(d.heroX, d.heroY);
+            Menus.Hide();
+            World.gameObject.SetActive(false);
+            DoTransition(() => StartChapter(State.Chapter), 0.25f, 0.45f);
+        }
+
+        public void LeaveToTitle()
+        {
+            Menus.Hide();
+            _paused = false;
+            DoTransition(() => ShowTitle(), 0.25f, 0.35f);
+        }
+
+        Vector2 ReadMoveInput()
+        {
+            // keyboard (desktop)
+            var kb = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+            if (kb.sqrMagnitude > 0.01f) return kb;
+
+            // touch joystick anywhere on the lower 60% of the screen
+            Vector2 vec = Vector2.zero;
+            if (Input.touchCount > 0)
+            {
+                foreach (var t in Input.touches)
+                {
+                    if (t.phase == TouchPhase.Began && !_joyTouch && t.position.y < Screen.height * 0.75f)
+                    {
+                        _joyTouch = true; _joyFinger = t.fingerId; _joyCenter = t.position;
+                    }
+                    else if (_joyTouch && t.fingerId == _joyFinger)
+                    {
+                        _joyCur = t.position;
+                        if (t.phase == TouchPhase.Ended || t.phase == TouchPhase.Canceled) { _joyTouch = false; _joyFinger = -1; }
+                        else
+                        {
+                            var d = (t.position - _joyCenter) / Mathf.Min(Screen.width, Screen.height) * 2.2f;
+                            vec = Vector2.ClampMagnitude(d, 1f);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // mouse drag as joystick (desktop testing)
+                if (Input.GetMouseButtonDown(1) || (Input.GetMouseButton(0) && Input.GetKey(KeyCode.LeftControl)))
+                {
+                    _joyTouch = true; _joyCenter = Input.mousePosition;
+                }
+                if (_joyTouch && Input.GetMouseButton(0))
+                {
+                    _joyCur = Input.mousePosition;
+                    var d = ((Vector2)Input.mousePosition - _joyCenter) / Mathf.Min(Screen.width, Screen.height) * 2.2f;
+                    vec = Vector2.ClampMagnitude(d, 1f);
+                    if (vec.sqrMagnitude < 0.003f) vec = Vector2.zero;
+                }
+                if (_joyTouch && Input.GetMouseButtonUp(0)) _joyTouch = false;
+            }
+            _joyVec = vec;
+            return vec;
+        }
+
+        /// <summary>The inverse of ScreenToStage, for tests that need to aim at the screen the
+        /// way a finger would instead of poking world coordinates directly.</summary>
+        public Vector3 StageToScreen(Vector2 stage)
+        {
+            return new Vector3((stage.x / 18f + 0.5f) * Screen.width,
+                (stage.y / (HalfH * 2f) + 0.5f) * Screen.height, 0f);
+        }
+
+        public Vector2 ScreenToStage(Vector3 screenPos)
+        {
+            float nx = Screen.width > 0 ? screenPos.x / Screen.width : 0.5f;
+            float ny = Screen.height > 0 ? screenPos.y / Screen.height : 0.5f;
+            return new Vector2((nx - 0.5f) * 18f, (ny - 0.5f) * (HalfH * 2f));
+        }
+
+        void OnGUI()
+        {
+            if (Target == null) return;
+            GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Target, ScaleMode.StretchToFill, false);
+        }
+
+        // ------------------------------------------------------------ editor preview
+
+        /// <summary>Snaps every text block to the pixel grid. LateUpdate does this while the
+        /// game runs; the editor render never advances a frame, so the capture has to do it or
+        /// the previews would show text that is half a pixel off while the game is not.</summary>
+        void SnapTextLayer()
+        {
+            var labels = Object.FindObjectsOfType<PixelLabel>(true);
+            foreach (var l in labels)
+            {
+                if (l == null || !l.gameObject.activeInHierarchy || !l.SnapToPixelGrid) continue;
+                var w = l.transform.position;
+                var s = new Vector3(Fx.Snap(w.x), Fx.Snap(w.y), w.z);
+                if (s != w) l.transform.position = s;
+            }
+        }
+
+        public void RenderToPng(string path)
+        {
+            if (Cam == null || Target == null) return;
+            SnapTextLayer();
+            var prev = RenderTexture.active;
+            Cam.Render();
+            RenderTexture.active = Target;
+            var tex = new Texture2D(Target.width, Target.height, TextureFormat.RGB24, false);
+            tex.ReadPixels(new Rect(0, 0, Target.width, Target.height), 0, 0);
+            tex.Apply();
+            RenderTexture.active = prev;
+            var bytes = tex.EncodeToPNG();
+            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path));
+            System.IO.File.WriteAllBytes(path, bytes);
+            Debug.Log("MoonThief preview written: " + path + " (" + bytes.Length + " bytes)");
+        }
+
+        // ------------------------------------------------------------ editor preview driving
+
+        public void EditorSplash()
+        {
+            Menus.Hide();
+            ShowSplash();
+        }
+
+        public void EditorMenu()
+        {
+            Menus.Hide();
+            ShowTitle();
+        }
+
+        public void EditorSettings()
+        {
+            SetCam(0f, 0f);
+            _titleRoot.gameObject.SetActive(false);
+            World.gameObject.SetActive(false);
+            Menus.Hide();
+            Menus.ShowSettings(false);
+        }
+
+        public void EditorCredits()
+        {
+            SetCam(0f, 0f);
+            _titleRoot.gameObject.SetActive(false);
+            World.gameObject.SetActive(false);
+            Menus.Hide();
+            Menus.ShowCredits();
+        }
+
+        public void EditorCinema(int slide = 5)
+        {
+            SetCam(0f, 0f);
+            _titleRoot.gameObject.SetActive(false);
+            _endRoot.gameObject.SetActive(false);
+            World.gameObject.SetActive(false);
+            Menus.Hide();
+            Menus.ShowCinema(slide);
+        }
+
+        public void EditorChapterCard(int chapter = 2)
+        {
+            SetCam(0f, 0f);
+            _titleRoot.gameObject.SetActive(false);
+            World.gameObject.SetActive(false);
+            Menus.Hide();
+            Menus.ShowChapterCard(chapter);
+        }
+
+        public void EditorPause()
+        {
+            Menus.Hide();
+            if (World != null && World.Ready) World.SetTextVisible(false);
+            Menus.ShowPause();
+            // the pause card rides the camera; Update() is what normally moves it, and the
+            // editor render never runs Update -- without this the card sat at the origin
+            // while the camera was out in the fields, so the shot showed a bare world
+            Menus.SetAnchor(Cam.transform.localPosition);
+        }
+
+        public void EditorExplore(int chapter)
+        {
+            State.NewRun();
+            State.Chapter = chapter;
+            Phase = St.Explore;
+            _metMira = true;
+            Menus.Hide();
+            _titleRoot.gameObject.SetActive(false);
+            _endRoot.gameObject.SetActive(false);
+            BattleViewRef.gameObject.SetActive(false);
+            World.gameObject.SetActive(true);
+
+            if (World.Ready && World.MapChapter == chapter) World.ResetForChapter();
+            else
+            {
+                if (World.Ready) World.Teardown();
+                _map = GameMap.Build(chapter);
+                World.Build(_map, StageRoot, HalfH);
+                World.MapChapter = chapter;
+            }
+            if (World.Ready) World.SetTextVisible(true);
+            World.PlaceHero(World.Map.VillageCenter + new Vector2(1.5f, 1.5f));
+            MakeHud();
+            _questText = null;
+            FollowHero();   // both axes: x matters too, the map is 60 tiles wide
+            RefreshHud();
+        }
+
+        /// <summary>The two HUD lines live on the world view, so they are rebuilt whenever the
+        /// view is swapped (street to room and back).</summary>
+        void MakeHud()
+        {
+            if (_hudZone == null)
+                _hudZone = PixelLabelUtil.Make(World.HudRoot, "hudZone", 1, new Color(0.94f, 0.95f, 1f), TextAlign.Left, 5001);
+            _hudZone.transform.localPosition = new Vector3(G.Left + 0.55f, HalfH - 0.5f, 0f);
+            _hudZone.enabled = true;
+            if (_hudQuest == null)
+            {
+                _hudQuest = PixelLabelUtil.Make(World.HudRoot, "hudQuest", 1, new Color(0.78f, 0.82f, 1f), TextAlign.Left, 5001);
+                // The goal used to be allowed 15.2 units, which is 39 characters a line: the line
+                // ran most of the way across the screen and a two-line goal was a slab of text
+                // over the village. 11.4 units keeps it a two-line note in the corner.
+                _hudQuest.MaxWidthUnits = 11.4f;
+            }
+            _hudQuest.transform.localPosition = new Vector3(G.Left + 0.55f, HalfH - 1.7f, 0f);
+            _hudQuest.enabled = true;
+        }
+
+        public void EditorDialog()
+        {
+            OpenDialog(Folks.Village(State.Chapter)[0]);
+        }
+
+        /// <summary>Talking for real: the NPC accepts a quest, the dialog opens and the toast
+        /// fires. That combination is what put a notification on top of the narration.</summary>
+        public void EditorTalk()
+        {
+            EditorExplore(1);
+            if (World.Npcs.Count == 0) return;
+            TalkTo(World.Npcs[0].Npc);
+        }
+
+        public void EditorLootToast()
+        {
+            CloseDialog();
+            EditorExplore(1);
+            State.AddBag("item.honey");
+            Menus.ShowToast(Strings.Get("loot.found", Strings.Get("item.honey"), 12), 6f);
+            // the toast follows the camera through SetAnchor, which Update normally calls; the
+            // editor render never runs Update, so without this the shot has the toast at the
+            // world origin instead of where a player would see it
+            Menus.SetAnchor(Cam.transform.localPosition);
+        }
+
+        /// <summary>The zone card, on the frame the notice lane it shares is empty. The notice is
+        /// parked while the card is up (Game.Update holds the lane on World.BannerUp), so showing
+        /// both here would print a shot of a state the game never reaches - and the card would come
+        /// out half hidden under the notice plate.</summary>
+        public void EditorBanner()
+        {
+            CloseDialog();
+            EditorExplore(1);
+            Menus.HideToast();
+            World.ShowBanner(Strings.Get("zone.arrive.2"));
+            Menus.SetAnchor(Cam.transform.localPosition);
+        }
+
+        public void EditorCloseDialog() => CloseDialog();
+
+        public void EditorPlaceHero(Vector2 pos)
+        {
+            World.PlaceHero(pos);
+            FollowHero();
+        }
+
+        public void EditorBattle()
+        {
+            Phase = St.Battle;
+            Menus.Hide();
+            World.gameObject.SetActive(false);
+            if (_hudZone != null) _hudZone.enabled = false;
+            if (_hudQuest != null) _hudQuest.enabled = false;
+            SetCamY(0f);
+            BattleViewRef.gameObject.SetActive(true);
+            Director.StartBattle(BattleData.Roll(State.Chapter, new System.Random(7)));
+            Director.EditorTick();   // edit mode: coroutines are dead, drive the round start by hand
+        }
+
+        public void EditorBattleMid()
+        {
+            var v = BattleViewRef;
+            if (v.Enemies.Length > 0)
+            {
+                v.Enemies[0].Hp = Mathf.Max(1, v.Enemies[0].Hp * 2 / 3);
+                v.FloatNumber(v.BodyCenter(v.Enemies[0]) + new Vector2(0f, 0.6f), "-7", new Color(1f, 0.95f, 0.75f));
+                v.SetMessage(Strings.Get("bt.trybefriend", v.Enemies[0].Name));
+            }
+            if (v.Party.Length > 1) v.Party[1].Hp = 12;
+            v.Refresh();
+        }
+
+        public void EditorWinCard()
+        {
+            BattleViewRef.ShowCard(Strings.Get("card.wintitle"),
+                new[]
+                {
+                    Strings.Get("card.xp", 90),
+                    Strings.Get("card.gold", 34),
+                    Strings.Get("card.befriended", 1, 1),
+                    Strings.Get("card.joined"),
+                },
+                new[] { Strings.Get("btn.continue") },
+                new System.Action[] { () => { } },
+                new Color(0.75f, 1f, 0.8f));
+        }
+
+        public void BackToExplore()
+        {
+            BattleViewRef.HideCard();
+            BattleViewRef.gameObject.SetActive(false);
+        }
+
+        public void EditorEnding()
+        {
+            State.Befriended = 3;
+            TriggerEnding();
+        }
+
+        // ---- interior and journal frames. Both are real states of the game, reached here
+        // without the taps and the fade that would normally lead to them, so the renderer can
+        // show a room and the pages the pause card opens.
+
+        public void EditorInterior(int house)
+        {
+            State.NewRun();
+            State.Chapter = 1;
+            Phase = St.Explore;
+            _metMira = true;
+            Menus.Hide();
+            _titleRoot.gameObject.SetActive(false);
+            _endRoot.gameObject.SetActive(false);
+            BattleViewRef.gameObject.SetActive(false);
+            World.gameObject.SetActive(true);
+            if (World.Ready) World.Teardown();
+            _overworld = World;
+            if (_houseRoot == null)
+            {
+                _houseRoot = new GameObject("house").transform;
+                _houseRoot.SetParent(StageRoot, false);
+            }
+            if (_houseView != null) Fx.Kill(_houseView.gameObject);
+            _houseView = new GameObject("houseView").AddComponent<WorldView>();
+            _houseView.transform.SetParent(_houseRoot, false);
+            _houseMap = GameMap.BuildRoom(house);
+            _houseView.Build(_houseMap, _houseRoot, HalfH);
+            World = _houseView;
+            World.PlaceHero(new Vector2(9.5f, 12.5f));
+            _inHouse = true;
+            MakeHud();
+            World.ShowBanner(Strings.Get(_houseMap.InteriorNameKey));
+            FollowHero();
+            RefreshHud();
+        }
+
+        /// <summary>The pause card, the journal hub and one of its pages, with a run behind them
+        /// that actually has something to show: levels, gear, quests in three different states
+        /// and a bestiary with a few names filled in.</summary>
+        public void EditorJournal(int page)
+        {
+            CloseDialog();
+            State.NewRun();
+            State.Chapter = 2;
+            State.Gold = 41;
+            State.Xp = 96;
+            State.ChestsOpened = 5;
+            State.Defeats = 4;
+            State.Befriended = 2;
+            State.MoonShards = 3;
+            State.AddBag("item.morsel");
+            State.AddBag("item.honey", 2);
+            State.AddBag("item.knife");
+            State.AddBag("item.cloak");
+            State.AddBag("item.charm.bell");
+            State.AddBag("item.axe");
+            State.AddBag("item.mushroom", 3);
+            State.Worn[0] = "item.knife";
+            State.Worn[1] = "item.cloak";
+            foreach (var m in BattleData.Bestiary)
+                if (m.Chapter <= 2) State.MarkSeen(m.Name);
+            Quests.Accept(Quests.Find("mq.2"));
+            Quests.SetStep("mq.2", 1);
+            Quests.Accept(Quests.Find("sq.mushroom"));
+            Quests.SetStep("sq.mushroom", 1);
+            Quests.Accept(Quests.Find("sq.kettles"));
+            Quests.SetStep("sq.kettles", 1);
+            Quests.SetStep("sq.chicken", 3);
+            if (World != null && World.Ready) World.SetTextVisible(false);
+            Menus.EditorJournal(page);
+            Menus.SetAnchor(Cam.transform.localPosition);
+        }
+
+        // ------------------------------------------------------------ self test
+
+        IEnumerator SelfTest()
+        {
+            System.IO.Directory.CreateDirectory(SelfTestDir);
+            // A hidden player window renders as fast as the machine allows, so "400 frames" can be
+            // a tenth of a second on one run and seven seconds on the next. Every budget below is
+            // wall-clock seconds for that reason, and the frame rate is pinned so the amount of
+            // simulated time per iteration stays sane.
+            Application.targetFrameRate = 120;
+            QualitySettings.vSyncCount = 0;
+            Debug.Log("[selftest] start dir=" + SelfTestDir);
+            yield return new WaitForSeconds(0.6f);
+            Shot("09-splash");
+            yield return new WaitForSeconds(2.0f);
+            Shot("10-menu");
+            Debug.Log("[selftest] front-end phase=" + Phase);
+
+            BeginRun();
+            yield return new WaitForSeconds(1.2f);
+            Shot("11-village");
+            Debug.Log("[selftest] hero=" + World.HeroPos + " mons=" + World.Monsters.Count);
+
+            // open the pause card and its settings page for real. The row layout used to be
+            // wired to one shared list, so these two cards drew an empty frame on a device
+            // while every singe-player shortcut test still passed -- capture them here.
+            OpenPause();
+            yield return new WaitForSeconds(0.6f);
+            Shot("19-pause");
+            Debug.Log("[selftest] pause rows=" + Menus.ActiveRowCount);
+            Menus.ShowSettings(true);
+            yield return new WaitForSeconds(0.5f);
+            Shot("20-settings");
+            Debug.Log("[selftest] settings rows=" + Menus.ActiveRowCount);
+
+            // the journal the pause card opens: hub, then a real page. Same reason as above -
+            // the rows are built per page and a shared list made every page after the first draw
+            // an empty frame.
+            Menus.EditorJournal(-1);
+            yield return new WaitForSeconds(0.5f);
+            Shot("27-journal");
+            Debug.Log("[selftest] journal rows=" + Menus.ActiveRowCount);
+            Menus.EditorJournal(4);
+            yield return new WaitForSeconds(0.5f);
+            Shot("28-quests");
+            Debug.Log("[selftest] quest rows=" + Menus.ActiveRowCount);
+            Menus.Hide();
+            _paused = false;
+
+            // hunt the nearest wild monster so an encounter is guaranteed, not lucky. Steering is
+            // diagonal: the old axis-only version (straight east/west, then straight north) wedged
+            // against a barrel or a house corner and stayed there, because the blocked axis was
+            // the only one it ever pushed on.
+            int guard = 0;
+            var lastHuntPos = World.HeroPos;
+            int huntStuck = 0;
+            float huntStart = Time.time;
+            while (Phase == St.Explore && Time.time - huntStart < 30f)
+            {
+                guard++;
+                var target = World.NearestMonsterPos();
+                if (target == null) break;                       // every monster already fought
+                var to = target.Value - World.HeroPos;
+                var dir = to.sqrMagnitude < 0.01f ? Vector2.up : to.normalized;
+                if (Vector2.Distance(World.HeroPos, lastHuntPos) < 0.02f) huntStuck++;
+                else huntStuck = 0;
+                lastHuntPos = World.HeroPos;
+                if (huntStuck > 25)
+                {
+                    dir = new Vector2(Random.value < 0.5f ? -1f : 1f, 0.6f);
+                    huntStuck = 0;
+                }
+                World.DriveHero(dir, Time.deltaTime);
+                TickWorldForTest();
+                yield return null;
+            }
+            Debug.Log("[selftest] explore ended at y=" + World.HeroPos.y + " phase=" + Phase + " guard=" + guard);
+            Shot("12-explore-far");
+
+            int battles = 0;
+            while (Phase == St.Battle && battles++ < 6)
+            {
+                yield return new WaitForSeconds(1.6f);
+                Shot("13-battle-" + battles);
+                int t = 0;
+                float turnStart = Time.time;
+                while (Phase == St.Battle && Time.time - turnStart < 45f)
+                {
+                    t++;
+                    if (Director.AwaitingInput)
+                    {
+                        // one turn in three goes through the real tap path, so the hit test
+                        // that a finger uses is exercised instead of only the shortcut. The
+                        // point is round-tripped through the screen mapping a finger goes
+                        // through, so a bad stage mapping now fails the test too.
+                        if (t % 3 == 0 && BattleViewRef.Menu.Count > 0)
+                        {
+                            var cell = BattleViewRef.Menu[t % BattleViewRef.Menu.Count];
+                            var stage = ScreenToStage(StageToScreen(cell.Hit.center));
+                            int hit = BattleViewRef.HitMenu(stage);
+                            Director.TapAt(stage);
+                            Debug.Log(hit >= 0
+                                ? "[selftest] TapAt menu cell (screen path) -> " + cell.Label
+                                : "[selftest] MISSED menu cell -> " + cell.Label);
+                        }
+                        else
+                        {
+                            Director.SelectCell(t % 3);
+                            Director.Confirm();
+                        }
+                        yield return new WaitForSeconds(0.7f);
+                    }
+                    else if (BattleViewRef.OverlayButtonCount > 0)
+                    {
+                        Shot("14-card");
+                        var cr = BattleViewRef.CardButtonRect(0);
+                        if (cr.width > 0f) { Director.TapAt(cr.center); Debug.Log("[selftest] TapAt card button"); }
+                        else BattleViewRef.CardButtonAt(0)?.Invoke();
+                        yield return new WaitForSeconds(1.0f);
+                        break;
+                    }
+                    else TickWorldForTest();
+                    if (t == 1499 || t == 2999)
+                        Debug.Log("[selftest] stall phase=" + Phase + " dir=" + Director.DebugPhase
+                            + " qi=" + Director.DebugQi + "/" + Director.DebugQueue + " round=" + Director.DebugRound
+                            + " menuOn=" + BattleViewRef.MenuOn);
+                    yield return null;
+                }
+            }
+            Debug.Log("[selftest] after battles phase=" + Phase);
+
+            // keep exploring to the boss if we are still alive
+            guard = 0;
+            var lastPos = World.HeroPos;
+            int stuck = 0;
+            float walkStart = Time.time;
+            while ((Phase == St.Explore || Phase == St.Battle) && Time.time - walkStart < 75f)
+            {
+                guard++;
+                if (Phase == St.Battle)
+                {
+                    if (Director.AwaitingInput) { Director.SelectCell(0); Director.Confirm(); }
+                    else if (BattleViewRef.OverlayButtonCount > 0)
+                        BattleViewRef.CardButtonAt(0)?.Invoke();
+                    else TickWorldForTest();
+                    yield return null;
+                    continue;
+                }
+                if (guard % 600 == 0)
+                    Debug.Log("[selftest] walking north guard=" + guard + " t=" + (Time.time - walkStart).ToString("0.0")
+                        + "s hero=" + World.HeroPos + " phase=" + Phase + " near=" + World.NearBoss);
+                if (World.NearBoss) break;
+                var toB = World.Map.BossPos - World.HeroPos;
+                // diagonal again, so a blocked axis still leaves the other one moving
+                var dirB = toB.sqrMagnitude < 0.01f ? Vector2.up : toB.normalized;
+                // a straight line to the boss can wedge on a tree: sidestep when stuck
+                if (Vector2.Distance(World.HeroPos, lastPos) < 0.01f) stuck++;
+                else stuck = 0;
+                lastPos = World.HeroPos;
+                if (stuck > 25)
+                {
+                    dirB = new Vector2(Random.value < 0.5f ? -1f : 1f, 0.15f);
+                    stuck = 0;
+                }
+                World.DriveHero(dirB, Time.deltaTime);
+                TickWorldForTest();
+                yield return null;
+            }
+            if (!World.NearBoss)
+            {
+                // pathing can stall on trees; step next to the boss so the fight is still tested
+                World.PlaceHero(new Vector2(World.Map.BossPos.x + 0.5f, World.Map.BossPos.y - 1.5f));
+                yield return null;
+            }
+            Shot("15-bosszone");
+            Debug.Log("[selftest] boss zone at y=" + World.HeroPos.y + " nearBoss=" + World.NearBoss);
+
+            // fight the boss
+            if (World.NearBoss && !_bossDown)
+            {
+                StartBattle(BattleData.BossFight());
+                int t2 = 0;
+                float bossStart = Time.time;
+                while (Phase == St.Battle && Time.time - bossStart < 45f)
+                {
+                    t2++;
+                    if (Director.AwaitingInput) { Director.SelectCell(0); Director.Confirm(); }
+                    else if (BattleViewRef.OverlayButtonCount > 0)
+                    {
+                        Shot("16-bosscard");
+                        var cr = BattleViewRef.CardButtonRect(0);
+                        if (cr.width > 0f) Director.TapAt(cr.center);
+                        else BattleViewRef.CardButtonAt(0)?.Invoke();
+                        yield return new WaitForSeconds(1.2f);
+                        break;
+                    }
+                    else TickWorldForTest();
+                    yield return null;
+                }
+            }
+
+            // the victory card rolls into the next night through a black dissolve; the old
+            // fixed 0.8 s wait landed inside it and the frame came out solid black
+            for (int fw = 0; fw < 600 && FadeAlpha > 0.04f; fw++) yield return null;
+            yield return new WaitForSeconds(0.5f);
+            Shot("17-after-boss");
+            Debug.Log("[selftest] after boss phase=" + Phase + " shards=" + State.MoonShards);
+
+            if (Phase == St.Explore)
+            {
+                // walk back to the cristal and end the game
+                World.DriveHero(Vector2.down, 0.016f);
+                int g3 = 0;
+                float homeStart = Time.time;
+                while (Phase == St.Explore && Time.time - homeStart < 45f)
+                {
+                    g3++;
+                    if (g3 % 600 == 0)
+                        Debug.Log("[selftest] walking to cristal g3=" + g3 + " hero=" + World.HeroPos
+                            + " shards=" + State.MoonShards);
+                    var target = World.Map.CristalPos;
+                    var delta = target - World.HeroPos;
+                    World.DriveHero(delta, Time.deltaTime);
+                    TickWorldForTest();
+                    if (Vector2.Distance(World.HeroPos, target) < 2f) break;
+                    yield return null;
+                }
+                TriggerEnding();
+                yield return new WaitForSeconds(1.0f);
+                Shot("18-ending");
+                Debug.Log("[selftest] ending shown");
+            }
+
+            Debug.Log("[selftest] done");
+            yield return new WaitForSeconds(0.3f);
+            Application.Quit();
+        }
+
+        void TickWorldForTest()
+        {
+            // drive the same logic Update() runs, without input.
+            // Only in Explore: the hero freezes in contact range during a battle, so an
+            // unguarded re-trigger rebuilt the encounter mid-fight and crashed the turn.
+            if (Phase != St.Explore) return;
+            if (World == null || !World.Ready) return;
+            _encounterCooldown -= Time.deltaTime;
+            var touched = World.TouchedMonster();
+            if (touched != null && _encounterCooldown <= 0f)
+            {
+                var spec = touched.Spec;
+                World.RemoveMonster(touched);
+                StartBattle(new[] { spec });
+            }
+        }
+
+        readonly System.Collections.Generic.Dictionary<string, int> _shotCounts =
+            new System.Collections.Generic.Dictionary<string, int>();
+
+        void Shot(string name)
+        {
+            if (Target == null) return;
+            // A tag can be used more than once in a run - two battles both end on a result card -
+            // and two moments written under one tag are read back as ONE frame by the layout
+            // audit, which then reports every plate in it twice and invents clashes between a
+            // label and itself. The second take gets its own suffix.
+            int take = _shotCounts.TryGetValue(name, out var c) ? c + 1 : 1;
+            _shotCounts[name] = take;
+            if (take > 1) name = name + "-" + take;
+            // the frames the phone would show are measured by the same pass the editor build uses,
+            // so a runtime-only overlap (a notice arriving during a conversation, a plate landing
+            // on a villager) reaches the log instead of the screenshot
+            LayoutAudit.Report("R" + name, HalfH, Cam != null ? Cam.transform.localPosition : Vector3.zero);
+            var prev = RenderTexture.active;
+            RenderTexture.active = Target;
+            var tex = new Texture2D(Target.width, Target.height, TextureFormat.RGB24, false);
+            tex.ReadPixels(new Rect(0, 0, Target.width, Target.height), 0, 0);
+            tex.Apply();
+            RenderTexture.active = prev;
+            System.IO.File.WriteAllBytes(System.IO.Path.Combine(SelfTestDir, name + ".png"), tex.EncodeToPNG());
+            Debug.Log("[selftest] shot " + name);
+        }
+    }
+}
