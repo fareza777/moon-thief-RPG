@@ -28,7 +28,7 @@ rate.store|Opening the store page...
 rate.thanks|Stars make the night brighter. Thank you!
 cred.title|THE MOON THIEF
 cred.sub|a tale in three nights
-cred.body|studio      f7 developer games\npixel art   super retro collection\ncode        unity, built from scratch\nsound       chiptune written in code\nfont        5x8 bitmap, drawn by hand
+cred.body|studio      f7 developer games\npixel art   super retro collection\ncode        unity, built from scratch\nsound       chiptune written in code\nfont        5x8 bitmap, drawn by hand\nversion     {0}
 cred.thanks|thank you for playing
 menu.back|BACK
 

@@ -1640,6 +1640,7 @@ namespace MoonThief
             Menus.Hide();
             _paused = false;
             if (World != null && World.Ready) World.SetTextVisible(true);
+            SaveRun();   // leaving keeps the night where it stands - no lost walks
             DoTransition(() => ShowTitle(), 0.25f, 0.35f);
         }
 

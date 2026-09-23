@@ -408,7 +408,7 @@ namespace MoonThief
             // measured and placed by LayoutCredits() instead of being pinned by hand
             _credText = PixelLabelUtil.Make(_credRoot, "credText", 1, new Color(0.93f, 0.95f, 1f), TextAlign.Center, 6006);
             _credText.MaxWidthUnits = 15.2f;
-            _credText.Set(Strings.Get("cred.body"));
+            _credText.Set(Strings.Get("cred.body", Application.version));
 
             _credThanks = PixelLabelUtil.Make(_credRoot, "credThanks", 2, new Color(0.88f, 0.96f, 0.86f), TextAlign.Center, 6006);
             _credThanks.Set(Strings.Get("cred.thanks"));

@@ -1107,6 +1107,7 @@ namespace MoonThief
             if (!target.Alive)
             {
                 tRig.Sr.enabled = false;
+                Sfx.Play("faint");
                 View.SetMessage(Strings.Get("bt.herodown", target.Name));
                 yield return Fx.Wait(0.8f);
             }
