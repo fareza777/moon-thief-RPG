@@ -807,7 +807,7 @@ namespace MoonThief
         void RefreshHud()
         {
             if (_hudZone != null)
-                _hudZone.Set(Strings.Get("hud.explore", State.Chapter, State.MoonShards, ShardsNeeded));
+                _hudZone.Set(Strings.Get("hud.explore", State.Chapter, State.MoonShards, ShardsNeeded, State.Gold));
             if (World != null) World.SetMoonFill(State.MoonShards, ShardsNeeded);
             RefreshQuest();
         }
@@ -1284,6 +1284,7 @@ namespace MoonThief
                     OpenDialog(npc, new[] { quest.DoneKey, "q.reward" });
                     Menus.ShowToast(Strings.Get("jr.questdone", Strings.Get(quest.TitleKey)), 3.6f);
                     Sfx.Play("coin");
+                    RefreshHud();
                     SaveRun();
                     return;
                 }

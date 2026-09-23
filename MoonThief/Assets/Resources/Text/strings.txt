@@ -95,7 +95,7 @@ ci.ch.3|NIGHT THREE\nthe dark wood
 # ---- hud
 hud.nightshort|NIGHT {0}
 hud.round|ROUND {0}
-hud.explore|NIGHT {0}    SHARD {1}/{2}
+hud.explore|NIGHT {0}    SHARD {1}/{2}    GOLD {3}
 hud.quest|NEXT: {0}
 
 # ---- quest chain (the clear workflow). Kept short: this line lives in the corner of the
