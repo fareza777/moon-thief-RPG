@@ -565,12 +565,12 @@ namespace MoonThief
                 float left = xs[i] - 1.1f;
                 bool alive = rig.F.Alive;
                 rig.BarBg.enabled = alive;
-                Box(rig.BarBg, left, PartyFeet - 0.45f, 2.2f, 0.20f, new Color32(12, 10, 22, 255));
+                Box(rig.BarBg, left, PartyFeet - 0.44f, 2.2f, 0.28f, new Color32(12, 10, 22, 255));
                 var c = rig.F.Hp01 > 0.5f ? new Color32(126, 226, 143, 255)
                     : rig.F.Hp01 > 0.22f ? new Color32(240, 208, 110, 255) : new Color32(232, 106, 106, 255);
                 float w = 2.2f * rig.F.Hp01;
                 rig.BarFill.enabled = alive && w > 0.03f;
-                if (rig.BarFill.enabled) Box(rig.BarFill, left + 0.0625f, PartyFeet - 0.43f, w - 0.0625f, 0.1f, c);
+                if (rig.BarFill.enabled) Box(rig.BarFill, left + 0.0625f, PartyFeet - 0.415f, w - 0.0625f, 0.17f, c);
                 rig.Name.SetColor(alive ? new Color(0.92f, 0.94f, 1f) : new Color(0.5f, 0.46f, 0.56f));
                 if (rig.NameChip != null) Plate(rig.NameChip, rig.Name, rig.F.Name);
             }
@@ -584,10 +584,10 @@ namespace MoonThief
                 if (show)
                 {
                     float left = rig.Home.x - 1.3f;
-                    Box(rig.BarBg, left, rig.Home.y - 0.55f, 2.6f, 0.2f, new Color32(12, 10, 22, 255));
+                    Box(rig.BarBg, left, rig.Home.y - 0.62f, 2.6f, 0.28f, new Color32(12, 10, 22, 255));
                     float w = 2.6f * rig.F.Hp01;
                     if (w > 0.03f)
-                        Box(rig.BarFill, left + 0.0625f, rig.Home.y - 0.49f, w - 0.0625f, 0.08f,
+                        Box(rig.BarFill, left + 0.0625f, rig.Home.y - 0.56f, w - 0.0625f, 0.16f,
                             rig.F.Boss ? new Color32(255, 150, 110, 255) : new Color32(232, 196, 120, 255));
                 }
             }
