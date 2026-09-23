@@ -1456,8 +1456,29 @@ namespace MoonThief
             // map bounds and an out-of-range spawn pushed the village shot half off-world
             float x = Mathf.Clamp(pos.x, 2f, GameMap.W - 2f);
             float y = Mathf.Clamp(pos.y, 1.5f, GameMap.H - 2f);
-            Hero.Root.localPosition = new Vector3(x, y, 0f);
+            var p = new Vector2(x, y);
+            if (!CanStand(p)) p = NearestStandable(p);
+            Hero.Root.localPosition = new Vector3(p.x, p.y, 0f);
             RefreshNamePlates();
+        }
+
+        // Rings of half-tile steps around a blocked spot; the first cell the feet box fits
+        // wins, so the hero lands beside whatever was in the way instead of inside it.
+        Vector2 NearestStandable(Vector2 from)
+        {
+            Vector2 best = from; float bd = float.MaxValue;
+            for (int r = 1; r <= 6; r++)
+                for (int dx = -r; dx <= r; dx++)
+                    for (int dy = -r; dy <= r; dy++)
+                    {
+                        if (Mathf.Max(Mathf.Abs(dx), Mathf.Abs(dy)) != r) continue;
+                        var p = from + new Vector2(dx * 0.5f, dy * 0.5f);
+                        if (p.x < 2f || p.y < 1.5f || p.x > GameMap.W - 2f || p.y > GameMap.H - 2f) continue;
+                        if (!CanStand(p)) continue;
+                        float d = (p - from).sqrMagnitude;
+                        if (d < bd) { bd = d; best = p; }
+                    }
+            return best;
         }
 
         void CreateHero()
