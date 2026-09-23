@@ -2003,6 +2003,7 @@ namespace MoonThief
             World.gameObject.SetActive(false);
             Menus.Hide();
             Menus.ShowOnboard();
+            Menus.SetAnchor(Cam.transform.localPosition);
         }
 
         /// <summary>Marn's shop card with a purse worth spending: stock rows plus gold in the sub.</summary>
@@ -2232,7 +2233,8 @@ namespace MoonThief
                 StartBattle(BattleData.BossFight());
                 int t2 = 0;
                 float bossStart = Time.time;
-                while (Phase == St.Battle && Time.time - bossStart < 45f)
+                // the boss plus its wisp add take longer than a wild pair - give it room
+                while (Phase == St.Battle && Time.time - bossStart < 90f)
                 {
                     t2++;
                     if (Director.AwaitingInput) { Director.SelectCell(0); Director.Confirm(); }

@@ -884,8 +884,8 @@ namespace MoonThief
         {
             _shopSub.Set(Strings.Get("shop.sub", Game.State.Gold));
             float rowsTop = LayoutCard(_shopPanel, 16.4f, ShopStock().Length + 1, true);
-            _shopTitle.transform.localPosition = new Vector3(0f, _cardTop - 1.9f, 0f);
-            _shopSub.transform.localPosition = new Vector3(0f, _cardTop - 3.4f, 0f);
+            _shopTitle.transform.localPosition = new Vector3(0f, _cardTop - 1.7f, 0f);
+            _shopSub.transform.localPosition = new Vector3(0f, _cardTop - 3.6f, 0f);
             var labels = new List<string>();
             var vals = new List<string>();
             var acts = new List<Action>();
