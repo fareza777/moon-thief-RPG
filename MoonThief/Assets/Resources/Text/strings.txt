@@ -2,8 +2,8 @@
 
 # ---- title
 title.name|THE MOON THIEF
-title.tagline|The moon is gone. Find the shards and light it again.
-title.footer|a tale of three nights
+title.tagline|The moon is gone. Find the shards and raise it again.
+title.footer|a tale in three nights
 title.tap|TAP TO BEGIN
 
 # ---- splash
@@ -273,7 +273,7 @@ jr.bestiary|BESTIARY
 jr.quests|QUESTS
 jr.count|QUESTS {0}/{1}
 jr.level|LEVEL
-jr.xp|EXPERIENCE
+jr.xp|XP EARNED
 jr.shards|MOON SHARDS
 jr.befriended|BEFRIENDED
 jr.felled|BEASTS FELLED
@@ -301,6 +301,7 @@ jr.unknown|?????
 jr.unseen|Nobody has met this one yet.
 jr.quests.sub|ACTIVE {0}   DONE {1}
 jr.main|MAIN
+jr.new|NEW
 jr.active|ACTIVE
 jr.ready|READY
 jr.done|DONE
@@ -428,4 +429,5 @@ ev.dog|A hunting dog will not leave the gate. It has waited long enough to forge
 
 # ---- ending
 end.notyet|The crystal is cold. {0} shards are still missing.
+end.tap|TAP TO CONTINUE
 end.text|The shards rise\nfrom your hands and\nclimb the sky.\n\nThe moon takes\nits old place over\nthe fields.\n{0} friends walk\nhome beside you.\n\nThe village wakes\nto its first gold\nmorning.

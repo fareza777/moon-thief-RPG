@@ -412,8 +412,9 @@ namespace MoonThief
             _credThanks = PixelLabelUtil.Make(_credRoot, "credThanks", 2, new Color(0.88f, 0.96f, 0.86f), TextAlign.Center, 6006);
             _credThanks.Set(Strings.Get("cred.thanks"));
 
-            // the lower hairline separates the story text from the RATE/SHARE/BACK rows
-            Rule("credRule2", -3.15f);
+            // the lower hairline sits above the thanks line, in the body band's tail space -
+            // any lower and it crosses the thanks line's cap row
+            Rule("credRule2", -2.95f);
 
             _credRows = BuildRows(_credRoot);
         }

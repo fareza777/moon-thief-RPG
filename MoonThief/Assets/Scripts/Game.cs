@@ -541,7 +541,7 @@ namespace MoonThief
 
             _tapHint = PixelLabelUtil.Make(_endRoot, "endTap", 2, new Color(1f, 0.88f, 0.5f), TextAlign.Center, 100);
             _tapHint.transform.localPosition = new Vector3(0f, -HalfH + 4.2f, 0f);
-            _tapHint.Set(Strings.Get("title.tap"));
+            _tapHint.Set(Strings.Get("end.tap"));
             _endRoot.gameObject.SetActive(false);
         }
 
@@ -2050,6 +2050,7 @@ namespace MoonThief
             Shot("10c-onboard-3");
             Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);   // BEGIN -> title
             yield return new WaitForSeconds(0.5f);
+            Shot("10c2-menu");    // on a fresh boot shot 10 lands on onboarding, so re-take it here
             Debug.Log("[selftest] after onboard phase=" + Phase);
 
             BeginRun();

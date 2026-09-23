@@ -309,7 +309,7 @@ namespace MoonThief
         }
 
         public static string StateWord(int step) => Strings.Get(step == 3 ? "jr.done"
-            : step == 2 ? "jr.ready" : "jr.active");
+            : step == 2 ? "jr.ready" : step == 0 ? "jr.new" : "jr.active");
 
         // ---- serialisation (the journal has to survive a save) ----
 

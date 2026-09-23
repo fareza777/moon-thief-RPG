@@ -98,7 +98,9 @@ namespace MoonThief
             _hudNight.transform.localPosition = new Vector3(Left + 0.45f, Top - 0.42f, 0f);
 
             _hudRound = Label("hudRound", 2, new Color(0.75f, 0.73f, 0.88f), TextAlign.Right, 50);
-            _hudRound.transform.localPosition = new Vector3(Right - 1.8f, Top - 0.42f, 0f);
+            // ends clear of the AUTO chip's left edge (the chip spans Right-4.5 .. Right-0.9):
+            // the chip draws above text, so a round counter reaching into it was half-covered
+            _hudRound.transform.localPosition = new Vector3(Right - 4.85f, Top - 0.42f, 0f);
 
             _moonIcon = SpriteRendererUtil.Make(Stage, "bmoon", Game.State.Chapter >= 3 ? TexArt.MoonFull() : TexArt.MoonEmpty(), 50);
             _moonIcon.transform.localPosition = new Vector3(Right - 0.9f, Top - 0.85f, 0f);
@@ -341,7 +343,12 @@ namespace MoonThief
                 rig.BarBg = SpriteRendererUtil.Make(Stage, "ebg" + i, TexArt.Solid(), 6);
                 rig.BarFill = SpriteRendererUtil.Make(Stage, "efill" + i, TexArt.Solid(), 7);
                 rig.Name = Label("ename" + i, 1, new Color(1f, 0.86f, 0.86f), TextAlign.Center, 8);
-                rig.Name.transform.localPosition = new Vector3(home.x, home.y + rig.BodyHeight + 0.45f, 0f);
+                // a floating/tall foe's name would sit inside the HUD strip -- but lowering it
+                // onto the sprite leaves the body covering the label, so it moves under the foe's
+                // HP bar (the bar sits at home.y-0.55 .. -0.35) instead
+                float aboveHead = home.y + rig.BodyHeight + 0.45f;
+                float nameTop = aboveHead <= HudBottom - 0.2f ? aboveHead : home.y - 0.95f;
+                rig.Name.transform.localPosition = new Vector3(home.x, nameTop, 0f);
                 rig.Name.Set(f.Name);
                 // dark plate behind the name: the arena art has flat bright patches and light
                 // text lying straight on top of them read as a smear
@@ -386,15 +393,20 @@ namespace MoonThief
             }
         }
 
-        /// <summary>Golden sparkle shower over the result card panel.</summary>
+        /// <summary>Golden sparkle shower over the result card panel. Sparks start just above
+        /// the card's top edge and drift down over its face; spawning at the top of the frame
+        /// left them twinkling across the HUD strip, a full card-height above the card.</summary>
         public void CardSparkle()
         {
             if (!Application.isPlaying) return;
+            float cardTop = _ovPanel != null
+                ? _ovPanel.transform.localPosition.y + _ovPanel.size.y * 0.5f
+                : Top - 2f;
             for (int i = 0; i < 12; i++)
             {
                 var go = new GameObject("cardspark");
                 go.transform.SetParent(Stage, false);
-                go.transform.localPosition = new Vector3(UnityEngine.Random.Range(Left + 1.5f, Right - 1.5f), Top - 1f, 0f);
+                go.transform.localPosition = new Vector3(UnityEngine.Random.Range(Left + 1.5f, Right - 1.5f), cardTop + 0.5f, 0f);
                 go.transform.localScale = Vector3.one * 2f;
                 var sr = go.AddComponent<SpriteRenderer>();
                 sr.sprite = TexArt.Spark();
