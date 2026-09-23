@@ -522,6 +522,20 @@ namespace MoonThief
             return rig.Sr.sprite.bounds.size.x * rig.F.Scale;
         }
 
+        void OnDisable()
+        {
+            // coroutines freeze while the view is off between battles and resume mid-flight in
+            // the next one -- last fight's sparks and damage numbers popping into a fresh arena.
+            // Kill the routines and sweep the FX nodes they would have cleaned up themselves.
+            StopAllCoroutines();
+            if (Stage == null) return;
+            for (int i = Stage.childCount - 1; i >= 0; i--)
+            {
+                var n = Stage.GetChild(i).name;
+                if (n == "spark" || n == "cardspark" || n == "floatn") UtilDestroy(Stage.GetChild(i).gameObject);
+            }
+        }
+
         void Update()
         {
             _time += Time.deltaTime;
