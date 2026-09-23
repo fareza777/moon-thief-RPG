@@ -1187,12 +1187,25 @@ namespace MoonThief
         }
 
         /// <summary>The corner moon brightens as shards come home: a faint ring while the
-        /// night is young, full warm light once the set is complete.</summary>
+        /// night is young, full warm light once the set is complete. The hero's lantern
+        /// drinks the same moonlight - every shard widens and warms the pool of light at
+        /// his feet (the flicker loop owns the alpha, so this feeds its amp instead).</summary>
+        SpriteRenderer _heroGlow;
+        int _heroGlowIdx;
+
         public void SetMoonFill(int shards, int needed)
         {
             if (_moonIcon == null) return;
             float t = needed <= 0 ? 1f : Mathf.Clamp01((float)shards / needed);
             _moonIcon.color = Color.Lerp(new Color(1f, 1f, 1f, 0.30f), new Color(1f, 0.95f, 0.75f, 1f), t);
+            if (_heroGlow != null && _heroGlowIdx >= 0 && _heroGlowIdx < _glowAmp.Count)
+            {
+                _glowAmp[_heroGlowIdx] = Mathf.Lerp(0.22f, 0.40f, t);
+                _heroGlow.transform.localScale = Vector3.Lerp(
+                    new Vector3(4.4f, 3.2f, 1f), new Vector3(6.4f, 4.6f, 1f), t);
+                var hc = _heroGlow.color;
+                _heroGlow.color = new Color(1f, 0.85f + 0.10f * t, 0.5f + 0.18f * t, hc.a);
+            }
         }
 
         /// <summary>Camera centre, pushed in by Game.SetCam: the guard uses it to keep plates
@@ -1510,6 +1523,8 @@ namespace MoonThief
             hglow.transform.localScale = new Vector3(4.4f, 3.2f, 1f);
             hglow.color = new Color(1f, 0.85f, 0.5f, 0.30f);
             AddGlow(hglow, 0.22f);
+            _heroGlow = hglow;
+            _heroGlowIdx = _glows.Count - 1;
         }
 
         bool _heroWalking;
