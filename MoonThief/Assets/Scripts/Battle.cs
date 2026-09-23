@@ -964,7 +964,8 @@ namespace MoonThief
             _befriended = 0;
             _levelAtStart = Game.State.Level;
             AwaitingInput = false;
-            View.SetBackdrop(Game.State.Chapter >= 3 ? "Art/Backgrounds/ForestA"
+            // each night has its own ground: the hollow's woods, the long fields, the deep
+            View.SetBackdrop(Game.State.Chapter >= 3 ? "Art/Backgrounds/DungeonA"
                 : Game.State.Chapter == 2 ? "Art/Backgrounds/PlainA" : "Art/Backgrounds/ForestA");
             View.SetNight(Game.State.Chapter);
             View.SetMoonIcon(Game.State.Chapter >= 3);
@@ -974,10 +975,11 @@ namespace MoonThief
             View.SetMenuVisible(false);
             View.SetAuto(Auto);
             View.IntroSlide();
-            var first = Strings.Get(specs.Length > 1 ? "bt.two" : "bt.one", View.Enemies[0].Name);
-            View.SetMessage(first);
             bool hasBoss = false;
             foreach (var s in specs) if (s.Boss) hasBoss = true;
+            var first = Strings.Get(hasBoss ? "bt.boss" : specs.Length > 1 ? "bt.two" : "bt.one",
+                View.Enemies[0].Name);
+            View.SetMessage(first);
             Sfx.Mus.Play(hasBoss ? "boss" : "battle");
             Sfx.Play(hasBoss ? "boss" : "enemy");
             if (Application.isPlaying) StartCoroutine(Timer(1.4f, RoundStart));
@@ -1072,8 +1074,11 @@ namespace MoonThief
         IEnumerator EnemyTurn(Fighter e)
         {
             _ph = Ph.Acting;
-            View.SetMessage(Strings.Get("bt.enemyturn", e.Name));
-            yield return Fx.Wait(0.5f);
+            // the guard does not swat like the wild things: now and then it rears up and
+            // brings the whole weight of the night down on one hero
+            bool slam = e.Boss && UnityEngine.Random.value < 0.35f;
+            View.SetMessage(Strings.Get(slam ? "bt.slam" : "bt.enemyturn", e.Name));
+            yield return Fx.Wait(slam ? 0.85f : 0.5f);
 
             // pick the toughest standing hero
             Fighter target = null;
@@ -1085,13 +1090,15 @@ namespace MoonThief
             var tRig = View.RigOf(target);
             yield return Lunge(eRig, tRig.Home, 0.3f);
 
-            int dmg = UnityEngine.Random.Range(e.AtkMin, e.AtkMax + 1);
+            int dmg = Mathf.RoundToInt(UnityEngine.Random.Range(e.AtkMin, e.AtkMax + 1) * (slam ? 1.6f : 1f));
             target.Hp = Mathf.Max(0, target.Hp - dmg);
             var stagger = Bank.Frames(BattleData.ClipPath(target.ColorDir, "hit"));
             if (stagger.Length > 0) tRig.Anim.Play(stagger, 14f, false);
             else StartCoroutine(Fx.FlashTint(tRig.Anim, new Color(1f, 0.45f, 0.45f), 2, 0.08f, 0.08f));
-            StartCoroutine(Fx.Shake(tRig.Root, 0.14f, 0.25f));
-            View.FloatNumber(tRig.Home + new Vector3(0f, 1.4f, 0f), "-" + dmg, new Color(1f, 0.6f, 0.55f));
+            StartCoroutine(Fx.Shake(tRig.Root, slam ? 0.22f : 0.14f, 0.25f));
+            if (slam) StartCoroutine(Fx.Shake(View.Stage, 0.15f, 0.2f));
+            View.FloatNumber(tRig.Home + new Vector3(0f, 1.4f, 0f), "-" + dmg,
+                slam ? new Color(1f, 0.45f, 0.3f) : new Color(1f, 0.6f, 0.55f));
             Sfx.Play("hurt");
             View.Refresh();
             yield return Fx.Wait(0.4f);

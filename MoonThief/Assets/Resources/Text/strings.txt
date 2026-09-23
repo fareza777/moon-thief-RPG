@@ -122,6 +122,8 @@ menu.run|LET GO
 # ---- battle messages
 bt.one|A wild {0} blocks the way!
 bt.two|{0} and a friend appear!
+bt.boss|The {0} bars your way!
+bt.slam|The {0} rears up and SLAMS down!
 bt.yourturn|{0} - your move.
 bt.enemyturn|{0} strikes!
 bt.herodown|{0} falls...
