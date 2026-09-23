@@ -69,9 +69,9 @@ namespace MoonThief
         // along the line, so the trail bends exactly the way the hero bent
         readonly List<Actor> _friends = new List<Actor>();
         readonly List<Vector3> _crumbs = new List<Vector3>();
-        // footstep dust: a small pool of warm puffs that spawn under the hero on the walk
-        // beat and drift up half a tile before thinning to nothing
-        class Dust { public SpriteRenderer Sr; public Vector2 V; public float T; }
+        // pooled world puffs: footstep dust under the hero and the gold flecks a chest
+        // throws when it pops. Same loop, different sprites and velocities.
+        class Dust { public SpriteRenderer Sr; public Vector2 V; public float T; public float MaxT; public float A; }
         readonly List<Dust> _dust = new List<Dust>();
         // One direction strip per sheet and facing. A turn swaps to an array that already
         // exists, so actors of the same kind share sprites and no walk cycle is built twice.
@@ -969,6 +969,7 @@ namespace MoonThief
         {
             _chests[i].Opened = true;
             var chest = _chests[i];
+            BurstLoot(chest.Pos);
             if (!Map.Interior) Game.State.MarkChest(MapChapter, chest.Cell);
             bool shard = !Map.Interior && Game.State.ChestsOpened < 3;
             if (!Map.Interior) Game.State.ChestsOpened++;
@@ -1687,20 +1688,42 @@ namespace MoonThief
         /// free. The glow sprite tinted warm and half-faded reads as kicked-up road.</summary>
         void SpawnDust(Vector2 at)
         {
+            var c = new Color(0.9f, 0.88f, 0.76f, 0.38f);
+            SpawnPuff(at + new Vector2(UnityEngine.Random.Range(-0.12f, 0.12f), -0.12f),
+                Vector2.up * 0.5f, TexArt.Glow(), 0.5f, c, 0.42f);
+        }
+
+        /// <summary>Gold flecks fan out over an opened chest and fall away - the loot
+        /// banner tells you what you got; this sells the pop.</summary>
+        public void BurstLoot(Vector2 at)
+        {
+            for (int i = 0; i < 9; i++)
+            {
+                float ang = i * (Mathf.PI * 2f / 9f) + UnityEngine.Random.Range(-0.25f, 0.25f);
+                var v = new Vector2(Mathf.Cos(ang), Mathf.Abs(Mathf.Sin(ang)) * 0.7f + 0.6f)
+                    * UnityEngine.Random.Range(0.8f, 1.5f);
+                SpawnPuff(at + new Vector2(0f, 0.25f), v, Tex.Spark(),
+                    0.34f, new Color(1f, 0.9f, 0.45f, 0.85f), 0.62f);
+            }
+        }
+
+        void SpawnPuff(Vector2 at, Vector2 vel, Sprite spr, float scale, Color tint, float life)
+        {
             Dust d = null;
             foreach (var x in _dust) if (!x.Sr.enabled) { d = x; break; }
             if (d == null)
             {
-                if (_dust.Count >= 14) return;
-                d = new Dust { Sr = SpriteRendererUtil.Make(_root, "dust" + _dust.Count, TexArt.Glow(), 1955) };
-                d.Sr.transform.localScale = Vector3.one * 0.5f;
+                if (_dust.Count >= 26) return;
+                d = new Dust { Sr = SpriteRendererUtil.Make(_root, "dust" + _dust.Count, spr, 1955) };
                 _dust.Add(d);
             }
             d.Sr.enabled = true;
-            d.Sr.transform.localPosition = new Vector3(at.x + UnityEngine.Random.Range(-0.12f, 0.12f), at.y - 0.12f, 0f);
-            d.V = new Vector2(0f, 0.5f);
-            d.T = 0.42f;
-            d.Sr.color = new Color(0.9f, 0.88f, 0.76f, 0.38f);
+            d.Sr.sprite = spr;
+            d.Sr.transform.localScale = Vector3.one * scale;
+            d.Sr.transform.localPosition = new Vector3(at.x, at.y, 0f);
+            d.V = vel;
+            d.T = life; d.MaxT = life; d.A = tint.a;
+            d.Sr.color = tint;
         }
 
         void DriveDust(float dt)
@@ -1711,10 +1734,11 @@ namespace MoonThief
                 d.T -= dt;
                 if (d.T <= 0f) { d.Sr.enabled = false; continue; }
                 var p = d.Sr.transform.localPosition;
-                p.y += d.V.y * dt;
+                p += (Vector3)(d.V * dt);
+                d.V *= 1f - 2.4f * dt;   // drag: flecks fling out then hang
                 d.Sr.transform.localPosition = p;
                 var c = d.Sr.color;
-                c.a = 0.38f * (d.T / 0.42f);
+                c.a = d.A * (d.T / d.MaxT);
                 d.Sr.color = c;
             }
         }
