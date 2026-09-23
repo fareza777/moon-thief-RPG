@@ -1386,6 +1386,20 @@ namespace MoonThief
             // One pitch for the whole list: evenly spaced rows read as a table, and the returned
             // bottom edge is what the card and its footnote are placed from.
             float pitch = RowH + RowGap;
+
+            // The value column gets one type size for the whole list before any row is laid out:
+            // a price/count column reads as a column, and two rows in a different size look like
+            // a misprint (the shop used to show "8 G" big and "14 G" small side by side).
+            const float colGap = 0.7f;
+            float colLabelX = -RowW * 0.5f + TextInset;
+            float colRoom = RowW * 0.5f - ValInset - colLabelX;
+            int valCol = 2;
+            for (int i = 0; i < count && i < vals.Length; i++)
+            {
+                if (string.IsNullOrEmpty(vals[i])) continue;
+                if (PixelFont.Measure(labels[i], 2).x + colGap + PixelFont.Measure(vals[i], 2).x > colRoom) { valCol = 1; break; }
+            }
+
             for (int i = 0; i < rows.Count; i++)
             {
                 var r = rows[i];
@@ -1403,20 +1417,18 @@ namespace MoonThief
 
                 // Two columns, laid out as columns: the chevron owns its own lane inside the row's
                 // padding, the label starts clear of it and the value is right aligned against the
-                // inner edge. The pair steps down in one order only -- value first, then label --
-                // so one list never mixes two type sizes on the same kind of row.
+                // inner edge. Values use the list-wide column size computed above; the label alone
+                // steps down when the pair still overflows, so the column stays one size.
                 const float gap = 0.7f;
                 float labelX = -RowW * 0.5f + TextInset;
                 float valX = RowW * 0.5f - ValInset;
                 float room = valX - labelX;
                 bool hasVal = !string.IsNullOrEmpty(val);
 
-                int labelScale = 2, valScale = 2;
+                int labelScale = 2, valScale = hasVal ? valCol : 2;
                 if (hasVal)
                 {
-                    float pair = PixelFont.Measure(label, 2).x + gap + PixelFont.Measure(val, 2).x;
-                    if (pair > room) { valScale = 1; pair = PixelFont.Measure(label, 2).x + gap + PixelFont.Measure(val, 1).x; }
-                    if (pair > room) labelScale = 1;
+                    if (PixelFont.Measure(label, 2).x + gap + PixelFont.Measure(val, valScale).x > room) labelScale = 1;
                 }
                 else if (PixelFont.Measure(label, 2).x > room) labelScale = 1;
 
