@@ -2198,7 +2198,7 @@ namespace MoonThief
             var lastHuntPos = World.HeroPos;
             int huntStuck = 0;
             float huntStart = Time.time;
-            while (Phase == St.Explore && Time.time - huntStart < 30f)
+            while (Phase == St.Explore && Time.time - huntStart < 50f)
             {
                 guard++;
                 var target = World.NearestMonsterPos();

@@ -366,6 +366,7 @@ namespace MoonThief
             {
                 rig.F.Hp = rig.F.MaxHp;
                 rig.F.Dead = false;
+                rig.Root.gameObject.SetActive(true);
                 rig.Root.localPosition = rig.Home;
                 rig.Body.localPosition = Vector3.zero;
                 rig.Sr.enabled = true;
@@ -1109,7 +1110,7 @@ namespace MoonThief
 
             if (!target.Alive)
             {
-                tRig.Sr.enabled = false;
+                yield return FadeOut(tRig, true);
                 Sfx.Play("faint");
                 View.SetMessage(Strings.Get("bt.herodown", target.Name));
                 yield return Fx.Wait(0.8f);
@@ -1340,12 +1341,12 @@ namespace MoonThief
             Sfx.Play(crit ? "crit" : "hit");
         }
 
-        IEnumerator FadeOut(BattleView.Rig rig)
+        IEnumerator FadeOut(BattleView.Rig rig, bool keepRoot = false)
         {
             yield return Fx.Fade(rig.Anim, new Color(1f, 1f, 1f, 0f), 0.45f);
             rig.Sr.enabled = false;
             rig.Anim.SetTint(Color.white);
-            rig.Root.gameObject.SetActive(false);
+            if (!keepRoot) rig.Root.gameObject.SetActive(false);
         }
 
         IEnumerator PlayerBefriend(Fighter actor)
