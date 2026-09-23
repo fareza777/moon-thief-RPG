@@ -220,7 +220,7 @@ namespace MoonThief
         System.Action _afterScreen;
 
         Transform _titleRoot, _endRoot;
-        PixelLabel _titleName, _titleTag, _titleTap, _titleEnd, _endLines, _tapHint;
+        PixelLabel _titleName, _titleTag, _titleTap, _titleEnd, _endLines, _endStats, _tapHint;
         Transform _titleMoon, _endMoon;
         SpriteRenderer _endGlow;
         Transform _fadeRoot;
@@ -555,6 +555,10 @@ namespace MoonThief
             _endLines = PixelLabelUtil.Make(_endRoot, "endLines", 2, new Color(1f, 0.97f, 0.88f), TextAlign.Center, 100);
             _endLines.transform.localPosition = new Vector3(0f, HalfH - 10f, 0f);
             _endLines.MaxWidthUnits = 15.5f;
+
+            // the run's ledger, set small under the epilogue: level, friends made, gold kept
+            _endStats = PixelLabelUtil.Make(_endRoot, "endStats", 1, new Color(0.78f, 0.8f, 0.95f), TextAlign.Center, 100);
+            _endStats.transform.localPosition = new Vector3(0f, -HalfH + 6.6f, 0f);
 
             _tapHint = PixelLabelUtil.Make(_endRoot, "endTap", 2, new Color(1f, 0.88f, 0.5f), TextAlign.Center, 100);
             _tapHint.transform.localPosition = new Vector3(0f, -HalfH + 4.2f, 0f);
@@ -1543,6 +1547,7 @@ namespace MoonThief
                 Sfx.Mus.Play("end");
                 _endLines.RevealSpeed = 0f;
                 _endLines.Set(Strings.Get("end.text", State.Befriended));
+                _endStats.Set(Strings.Get("end.stats", State.Level, State.Befriended, State.Gold));
                 SaveSystem.Erase();          // the tale is told; the menu offers a fresh night
             }, 0.4f, 0.6f);
         }
