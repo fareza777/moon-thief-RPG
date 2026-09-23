@@ -211,6 +211,10 @@ zone.chapdone|THE ROAD OPENS...
 zone.bossdown|THE LAST SHARD IS YOURS
 zone.retreat|You fall back to the village.
 zone.shard|A MOON SHARD hums in your hands
+
+# ---- boss talk. The Pale Guard speaks before it swings.
+boss.taunt.1|A hundred nights I stood this watch. The shard crown burns my head.
+boss.taunt.2|Take it if you can. Or kneel, little thief, and keep the dark.
 zone.name.village|QUIET HOLLOW
 zone.name.fields|THE LONG FIELDS
 zone.name.wood|THE DARK WOOD

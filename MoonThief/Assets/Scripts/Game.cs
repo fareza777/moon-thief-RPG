@@ -247,6 +247,7 @@ namespace MoonThief
         bool _dlgOpen;
         string[] _dlgLines;
         int _dlgIndex;
+        System.Action _dlgThen;   // queued by a scripted talk (the boss taunt) to fire when it closes
         NpcDef _dlgNpc;
         float _encounterCooldown = 3f;
         bool _bossDown;
@@ -1197,7 +1198,14 @@ namespace MoonThief
             }
             if (World.NearBoss && !_bossDown)
             {
-                StartBattle(BattleData.BossFight());
+                // the guard gets two lines before it swings: a taunt, then the fight
+                var boss = new NpcDef
+                {
+                    Sheet = GameMap.BossMapSheet(), NameKey = "mon.minotaur",
+                    Lines = new[] { "boss.taunt.1", "boss.taunt.2" }, Monster = true,
+                };
+                OpenDialog(boss, boss.Lines);
+                _dlgThen = () => StartBattle(BattleData.BossFight());
                 return;
             }
             if (Vector2.Distance(World.HeroPos, World.Map.CristalPos) < 2f)
@@ -1326,6 +1334,7 @@ namespace MoonThief
             _dlgLines = lines;
             _dlgIndex = 0;
             _dlgOpen = true;
+            _dlgThen = null;   // a fresh talk never runs whatever a previous close had queued
             DialogRoot.gameObject.SetActive(true);
             _dlgText.RevealSpeed = Prefs.RevealSpeed;
             _dlgName.Set(Strings.Get(npc.NameKey));
@@ -1334,7 +1343,16 @@ namespace MoonThief
             _dlgText.Set(body);
             if (_dlgPortrait != null)
             {
-                _dlgPortrait.sprite = TexArt.Chara(Folks.Sheet(npc), (int)Dir.Down, 1);
+                if (npc.Monster)
+                {
+                    _dlgPortrait.sprite = TexArt.MapMonster(npc.Sheet, 1);
+                    _dlgPortrait.transform.localScale = Vector3.one * 1.15f;
+                }
+                else
+                {
+                    _dlgPortrait.sprite = TexArt.Chara(Folks.Sheet(npc), (int)Dir.Down, 1);
+                    _dlgPortrait.transform.localScale = Vector3.one * 3f;
+                }
                 _dlgPortrait.enabled = _dlgPortrait.sprite != null;
             }
             Sfx.Play("blip");
@@ -1364,6 +1382,7 @@ namespace MoonThief
             _dlgIndex = _metNpcs.Add(npc.NameKey) || _dlgLines.Length < 2
                 ? 0 : Random.Range(1, _dlgLines.Length);
             _dlgOpen = true;
+            _dlgThen = null;
             DialogRoot.gameObject.SetActive(true);
             _dlgText.RevealSpeed = Prefs.RevealSpeed;
             _dlgName.Set(Strings.Get(npc.NameKey));
@@ -1373,6 +1392,7 @@ namespace MoonThief
             {
                 _dlgPortrait.sprite = TexArt.Face(Folks.Sheet(npc))
                     ?? TexArt.Chara(Folks.Sheet(npc), (int)Dir.Down, 1);
+                _dlgPortrait.transform.localScale = Vector3.one * 3f;
                 _dlgPortrait.enabled = _dlgPortrait.sprite != null;
             }
             Sfx.Play("blip");
@@ -1412,6 +1432,9 @@ namespace MoonThief
             // the moment neither is on screen.
             DialogRoot.gameObject.SetActive(false);
             _encounterCooldown = Mathf.Max(_encounterCooldown, 1.5f);
+            var then = _dlgThen;
+            _dlgThen = null;
+            then?.Invoke();
         }
 
         // ------------------------------------------------------------ battles

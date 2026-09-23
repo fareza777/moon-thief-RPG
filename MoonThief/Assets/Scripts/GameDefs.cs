@@ -995,6 +995,7 @@ namespace MoonThief
         public string NameKey; // string key of the name
         public string[] Lines; // string keys spoken in order
         public bool Shop;      // tapping opens the shop instead of a dialog
+        public bool Monster;   // portrait comes off a 48px monster cell, not a chara sheet
     }
 
     public static class Folks
