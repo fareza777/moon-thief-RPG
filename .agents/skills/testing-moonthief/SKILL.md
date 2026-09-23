@@ -93,3 +93,8 @@ None — the game has no logins or network dependencies. Audio will NOT work on 
 - **Bestiary tap** → flavor toast: seen beast → `mon.X.d` line (e.g. slime2 "Softer than it looks. Meaner too."), unseen `?????` → "Nobody has met this one yet." (jr.unseen). Toast ~2.6s — capture fast.
 - **Hero-down plays a faint sting** (PlayerDowned:707) — audio, untestable on the no-audio VM.
 - All four behave; regression clean.
+
+## Round-13 (18c6f81) — party trail + AUTO BATTLE — verified
+- **Party trail**: Sea(color_2)+Moss(color_3) follow the hero as `_friends` (WorldView). Crumbs drop every ~0.25 tiles (`_crumbs.Insert(0)`); each friend targets `_crumbs[(i+1)*6]` → ~1.5u & ~3u behind, `MoveTowards` at 5.4/s + `StepBob` hop. >3u off → snaps to crumb (corner/door catch-up). On `PlaceHero` they gather at hero's heels. Each WorldView (incl house interiors) has its OWN friends → they follow into and out of houses, no strays. Friends have `f.Name=null` → no name plates, no collision with NPC plates.
+  - Verify: enter a house — the ONLY actors inside are hero + 2 friends (isolation from wandering NPCs). Trail visibly forms a line behind when walking; bends on corners (friends on the path leg, not a beeline). Hard to isolate in the crowded village — use house interiors or the east-village edge (x~44) for clean shots.
+- **AUTO BATTLE setting** (1656e52): `Prefs.Auto`=PlayerPrefs `mt.auto`. Settings card now has 6 rows incl `AUTO BATTLE ON/OFF`. `Battle.ToggleAuto` (the in-battle AUTO chip) also writes `Prefs.Auto`+Store → persists. Battle init reads `Auto=Prefs.Auto` → chip reflects it at battle start. Verify: settings→ON→battle auto-plays+chip lit; in-battle chip toggle→mt.auto flips→next battle + relaunch keep it. Check `strings prefs|grep mt.auto` (1/0).
