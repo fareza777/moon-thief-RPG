@@ -558,7 +558,7 @@ namespace MoonThief
 
             // the run's ledger, set small under the epilogue: level, friends made, gold kept
             _endStats = PixelLabelUtil.Make(_endRoot, "endStats", 1, new Color(0.78f, 0.8f, 0.95f), TextAlign.Center, 100);
-            _endStats.transform.localPosition = new Vector3(0f, -HalfH + 6.6f, 0f);
+            _endStats.transform.localPosition = new Vector3(0f, -HalfH + 5.0f, 0f);
 
             _tapHint = PixelLabelUtil.Make(_endRoot, "endTap", 2, new Color(1f, 0.88f, 0.5f), TextAlign.Center, 100);
             _tapHint.transform.localPosition = new Vector3(0f, -HalfH + 4.2f, 0f);
