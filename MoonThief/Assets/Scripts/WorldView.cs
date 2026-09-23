@@ -1690,9 +1690,9 @@ namespace MoonThief
         /// free. The glow sprite tinted warm and half-faded reads as kicked-up road.</summary>
         void SpawnDust(Vector2 at)
         {
-            var c = new Color(0.9f, 0.88f, 0.76f, 0.38f);
+            var c = new Color(0.95f, 0.9f, 0.74f, 0.55f);
             SpawnPuff(at + new Vector2(UnityEngine.Random.Range(-0.12f, 0.12f), -0.12f),
-                Vector2.up * 0.5f, TexArt.Glow(), 0.5f, c, 0.42f);
+                Vector2.up * 0.5f, TexArt.Glow(), 0.62f, c, 0.42f);
         }
 
         /// <summary>Gold flecks fan out over an opened chest and fall away - the loot
