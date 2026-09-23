@@ -11,10 +11,10 @@ namespace MoonThief
         public const float SpeedSlow = 26f, SpeedNormal = 55f, SpeedFast = 95f, SpeedInstant = 0f;
 
         public static int SpeedIndex = 1;      // 0 slow, 1 normal, 2 fast, 3 instant
-        public static bool Sound = true;
+        public static int SoundLevel = 4;      // 0 off .. 4 full; the settings row steps it
         public static bool Shake = true;
         public static bool IntroSeen;
-        public static bool Music = true;
+        public static int MusicLevel = 4;      // 0 off .. 4 full
         public static bool OnbSeen;            // the three onboarding cards only run once
 
         public static float RevealSpeed => SpeedIndex switch
@@ -36,26 +36,31 @@ namespace MoonThief
         public static void Load()
         {
             SpeedIndex = Mathf.Clamp(PlayerPrefs.GetInt("mt.speed", 1), 0, 3);
-            Sound = PlayerPrefs.GetInt("mt.sound", 1) == 1;
+            // the old on/off keys feed the level default once, so existing saves keep their choice
+            SoundLevel = Mathf.Clamp(PlayerPrefs.GetInt("mt.soundlvl", PlayerPrefs.GetInt("mt.sound", 1) * 4), 0, 4);
             Shake = PlayerPrefs.GetInt("mt.shake", 1) == 1;
             IntroSeen = PlayerPrefs.GetInt("mt.intro", 0) == 1;
-            Music = PlayerPrefs.GetInt("mt.music", 1) == 1;
+            MusicLevel = Mathf.Clamp(PlayerPrefs.GetInt("mt.muslvl", PlayerPrefs.GetInt("mt.music", 1) * 4), 0, 4);
             OnbSeen = PlayerPrefs.GetInt("mt.onb", 0) == 1;
-            Sfx.Muted = !Sound;
-            Sfx.Mus.Muted = !Music;
+            Sfx.Volume = SoundLevel * 0.25f;
+            Sfx.Muted = SoundLevel <= 0;
+            Sfx.Mus.Volume = MusicLevel * 0.25f;
+            Sfx.Mus.Muted = MusicLevel <= 0;
         }
 
         public static void Store()
         {
             PlayerPrefs.SetInt("mt.speed", SpeedIndex);
-            PlayerPrefs.SetInt("mt.sound", Sound ? 1 : 0);
+            PlayerPrefs.SetInt("mt.soundlvl", SoundLevel);
             PlayerPrefs.SetInt("mt.shake", Shake ? 1 : 0);
             PlayerPrefs.SetInt("mt.intro", IntroSeen ? 1 : 0);
-            PlayerPrefs.SetInt("mt.music", Music ? 1 : 0);
+            PlayerPrefs.SetInt("mt.muslvl", MusicLevel);
             PlayerPrefs.SetInt("mt.onb", OnbSeen ? 1 : 0);
             PlayerPrefs.Save();
-            Sfx.Muted = !Sound;
-            Sfx.Mus.Muted = !Music;
+            Sfx.Volume = SoundLevel * 0.25f;
+            Sfx.Muted = SoundLevel <= 0;
+            Sfx.Mus.Volume = MusicLevel * 0.25f;
+            Sfx.Mus.Muted = MusicLevel <= 0;
         }
     }
 
@@ -544,7 +549,8 @@ namespace MoonThief
             moon.transform.localPosition = new Vector3(0f, 6.4f, 0f);
             moon.transform.localScale = Vector3.one * 2.4f;
             _onbTitle = PixelLabelUtil.Make(_onbRoot, "onbTitle", 3, new Color(1f, 0.95f, 0.78f), TextAlign.Center, 6006);
-            _onbTitle.transform.localPosition = new Vector3(0f, 3.6f, 0f);
+            _onbTitle.transform.localPosition = new Vector3(0f, 4.3f, 0f);
+            _onbTitle.MaxWidthUnits = 14.2f;   // FIGHT & BEFRIEND stacks to two lines rather than clip
             _onbBody = PixelLabelUtil.Make(_onbRoot, "onbBody", 1, new Color(0.93f, 0.95f, 1f), TextAlign.Center, 6006);
             _onbBody.MaxWidthUnits = 14.2f;
             _onbBody.transform.localPosition = new Vector3(0f, 0.4f, 0f);
@@ -783,16 +789,16 @@ namespace MoonThief
             var acts = new Action[]
             {
                 () => { Prefs.SpeedIndex = (Prefs.SpeedIndex + 1) % 4; Prefs.Store(); RefreshSettingsRows(); Select(_sel); },
-                () => { Prefs.Music = !Prefs.Music; Prefs.Store(); RefreshSettingsRows(); Select(_sel); },
-                () => { Prefs.Sound = !Prefs.Sound; Prefs.Store(); RefreshSettingsRows(); Select(_sel); },
+                () => { Prefs.MusicLevel = (Prefs.MusicLevel + 4) % 5; Prefs.Store(); RefreshSettingsRows(); Select(_sel); },
+                () => { Prefs.SoundLevel = (Prefs.SoundLevel + 4) % 5; Prefs.Store(); RefreshSettingsRows(); Select(_sel); },
                 () => { Prefs.Shake = !Prefs.Shake; Prefs.Store(); RefreshSettingsRows(); Select(_sel); },
                 () => { if (_settingsFromPause) ShowPause(); else ShowMain(); },
             };
             string[] vals =
             {
                 Prefs.SpeedName,
-                Prefs.Music ? Strings.Get("set.on") : Strings.Get("set.off"),
-                Prefs.Sound ? Strings.Get("set.on") : Strings.Get("set.off"),
+                Prefs.MusicLevel <= 0 ? Strings.Get("set.off") : (Prefs.MusicLevel * 25) + "%",
+                Prefs.SoundLevel <= 0 ? Strings.Get("set.off") : (Prefs.SoundLevel * 25) + "%",
                 Prefs.Shake ? Strings.Get("set.on") : Strings.Get("set.off"),
                 "",
             };

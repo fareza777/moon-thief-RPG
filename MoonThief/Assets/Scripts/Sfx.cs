@@ -19,6 +19,9 @@ namespace MoonThief
         /// <summary>Silenced by the settings screen without tearing the source down.</summary>
         public static bool Muted;
 
+        /// <summary>Master loudness for effects, 0..1; the settings row steps it in quarters.</summary>
+        public static float Volume = 1f;
+
         /// <summary>Creates the one AudioListener + player source under the game root.</summary>
         public static void Init(Transform parent)
         {
@@ -35,7 +38,7 @@ namespace MoonThief
         {
             if (_src == null || Muted || !Application.isPlaying) return;
             if (!_cache.TryGetValue(name, out var clip)) { clip = Build(name); _cache[name] = clip; }
-            if (clip != null) _src.PlayOneShot(clip);
+            if (clip != null) _src.PlayOneShot(clip, Volume);
         }
 
         static AudioClip Build(string name)
@@ -143,6 +146,20 @@ namespace MoonThief
             static float _fade;             // seconds left on the current crossfade
             static bool _muted;
 
+            static float _vol = 1f;
+
+            /// <summary>Music loudness, 0..1, folded into the crossfade target volume. Applies to
+            /// the playing track immediately, not just on the next Play().</summary>
+            public static float Volume
+            {
+                get => _vol;
+                set
+                {
+                    _vol = Mathf.Clamp01(value);
+                    if (_cur != null && _fade <= 0f) _cur.volume = 0.55f * _vol;
+                }
+            }
+
             public static bool Muted
             {
                 get => _muted;
@@ -199,7 +216,7 @@ namespace MoonThief
                 if (_a == null || _fade <= 0f) return;
                 _fade -= Time.deltaTime;
                 float k = 1f - Mathf.Clamp01(_fade / 0.45f);
-                if (_cur != null) _cur.volume = Mathf.Lerp(_cur.volume, 0.55f, k * 0.35f);
+                if (_cur != null) _cur.volume = Mathf.Lerp(_cur.volume, 0.55f * Volume, k * 0.35f);
                 var other = _cur == _a ? _b : _a;
                 other.volume = Mathf.Max(0f, other.volume - Time.deltaTime * 1.6f);
                 if (other.volume <= 0.001f) other.Stop();

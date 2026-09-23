@@ -1005,8 +1005,10 @@ namespace MoonThief
                 }
             }
 
-            // interactions: a deliberate short tap, never a joystick drag
+            // interactions: a deliberate short tap, never a joystick drag; on desktop the
+            // confirm key does the same thing so the whole game can be played without a mouse
             if (_tapPending) { _tapPending = false; TryInteract(); }
+            else if (KeyConfirm()) TryInteract();
         }
 
         /// <summary>One-off encounters on the road, from Quests.Events. Each fires once per run at
@@ -1327,10 +1329,10 @@ namespace MoonThief
         {
             if (_dlgText.IsRevealing)
             {
-                if (TapPressed()) _dlgText.Set(_dlgText.Text, true);
+                if (TapPressed() || KeyConfirm()) _dlgText.Set(_dlgText.Text, true);
                 return;
             }
-            if (TapPressed())
+            if (TapPressed() || KeyConfirm())
             {
                 _dlgIndex++;
                 if (_dlgIndex < _dlgLines.Length)
@@ -2042,6 +2044,7 @@ namespace MoonThief
             Shot("10b-onboard");
             Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);
             yield return new WaitForSeconds(0.3f);
+            Shot("10b2-onboard-2");
             Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);
             yield return new WaitForSeconds(0.3f);
             Shot("10c-onboard-3");
