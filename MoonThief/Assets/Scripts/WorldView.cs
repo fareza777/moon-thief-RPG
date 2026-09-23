@@ -1468,6 +1468,13 @@ namespace MoonThief
             // The hero carries no name plate. "YOU" floating over the character the player is
             // steering is the one label that tells them nothing and covers the sprite doing it.
             Hero.Name = null;
+            // A soft lantern aura: at night the dark sprite reads as grass without it, and the
+            // light the thief carries is the one focal point in every frame it shares.
+            var hglow = SpriteRendererUtil.Make(Hero.Root, "hglow", TexArt.Glow(), 2010);
+            hglow.transform.localPosition = new Vector3(0f, 0.35f, 0f);
+            hglow.transform.localScale = new Vector3(4.4f, 3.2f, 1f);
+            hglow.color = new Color(1f, 0.85f, 0.5f, 0.30f);
+            AddGlow(hglow, 0.22f);
         }
 
         bool _heroWalking;

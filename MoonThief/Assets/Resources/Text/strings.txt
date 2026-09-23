@@ -98,11 +98,11 @@ hud.quest|NEXT: {0}
 # ---- quest chain (the clear workflow). Kept short: this line lives in the corner of the
 # ---- screen over the world, and a 39-character line ran most of the way across it.
 # Numbered: the corner line reads like a walkthrough, so the order is never in doubt.
-quest.1|1. Talk to Mira by the crystal.
+quest.1|1. Talk to Mira.
 quest.2|2. Open night chests. {0} shards left.
-quest.3|3. Follow the lamps north.
+quest.3|3. Follow the lamps.
 quest.4|4. Face the Pale Guard.
-quest.5|5. Raise the moon at the crystal.
+quest.5|5. Raise the moon at Mira's crystal.
 
 # ---- heroes
 hero.amber|AMBER
