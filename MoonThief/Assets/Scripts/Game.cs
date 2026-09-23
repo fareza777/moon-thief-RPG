@@ -242,7 +242,7 @@ namespace MoonThief
         Vector2 _tapStart;
         float _tapTime;
         bool _tapMoved;
-        PixelLabel _dlgText, _dlgName, _hudZone, _hudShards;
+        PixelLabel _dlgText, _dlgName, _dlgNext, _hudZone, _hudShards;
         SpriteRenderer _dlgPanel, _dlgPanelName, _dlgPortrait;
         bool _dlgOpen;
         string[] _dlgLines;
@@ -585,6 +585,11 @@ namespace MoonThief
             // and its right edge landed 3 px *past* the first letter of the line it introduces.
             _dlgPortrait.transform.localScale = Vector3.one * 3f;
 
+            // the "there is more" tick at the box's bottom corner - lit once a line is done
+            // spelling itself out, blink-bobbing so a waiting tap is obvious
+            _dlgNext = PixelLabelUtil.Make(root, "dlgNext", 1, new Color(1f, 0.85f, 0.5f), TextAlign.Right, 3002);
+            _dlgNext.Set("v");
+
             LayoutDialogBox("");
             root.gameObject.SetActive(false);
             DialogRoot = root;
@@ -608,6 +613,7 @@ namespace MoonThief
             _dlgName.transform.localPosition = new Vector3(G.Left + 3.5f, top - 0.5f, 0f);
             _dlgText.transform.localPosition = new Vector3(G.Left + 3.5f, top - 1.15f, 0f);
             _dlgPortrait.transform.localPosition = new Vector3(G.Left + 1.75f, bottom + 2.1f, 0f);
+            _dlgNext.transform.localPosition = new Vector3(G.Right - 0.7f, bottom + 0.35f, 0f);
         }
 
         Transform DialogRoot { get; set; }
@@ -1374,6 +1380,12 @@ namespace MoonThief
 
         void UpdateDialog()
         {
+            if (_dlgNext != null)
+            {
+                _dlgNext.enabled = !_dlgText.IsRevealing;
+                float a = 0.55f + 0.45f * Mathf.Sin(Time.time * 6f);
+                _dlgNext.SetColor(new Color(1f, 0.85f, 0.5f, a));
+            }
             if (_dlgText.IsRevealing)
             {
                 if (TapPressed() || KeyConfirm()) _dlgText.Set(_dlgText.Text, true);

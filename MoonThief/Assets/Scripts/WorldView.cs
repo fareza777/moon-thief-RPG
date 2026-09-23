@@ -1301,8 +1301,10 @@ namespace MoonThief
                 bool wants = n.Npc.NameKey == "npc.elder" && Quests.Step("mq.1") == 0;
                 if (!wants)
                 {
+                    // a giver mid-errand wears no mark - the bubble means "needs you now":
+                    // a new offer, or a finished errand ready to hand in
                     var q = Quests.ForGiver(n.Npc.NameKey, out bool ready);
-                    wants = q != null;
+                    wants = q != null && (Quests.Step(q.Id) == 0 || ready);
                 }
                 if (n.Alert == null)
                 {
