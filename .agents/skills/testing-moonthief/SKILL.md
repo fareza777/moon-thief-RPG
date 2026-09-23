@@ -22,11 +22,13 @@ None — the game has no logins or network dependencies. Audio will NOT work on 
   - `Player.log` — Unity log; at end of run `grep -n "Exception\|NullReference\|InvalidOperation" Player.log` (ALSA/FMOD errors expected on headless VMs).
 
 ## Input model quirks (verified on Linux build)
-- **NPC talk / chest / dialogue-advance is CLICK-ONLY.** `TryInteract()` fires only on a left-click near the hero (within ~1.4 tiles via `World.NearestNpc`). Walking adjacent + Z/Enter/Space does NOTHING in Explore or to advance dialogue — keyboard confirm works only inside menus and the battle command grid. If clicking does nothing, the hero is >1.4 tiles away — walk it right next to the sprite first.
-- WASD/arrows move in Explore (`Input.GetAxisRaw`); arrows+Enter/Space/Z navigate menus and the battle 2x2 command grid; Esc opens PAUSED; Tab cycles battle targets.
-- Mouse joystick needs RMB-drag or Ctrl+LMB-drag — a plain LMB-drag does NOT move the hero.
+- **Talk / chest / door / interact** = `TryInteract()` → `World.NearestNpc(HeroPos)` within **1.4 tiles**. Triggered by a **short left-tap** (`_tapPending`, press+release without drag) OR by **Enter/Space/Z** (`KeyConfirm`). Confirmed on build a5c2327: pressing Enter next to an NPC opens its dialogue and the MARN shop. (An earlier note claimed click-only — that was wrong; the hero was likely out of range or focus-stolen.) The NPC is chosen by proximity to the HERO, not the click location.
+- **NPCs wander**, so the in-range window is a moving target — a "!" indicator appears over the nearest in-range NPC; interact then. If talk does nothing, the NPC drifted >1.4 tiles — press Enter again as it wanders back.
+- WASD/arrows move in Explore (`Input.GetAxisRaw`: `w`=+y north/up-screen, `s`=−y south, `a`=−x west, `d`=+x east; +y = north toward boss). Arrows+Enter/Space/Z navigate menus and the battle 2x2 command grid; Esc opens PAUSED; Tab cycles battle targets.
+- Mouse joystick needs RMB-drag or Ctrl+LMB-drag — a plain LMB-drag does NOT move the hero. A plain LMB *click* is a tap = TryInteract.
 - Click/tap also acts as the "advance" input for cinema pages, dialogue lines, and result cards.
 - The Devin automation Chrome window sits on the right half of the screen and can overlap the game; it also STEALS keyboard focus if you click outside the game window or it raises itself — keyboard movement then silently dies and looks like a wedge. Refocus with `wmctrl -a "The Moon Thief"`; do NOT pkill it (it's the automation browser). Before calling any movement problem a bug, confirm the game window is focused.
+- **Two game processes can coexist** (a leftover from a previous session isn't auto-killed). Their windows overlap at the same position, so `wmctrl -a` may raise a STALE binary and show old behavior. Check `wmctrl -lp` (gives PID per window) + `ps aux|grep TheMoonThief` for start times; `kill` the old PID, then `wmctrl -i -a 0x<newWindowId>`.
 
 ## Identifying the hero (sprites are tiny + camera follows it)
 - The hero is a small figure among similar-looking wandering villagers/critters. To find it: the camera centers on the hero, so after any move the figure nearest screen-center is the hero. NPCs and critters wander on their own — do NOT mistake their idle drift for your input working.
@@ -50,3 +52,22 @@ None — the game has no logins or network dependencies. Audio will NOT work on 
 ## Known spec gaps (as of the tested build — verify before re-flagging)
 - Settings rows: TEXT SPEED / MUSIC / SOUND / SCREEN SHAKE / BACK. MUSIC and SOUND are 4-step volume rows (100%/75%/50%/25%/OFF); there is no EN/ID language toggle (strings.txt is English-only).
 - SHARE → clipboard toast (no crash); RATE US → opens a browser to a Play Store URL that 404s (app unpublished) — the browser steals focus; return with `wmctrl -a "The Moon Thief"`. Both are expected stubs.
+
+## Quest journal + quest givers (as of build a5c2327)
+- Journal QUESTS page lists only MAIN quests (mq.1-3: LAST LANTERN / FOUR SHARDS / THE PALE GUARD) + side quests actually accepted — side quests stay hidden until taken. Pause→JOURNAL→QUESTS.
+- Quest-giver names (ch1): MIRA/elder (also MAIN), TOBBE/kid→RED DOLL, SABLE/house.3→LENT AXE, JUNO/house.5; npc.house.X = ILSE/BRAM/MARA/SABLE/TAVI/JUNO. Chapter-gated spawns: ch≥2 adds WREN/ODA; ch≥3 adds OSK/GRANNY ASH(MUSHROOMS)/NAIL — so e.g. GRANNY ASH's MUSHROOMS quest can't be tested in night 1.
+- Accepting: talk → an OFFER card with a ✓/YES row → tap to accept → quest moves to ACTIVE in the journal + quest counter (JOURNAL x/10) ticks.
+
+## Chest economy + moon shards
+- Outdoor field chests give **moon shards** only for the first 3 chests opened (ChestsOpened<3), no gold; interior house chests give +20 gold (no shard); outdoor chest #4+ gives 12 gold + a random item.
+- Field chest spots (ch1): cells (12,22) and (46,48). Roads: spine lane x29-31 y13-58, west fork y22→chest(12,22), east fork y48→chest(46,48).
+- SHARD counter = `shards/4` (ShardsNeeded=4). Top-right moon icon dims at 0/4 and brightens toward warm as shards collect (`SetMoonFill` alpha lerp 0.30→1.0).
+
+## Efficient state setup via save-editing
+- `moonthief-save.json` keys: version, chapter, shards, befriended, gold, xp, morsels, items, chestsOpened, defeats, heroX, heroY, stamp, bag, worn, zones, seen, quests. Edit it to set up a test state (e.g. `"shards":3` for moon-fill, `"gold":999`, `"heroX"/"heroY"` to teleport).
+- **LeaveToTitle does NOT save** — safe to edit the file after leaving to title, then CONTINUE reloads it. Resume places via PlaceHero (snaps to standable). Use `python3 -c "import json;d=json.load(open('.../moonthief-save.json'));print(d)"` to inspect.
+- Reading hero pos live: Esc→SAVE PROGRESS writes the file with live heroX/heroY.
+
+## Known issues / quirks observed (verify before re-flagging)
+- **World HUD missing on CONTINUE (reproducible, minor):** on CONTINUE the world HUD (NIGHT/SHARD/NEXT text + NPC name plates + moon icon) fails to render until a UI card is opened and closed (Esc→RESUME restores it). NEW GAME→village shows HUD fine. Likely `SetTextVisible(true)` not re-fired on the continue path. Seen on a5c2327 — may be pre-existing, unrelated to that commit.
+- Movement is slow (~1.3-3.6 tiles/s effective) on VNC/low-fps; reads save pos to confirm motion rather than eyeballing pixels.

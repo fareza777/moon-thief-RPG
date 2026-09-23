@@ -778,6 +778,9 @@ namespace MoonThief
                 World.MapChapter = chapter;
                 _overworld = World;
             }
+            // a card can leave world text hushed when it hands control back (pause ->
+            // leave to title -> continue reuses this same WorldView)
+            World.SetTextVisible(true);
             World.PlaceHero(_resumePos ?? World.Map.VillageCenter);
             _resumePos = null;
 
@@ -1615,6 +1618,7 @@ namespace MoonThief
         {
             Menus.Hide();
             _paused = false;
+            if (World != null && World.Ready) World.SetTextVisible(true);
             DoTransition(() => ShowTitle(), 0.25f, 0.35f);
         }
 
