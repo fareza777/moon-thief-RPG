@@ -31,6 +31,7 @@ namespace MoonThief
             public static readonly List<string> Bag = new List<string>();          // item keys, repeats allowed
             public static readonly string[] Worn = new string[3];                  // blade, cloth, charm
             public static readonly List<string> Zones = new List<string>();        // places walked into
+            public static readonly List<string> ChestsDone = new List<string>();   // chests already opened
             public static readonly Dictionary<string, int> Seen = new Dictionary<string, int>();
 
             public static int Level => 1 + Xp / 40;
@@ -41,7 +42,7 @@ namespace MoonThief
                 Chapter = 1; MoonShards = 0; Befriended = 0; HeldItems = 0; MorselsUsed = 0;
                 Gold = 0; Xp = 0; ChestsOpened = 0; Defeats = 0;
                 Bag.Clear(); Worn[0] = Worn[1] = Worn[2] = null;
-                Zones.Clear(); Seen.Clear();
+                Zones.Clear(); Seen.Clear(); ChestsDone.Clear();
                 Quests.Reset();
             }
 
@@ -69,6 +70,16 @@ namespace MoonThief
                 int n = 0;
                 foreach (var b in Bag) if (b == key) n++;
                 return n;
+            }
+
+            /// <summary>A chest's resting place names it: the chapter it stands in and its cell.
+            /// Chests stay open across a save, so the field cannot be farmed by reloading.</summary>
+            public static string ChestKey(int chapter, Vector2Int cell) => chapter + ":" + cell.x + "," + cell.y;
+            public static bool HasChest(int chapter, Vector2Int cell) => ChestsDone.Contains(ChestKey(chapter, cell));
+            public static void MarkChest(int chapter, Vector2Int cell)
+            {
+                var k = ChestKey(chapter, cell);
+                if (!ChestsDone.Contains(k)) ChestsDone.Add(k);
             }
 
             /// <summary>Records a place the hero has walked into (drives the bard's quest).
@@ -140,7 +151,7 @@ namespace MoonThief
                 chestsOpened = ChestsOpened, heroX = heroX, heroY = heroY,
                 defeats = Defeats, bag = Bag.ToArray(), worn = (string[])Worn.Clone(),
                 zones = Zones.ToArray(), quests = Quests.Capture(),
-                seen = SeenKeys(),
+                seen = SeenKeys(), chests = ChestsDone.ToArray(),
             };
 
             static string[] SeenKeys()
@@ -178,6 +189,8 @@ namespace MoonThief
                         int n;
                         if (p.Length == 2 && int.TryParse(p[1], out n)) Seen[p[0]] = n;
                     }
+                ChestsDone.Clear();
+                if (d.chests != null) foreach (var k in d.chests) if (!string.IsNullOrEmpty(k) && !ChestsDone.Contains(k)) ChestsDone.Add(k);
                 Quests.Apply(d.quests);
             }
         }
@@ -857,8 +870,8 @@ namespace MoonThief
             }
             if (State.MoonShards >= ShardsNeeded)
                 return _bossDown ? (Vector2?)World.Map.CristalPos : World.Map.BossPos;
-            var chest = World.NearestChest(World.HeroPos, 999f);
-            if (chest.HasValue) return chest.Value.Pos;
+            int chestAt = World.NearestChest(World.HeroPos, 999f);
+            if (chestAt >= 0) return World.ChestPos(chestAt);
             return World.Map.BossPos;
         }
 
@@ -1011,7 +1024,7 @@ namespace MoonThief
             }
 
             // first chest in reach: one nudge, then never again
-            if (_hintChest && World.ChestsLeft > 0 && World.NearestChest(World.HeroPos, 3f).HasValue)
+            if (_hintChest && World.ChestsLeft > 0 && World.NearestChest(World.HeroPos, 3f) >= 0)
             {
                 _hintChest = false;
                 Menus.ShowToast(Strings.Get("onb.chest"), 3.6f);
@@ -1144,7 +1157,7 @@ namespace MoonThief
         void TryInteract()
         {
             var npc = World.NearestNpc(World.HeroPos);
-            var chest = World.NearestChest(World.HeroPos);
+            int chestAt = World.NearestChest(World.HeroPos);
 
             if (npc.NameKey != null)
             {
@@ -1153,10 +1166,10 @@ namespace MoonThief
                 RefreshQuest();
                 return;
             }
-            if (chest.HasValue)
+            if (chestAt >= 0)
             {
                 int shardsBefore = State.MoonShards;
-                World.OpenChest(chest.Value);
+                World.OpenChest(chestAt);
                 Sfx.Play(State.MoonShards > shardsBefore ? "shard" : "chest");
                 World.ShowBanner(World.LastLootText);
                 RefreshHud();

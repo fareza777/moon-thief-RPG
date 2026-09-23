@@ -89,6 +89,7 @@ namespace MoonThief
         public string[] zones;
         public string[] seen;
         public string[] quests;
+        public string[] chests;
     }
 
     /// <summary>JSON save file in the platform's persistent data folder.</summary>

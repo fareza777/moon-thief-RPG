@@ -84,6 +84,7 @@ namespace MoonThief
         public struct ChestDef
         {
             public Vector2 Pos;
+            public Vector2Int Cell;
             public SpriteRenderer Sr;
             public SpriteRenderer Glow;
             public Anim Anim;
@@ -861,11 +862,20 @@ namespace MoonThief
                 var sh = SpriteRendererUtil.Make(_root, "csh" + i, TexArt.Shadow(), 45);
                 sh.transform.localPosition = new Vector3(pos.x, pos.y - 0.46f, 0f);
                 sh.transform.localScale = new Vector3(0.8f, 0.66f, 1f);
+                bool wasOpened = !Map.Interior && Game.State.HasChest(MapChapter, c);
                 _chests[i] = new ChestDef
                 {
-                    Pos = pos, Sr = sr, Glow = glow, Anim = anim, Variant = variant,
-                    Opened = false, LootKey = "loot.moonshard",
+                    Pos = pos, Cell = c, Sr = sr, Glow = glow, Anim = anim, Variant = variant,
+                    Opened = wasOpened, LootKey = "loot.moonshard",
                 };
+                // a chest left open in an earlier visit still reads open - no halo, dark wood,
+                // lid up on frame 3 - so the field cannot be looted twice by walking out and in
+                if (wasOpened)
+                {
+                    if (frames.Length >= 4) sr.sprite = frames[3];
+                    glow.gameObject.SetActive(false);
+                    sr.color = new Color(0.76f, 0.78f, 0.86f);
+                }
             }
         }
 
@@ -920,15 +930,19 @@ namespace MoonThief
             return false;
         }
 
-        public ChestDef? NearestChest(Vector2 pos, float maxDist = 1.2f)
+        /// <summary>Index of the nearest chest still shut, or -1. ChestDef is a struct, so
+        /// callers trade in indexes - a returned copy could never flip Opened for real.</summary>
+        public int NearestChest(Vector2 pos, float maxDist = 1.2f)
         {
             for (int i = 0; i < _chests.Length; i++)
             {
                 if (_chests[i].Opened) continue;
-                if (Vector2.Distance(_chests[i].Pos, pos) <= maxDist) return _chests[i];
+                if (Vector2.Distance(_chests[i].Pos, pos) <= maxDist) return i;
             }
-            return null;
+            return -1;
         }
+
+        public Vector2 ChestPos(int i) => _chests[i].Pos;
 
         /// <summary>How many chests are still shut in this chapter (drives the quest line).</summary>
         public int ChestsLeft
@@ -947,9 +961,11 @@ namespace MoonThief
         /// real item, rolled from the chapter's pool - a chest used to hand out a flag and a
         /// number that nothing read. Inside a house nothing ever counts as a shard: the room cache
         /// is pocket money, so the night's four shards stay where the story put them.</summary>
-        public void OpenChest(ChestDef chest)
+        public void OpenChest(int i)
         {
-            chest.Opened = true;
+            _chests[i].Opened = true;
+            var chest = _chests[i];
+            if (!Map.Interior) Game.State.MarkChest(MapChapter, chest.Cell);
             bool shard = !Map.Interior && Game.State.ChestsOpened < 3;
             if (!Map.Interior) Game.State.ChestsOpened++;
             if (shard)
