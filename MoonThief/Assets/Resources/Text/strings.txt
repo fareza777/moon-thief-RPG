@@ -23,7 +23,7 @@ menu.rate|RATE US
 menu.credits|CREDITS
 menu.hint|TAP A ROW TO PICK
 share.copied|Store link copied - send it to a friend.
-share.text|The Moon Thief - a night tale in three nights. {0}
+share.text|The Moon Thief - a tale in three nights. {0}
 rate.store|Opening the store page...
 rate.thanks|Stars make the night brighter. Thank you!
 cred.title|THE MOON THIEF
@@ -100,7 +100,7 @@ hud.quest|NEXT: {0}
 # ---- screen over the world, and a 39-character line ran most of the way across it.
 # Numbered: the corner line reads like a walkthrough, so the order is never in doubt.
 quest.1|1. Talk to Mira.
-quest.2|2. Open night chests. {0} shards left.
+quest.2|2. Open night chests. {0} left.
 quest.3|3. Follow the lamps.
 quest.4|4. Face the Pale Guard.
 quest.5|5. Raise the moon at Mira's crystal.
@@ -418,8 +418,8 @@ q.ledger.offer|My father kept a ledger of everything the dark was owed. Six line
 q.ledger.done|Six lines closed. Now take the blade - it was always meant to leave this house.
 
 # ---- one-off things on the road
-ev.hen|A hen looks at you, coughs, and drops a coin she has plainly swallowed twice. There is no arguing with her.
-ev.toll|A boy holds out a stick. Toll, he says, and takes six coins out of your pocket himself.
+ev.hen|A hen looks at you, coughs, and drops an ember berry she has plainly swallowed twice. There is no arguing with her.
+ev.toll|A boy holds out a stick. Toll, he says, and pushes six coins into your hand. He is not good at this.
 ev.laundry|Somebody has hung the night's washing on the fog. It is dry. Nobody is anywhere.
 ev.rock|You sit on a warm rock and feel better. The rock is humming an old marching song.
 ev.moth|A moth the size of your hand lands on the lantern and leaves a small charm inside. It seems to expect nothing.
@@ -429,6 +429,6 @@ ev.lantern|An old lantern burns alone on the ridge. Nobody lit it. Fifteen coins
 ev.dog|A hunting dog will not leave the gate. It has waited long enough to forget what for.
 
 # ---- ending
-end.notyet|The crystal is cold. {0} shards are still missing.
+end.notyet|The crystal is cold. {0} more to find.
 end.tap|TAP TO CONTINUE
-end.text|The shards rise\nfrom your hands and\nclimb the sky.\n\nThe moon takes\nits old place over\nthe fields.\n{0} friends walk\nhome beside you.\n\nThe village wakes\nto its first gold\nmorning.
+end.text|The shards rise\nfrom your hands and\nclimb the sky.\n\nThe moon takes\nits old place over\nthe fields.\nYour new friends\nwalk home beside\nyou.\n\nThe village wakes\nto its first gold\nmorning.
