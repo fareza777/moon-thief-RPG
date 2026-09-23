@@ -1400,6 +1400,7 @@ namespace MoonThief
             _paused = false;
             FollowHero();
             World.ResetForChapter();
+            World.SetTextVisible(true);
             RefreshHud();
             SaveRun();
         }
@@ -1416,6 +1417,7 @@ namespace MoonThief
             if (_hudZone != null) _hudZone.enabled = true;
             if (_hudQuest != null) _hudQuest.enabled = true;
             FollowHero();
+            World.SetTextVisible(true);
 
             if (State.Chapter >= 3)
             {
@@ -1449,8 +1451,10 @@ namespace MoonThief
                 World.ResetForChapter();
                 World.PlaceHero(World.Map.VillageCenter);
                 FollowHero();
+                World.SetTextVisible(true);   // the banner lives under HudRoot: no text, no banner
                 World.ShowBanner(Strings.Get("zone.retreat"));
                 RefreshHud();
+                SaveRun();   // the retreat is where the night picks up again
             }, 0.3f, 0.4f);
         }
 

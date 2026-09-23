@@ -1415,6 +1415,10 @@ namespace MoonThief
             var parts = (text ?? "").Split('\n');
             string top = parts.Length > 0 ? parts[0] : "";
             string sub = parts.Length > 1 ? parts[1] : "";
+            // the frame is 18 units wide and the label centres itself: a long line at the big
+            // face bleeds past both edges, so it steps down to the small face to fit
+            ZoneBanner.Scale = 2;
+            if (ZoneBanner.MeasureWidth(top) > 15.8f) ZoneBanner.Scale = 1;
             ZoneBanner.Set(top, true);
             if (ZoneBannerSub != null) ZoneBannerSub.Set(sub, true);
             if (ZoneChip != null)
