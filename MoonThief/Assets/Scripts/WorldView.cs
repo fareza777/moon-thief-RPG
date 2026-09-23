@@ -1436,6 +1436,28 @@ namespace MoonThief
             return null;
         }
 
+        /// <summary>Turn a villager to look at a point - usually the hero they are talking to.</summary>
+        public void FaceAt(Actor a, Vector2 toward)
+        {
+            if (a == null || a.Npc.NameKey == null || a.Root == null) return;
+            var delta = toward - (Vector2)a.Root.localPosition;
+            if (delta.sqrMagnitude < 0.01f) return;
+            var d = DirVec.From(delta);
+            Face(a, d, CharaClip(Folks.Sheet(a.Npc), d));
+            if (a.Anim != null) a.Anim.Fps = 1f;
+        }
+
+        /// <summary>The hero's half of the same courtesy: turn to look at whoever is speaking.</summary>
+        public void FaceHeroAt(Vector2 toward)
+        {
+            if (Hero == null || Hero.Root == null) return;
+            var delta = toward - (Vector2)Hero.Root.localPosition;
+            if (delta.sqrMagnitude < 0.01f) return;
+            var d = DirVec.From(delta);
+            Face(Hero, d, HeroClip(d));
+            if (Hero.Anim != null) Hero.Anim.Fps = 1f;
+        }
+
         /// <summary>True while the zone card owns the top of the frame ("NIGHT TWO" / "the long
         /// fields"). Game parks the notice while this is up: both are drawn in the same strip,
         /// and the runtime audit caught them printing over each other in the village.</summary>

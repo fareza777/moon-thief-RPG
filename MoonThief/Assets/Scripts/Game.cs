@@ -1273,6 +1273,13 @@ namespace MoonThief
         /// offer says so, an NPC whose errand is done hands it over, and everyone else just talks.</summary>
         void TalkTo(NpcDef npc)
         {
+            // the two of them turn to look at each other, like people would
+            if (World != null)
+            {
+                var talker = World.FindNpc(npc.NameKey);
+                World.FaceAt(talker, World.HeroPos);
+                if (talker != null && talker.Root != null) World.FaceHeroAt(talker.Root.localPosition);
+            }
             // a shopkeeper's dialogue IS his stall: no small talk, straight to the wares
             if (npc.Shop) { OpenShop(); return; }
             var quest = Quests.ForGiver(npc.NameKey, out bool ready);
