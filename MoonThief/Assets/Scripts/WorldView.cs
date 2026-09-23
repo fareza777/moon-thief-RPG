@@ -69,6 +69,10 @@ namespace MoonThief
         // along the line, so the trail bends exactly the way the hero bent
         readonly List<Actor> _friends = new List<Actor>();
         readonly List<Vector3> _crumbs = new List<Vector3>();
+        // footstep dust: a small pool of warm puffs that spawn under the hero on the walk
+        // beat and drift up half a tile before thinning to nothing
+        class Dust { public SpriteRenderer Sr; public Vector2 V; public float T; }
+        readonly List<Dust> _dust = new List<Dust>();
         // One direction strip per sheet and facing. A turn swaps to an array that already
         // exists, so actors of the same kind share sprites and no walk cycle is built twice.
         readonly Dictionary<string, Sprite[]> _clipCache = new Dictionary<string, Sprite[]>();
@@ -1411,7 +1415,7 @@ namespace MoonThief
             if (_root != null) Fx.Kill(_root.gameObject);
             Monsters.Clear(); Npcs.Clear(); _props.Clear(); _glows.Clear(); _glowAmp.Clear(); _flies.Clear();
             _water.Clear(); _critters.Clear(); _respawns.Clear();
-            _friends.Clear(); _crumbs.Clear();
+            _friends.Clear(); _crumbs.Clear(); _dust.Clear();
             _bossProp = null; _bossHidden = false;
             Hero = null; Map = null; HudRoot = null; _vignette = null; _objArrow = null;
         }
@@ -1658,6 +1662,7 @@ namespace MoonThief
             if (_stepSfxT <= 0f)
             {
                 Sfx.Play("step");
+                SpawnDust((Vector2)Hero.Root.localPosition - input.normalized * 0.35f);
                 _stepSfxT = 0.24f;
             }
 
@@ -1676,6 +1681,42 @@ namespace MoonThief
                 if (_crumbs.Count > 160) _crumbs.RemoveAt(_crumbs.Count - 1);
             }
             return true;
+        }
+
+        /// <summary>A dust puff under the hero's heel, borrowed from the pool when one is
+        /// free. The glow sprite tinted warm and half-faded reads as kicked-up road.</summary>
+        void SpawnDust(Vector2 at)
+        {
+            Dust d = null;
+            foreach (var x in _dust) if (!x.Sr.enabled) { d = x; break; }
+            if (d == null)
+            {
+                if (_dust.Count >= 14) return;
+                d = new Dust { Sr = SpriteRendererUtil.Make(_root, "dust" + _dust.Count, TexArt.Glow(), 1955) };
+                d.Sr.transform.localScale = Vector3.one * 0.5f;
+                _dust.Add(d);
+            }
+            d.Sr.enabled = true;
+            d.Sr.transform.localPosition = new Vector3(at.x + UnityEngine.Random.Range(-0.12f, 0.12f), at.y - 0.12f, 0f);
+            d.V = new Vector2(0f, 0.5f);
+            d.T = 0.42f;
+            d.Sr.color = new Color(0.9f, 0.88f, 0.76f, 0.38f);
+        }
+
+        void DriveDust(float dt)
+        {
+            foreach (var d in _dust)
+            {
+                if (!d.Sr.enabled) continue;
+                d.T -= dt;
+                if (d.T <= 0f) { d.Sr.enabled = false; continue; }
+                var p = d.Sr.transform.localPosition;
+                p.y += d.V.y * dt;
+                d.Sr.transform.localPosition = p;
+                var c = d.Sr.color;
+                c.a = 0.38f * (d.T / 0.42f);
+                d.Sr.color = c;
+            }
         }
 
         /// <summary>Sea and moss keep pace a few crumbs back on the hero's own footprints,
@@ -1959,6 +2000,7 @@ namespace MoonThief
 
             // the friends keep their slots on the breadcrumb line
             DriveFriends(dt);
+            DriveDust(dt);
 
             // respawn tickets: a felled monster comes back after its delay, and only while
             // the hero is somewhere else - nothing materialises on top of the player
