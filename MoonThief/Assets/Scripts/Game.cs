@@ -198,6 +198,7 @@ namespace MoonThief
 
         bool _paused;
         bool _metMira;
+        readonly HashSet<string> _metNpcs = new HashSet<string>();
         bool _hintTalk = true, _hintChest = true;
         PixelLabel _hudQuest;
         Vector2? _resumePos;
@@ -797,6 +798,7 @@ namespace MoonThief
         {
             if (_hudZone != null)
                 _hudZone.Set(Strings.Get("hud.explore", State.Chapter, State.MoonShards, ShardsNeeded));
+            if (World != null) World.SetMoonFill(State.MoonShards, ShardsNeeded);
             RefreshQuest();
         }
 
@@ -1310,13 +1312,16 @@ namespace MoonThief
         {
             _dlgNpc = npc;
             _dlgLines = npc.Lines;
-            _dlgIndex = 0;
+            // someone the hero has already talked to opens on a different quip instead of
+            // reciting the same first line every tap
+            _dlgIndex = _metNpcs.Add(npc.NameKey) || _dlgLines.Length < 2
+                ? 0 : Random.Range(1, _dlgLines.Length);
             _dlgOpen = true;
             DialogRoot.gameObject.SetActive(true);
             _dlgText.RevealSpeed = Prefs.RevealSpeed;
             _dlgName.Set(Strings.Get(npc.NameKey));
-            LayoutDialogBox(Strings.Get(_dlgLines[0]));
-            _dlgText.Set(Strings.Get(_dlgLines[0]));
+            LayoutDialogBox(Strings.Get(_dlgLines[_dlgIndex]));
+            _dlgText.Set(Strings.Get(_dlgLines[_dlgIndex]));
             if (_dlgPortrait != null)
             {
                 _dlgPortrait.sprite = TexArt.Face(Folks.Sheet(npc))

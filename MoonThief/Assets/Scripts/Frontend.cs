@@ -899,8 +899,10 @@ namespace MoonThief
             foreach (var key in ShopStock())
             {
                 var def = Items.Get(key);
-                labels.Add(Strings.Get(key));
-                vals.Add(def.Price + " G");
+                labels.Add(Strings.Get(key) + "  " + Items.Effect(def));
+                bool owned = Items.IsEquip(def.Kind)
+                    && (Game.State.BagCount(key) > 0 || Array.IndexOf(Game.State.Worn, key) >= 0);
+                vals.Add(owned ? Strings.Get("shop.owned") : def.Price + " G");
                 var k = key;
                 acts.Add(() => Buy(k));
             }
@@ -914,6 +916,13 @@ namespace MoonThief
         void Buy(string key)
         {
             var def = Items.Get(key);
+            if (Items.IsEquip(def.Kind)
+                && (Game.State.BagCount(key) > 0 || Array.IndexOf(Game.State.Worn, key) >= 0))
+            {
+                Sfx.Play("fail");
+                ShowToast(Strings.Get("shop.have"), 2.6f);
+                return;
+            }
             if (Game.State.Gold < def.Price)
             {
                 Sfx.Play("fail");
@@ -1194,6 +1203,7 @@ namespace MoonThief
                     foreach (var q in Quests.All)
                     {
                         int step = Quests.Step(q.Id);
+                        if (!q.Main && step == 0) continue;   // side quests list only once taken on
                         labels.Add(Strings.Get(q.TitleKey));
                         vals.Add(q.Main && step < 3 ? Strings.Get("jr.main") : Quests.StateWord(step));
                         var quest = q;

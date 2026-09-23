@@ -114,7 +114,7 @@ namespace MoonThief
             // scales the text down rather than letting it run over the border
             _msg = Label("bmsg", 2, new Color(1f, 0.96f, 0.82f), TextAlign.Left, 53);
             _msg.MaxWidthUnits = 15.2f;
-            _msg.RevealSpeed = 60f;
+            _msg.RevealSpeed = Prefs.RevealSpeed;
             _msg.transform.localPosition = new Vector3(Left + 0.75f, MenuTop + MsgH - 0.48f, 0f);
 
             // Control hint. It lives in the HUD bar, on its own line under NIGHT, instead of
@@ -442,6 +442,8 @@ namespace MoonThief
 
         public void SetMessage(string text)
         {
+            // the text-speed setting applies mid-game too, so re-read it each message
+            _msg.RevealSpeed = Prefs.RevealSpeed;
             // One panel, and the text picks the largest scale that fits inside it: two lines at
             // scale 2, three at scale 1. The old version always drew at scale 2 with the anchor a
             // flat 0.48 units under the plate's top edge, so a wrapped message sat glued to the

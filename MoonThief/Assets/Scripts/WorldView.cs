@@ -1186,6 +1186,15 @@ namespace MoonThief
             _moonIcon.transform.localScale = Vector3.one * 2f;
         }
 
+        /// <summary>The corner moon brightens as shards come home: a faint ring while the
+        /// night is young, full warm light once the set is complete.</summary>
+        public void SetMoonFill(int shards, int needed)
+        {
+            if (_moonIcon == null) return;
+            float t = needed <= 0 ? 1f : Mathf.Clamp01((float)shards / needed);
+            _moonIcon.color = Color.Lerp(new Color(1f, 1f, 1f, 0.30f), new Color(1f, 0.95f, 0.75f, 1f), t);
+        }
+
         /// <summary>Camera centre, pushed in by Game.SetCam: the guard uses it to keep plates
         /// out of the screen edges, where half a name used to hang off the frame.</summary>
         public Vector2 ViewCenter;

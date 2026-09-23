@@ -64,6 +64,8 @@ shop.sub|{0} GOLD
 shop.buy|BUY
 shop.sold|Carried off. Careful out there.
 shop.poor|Not enough gold, love.
+shop.owned|OWNED
+shop.have|You already have one, love.
 shop.hint|TAP A WARE TO BUY IT
 
 # ---- pause
@@ -165,11 +167,11 @@ card.bossline|The last shard slips out of its hands.
 card.lossline|The party wakes by the crystal. The moon is still gone.
 card.xp|XP {0}
 card.gold|GOLD {0}
-card.levelup|LEVEL UP - now level {0}!
+card.levelup|LEVEL UP - LV {0}!
 card.healall|The party breathes easier.
 card.befriended|FRIENDS {0}/{1}
 card.joined|They wanted to come.
-card.moon|The moon is still gone.
+card.moon|The moon stays gone.
 
 # ---- buttons
 btn.continue|CONTINUE
