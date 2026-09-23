@@ -14,6 +14,7 @@ splash.presents|presents
 # ---- main menu
 menu.new|NEW GAME
 menu.continue|CONTINUE
+menu.nosave|NO SAVE
 menu.story|STORY
 menu.settings|SETTINGS
 menu.about|ABOUT

@@ -731,7 +731,7 @@ namespace MoonThief
                 () => DoShare(),
                 () => DoRate(),
             };
-            var vals = new string[] { "", hasSave ? SaveStamp() : Strings.Get("set.off"), "", "", "", "", "" };
+            var vals = new string[] { "", hasSave ? SaveStamp() : Strings.Get("menu.nosave"), "", "", "", "", "" };
             LayRows(_mainRows, labels, acts, vals, 2.6f, 7);
             for (int i = 0; i < 7; i++) _mainRows[i].Enabled = i != 1 || hasSave;
             _sel = hasSave ? 1 : 0;
