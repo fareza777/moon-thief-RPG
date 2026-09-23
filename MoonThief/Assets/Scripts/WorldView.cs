@@ -1780,7 +1780,7 @@ namespace MoonThief
                 }
                 _touchCue.enabled = true;
                 _touchCue.transform.localPosition = new Vector3(at.Value.x, at.Value.y - 0.2f, 0f);
-                _touchCue.color = new Color(1f, 0.9f, 0.6f, 0.3f + 0.2f * Mathf.Sin(_time * 6f));
+                _touchCue.color = new Color(1f, 0.9f, 0.6f, 0.45f + 0.3f * Mathf.Sin(_time * 6f));
             }
             else if (_touchCue != null) _touchCue.enabled = false;
         }
