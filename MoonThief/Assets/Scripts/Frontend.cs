@@ -1269,7 +1269,7 @@ namespace MoonThief
                 ? Strings.Get("jr.beast", spec.Hp, spec.AtkMin, spec.AtkMax)
                 : "?");
             var s2 = spec;
-            acts.Add(() => ShowToast(known ? Strings.Get(s2.Name) : Strings.Get("jr.unseen"), 2.6f));
+            acts.Add(() => ShowToast(known ? Strings.Get(s2.Name + ".d") : Strings.Get("jr.unseen"), 2.6f));
         }
 
         static void Add(List<string> labels, List<string> vals, List<Action> acts,

@@ -160,6 +160,22 @@ mon.minotaur|PALE GUARD
 mon.thane|NIGHT THANE
 mon.thick|THICKET
 mon.palebell|PALE BELL
+mon.slime.d|It misses the moon too.
+mon.slime2.d|Softer than it looks. Meaner too.
+mon.imp.d|Grew from a kettle nobody emptied.
+mon.slimeB.d|The dark squeezes into puddles now.
+mon.gloop.d|Smells like the pond. The bad side.
+mon.impB.d|Older than the hollow. Grumpier.
+mon.wasp.d|Still looking for a lamp to die on.
+mon.wasp2.d|Stings first. Asks never.
+mon.shade.d|A shadow that lost its person.
+mon.bones.d|Keeps walking. Out of habit.
+mon.hob.d|Sleeps as a rock. Walks as a grudge.
+mon.wisp.d|Lamp smoke that learned to float.
+mon.minotaur.d|It wears the shard like a crown.
+mon.thane.d|The dark's own knight. No oath, just hunger.
+mon.thick.d|The hedge grew teeth last winter.
+mon.palebell.d|It rings. Something answers.
 
 # ---- result cards
 card.wintitle|THE WAY IS CLEAR
