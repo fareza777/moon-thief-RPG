@@ -22,6 +22,7 @@ namespace MoonThief
             public float Speed = 3f;
             public Vector2 HomeCell;
             public bool Aggro;
+            public float AggroT;      // windup under the "!" before the chase begins
             public float WanderCd;
             public float Pause;         // idle pause before moving again
             public Vector2Int Dest;
@@ -1826,9 +1827,10 @@ namespace MoonThief
                 if (m.Root == null) continue;
                 var mpos = (Vector2)m.Root.localPosition;
 
-                // notice the hero: close in, give up if they slip away
+                // notice the hero: close in, give up if they slip away. The "!" holds a beat
+                // before the chase so the player gets a dodge window instead of an ambush.
                 float dh = Vector2.Distance(mpos, HeroPos);
-                if (!m.Aggro && dh < 3.2f) m.Aggro = true;
+                if (!m.Aggro && dh < 3.2f) { m.Aggro = true; m.AggroT = 0.85f; }
                 if (m.Aggro && dh > 6.5f) m.Aggro = false;
 
                 if (m.Aggro)
@@ -1846,6 +1848,14 @@ namespace MoonThief
                     m.Alert.enabled = true;
                     if (m.Alert != null)
                         m.Alert.transform.localPosition = new Vector3(0f, 1.05f + Mathf.Sin(_time * 9f) * 0.08f, 0f);
+                    if (m.AggroT > 0f)
+                    {
+                        m.AggroT -= dt;
+                        if (m.Anim != null) m.Anim.Fps = 0f;
+                        var wdir = DirVec.From(HeroPos - mpos);
+                        Face(m, wdir, MonsterClip(m.Spec.MapSheet, wdir));
+                        continue;
+                    }
                     if (m.Anim != null) m.Anim.Fps = 6f;
                     var cdir = DirVec.From(HeroPos - mpos);
                     Face(m, cdir, MonsterClip(m.Spec.MapSheet, cdir));

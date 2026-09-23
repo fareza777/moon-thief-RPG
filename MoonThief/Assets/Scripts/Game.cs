@@ -1361,7 +1361,8 @@ namespace MoonThief
         public void StartBattle(MonsterSpec[] specs)
         {
             Phase = St.Battle;
-            _encounterCooldown = 4f;
+            // breathing room after a fight before the next wild touch can trigger
+            _encounterCooldown = 6f;
             SetCamY(0f);
             Menus.Hide();
             _paused = false;
