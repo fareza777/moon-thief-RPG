@@ -977,6 +977,7 @@ namespace MoonThief
             bool hasBoss = false;
             foreach (var s in specs) if (s.Boss) hasBoss = true;
             Sfx.Mus.Play(hasBoss ? "boss" : "battle");
+            Sfx.Play(hasBoss ? "boss" : "enemy");
             if (Application.isPlaying) StartCoroutine(Timer(1.4f, RoundStart));
         }
 
@@ -1089,6 +1090,7 @@ namespace MoonThief
             else StartCoroutine(Fx.FlashTint(tRig.Anim, new Color(1f, 0.45f, 0.45f), 2, 0.08f, 0.08f));
             StartCoroutine(Fx.Shake(tRig.Root, 0.14f, 0.25f));
             View.FloatNumber(tRig.Home + new Vector3(0f, 1.4f, 0f), "-" + dmg, new Color(1f, 0.6f, 0.55f));
+            Sfx.Play("hurt");
             View.Refresh();
             yield return Fx.Wait(0.4f);
             yield return Lunge(eRig, eRig.Home, 0.3f);
@@ -1351,6 +1353,7 @@ namespace MoonThief
                 _befriended++;
                 Game.State.Befriended++;
                 View.Sparkle(tRig.Home + new Vector3(0f, tRig.BodyHeight * 0.5f, 0f), new Color(1f, 0.95f, 0.6f), 14);
+                Sfx.Play("befriend");
                 View.SetMessage(Strings.Get("bt.befriended", target.Name));
                 yield return FadeOut(tRig);
                 yield return Fx.Wait(0.5f);
@@ -1358,6 +1361,7 @@ namespace MoonThief
             else
             {
                 View.SetMessage(Strings.Get("bt.befriendfail", target.Name));
+                Sfx.Play("fail");
                 StartCoroutine(Fx.Shake(tRig.Root, 0.1f, 0.2f));
                 yield return Fx.Wait(0.8f);
             }

@@ -1479,6 +1479,7 @@ namespace MoonThief
 
         bool _heroWalking;
         float _stepT;
+        float _stepSfxT;
 
         /// <summary>One pixel up on the beat, or nothing at all: a walk bob that never lands
         /// between two pixels. Used by the hero, the villagers and the monsters alike, so the
@@ -1516,6 +1517,12 @@ namespace MoonThief
             _stepT += dt;
             if (Hero.Body != null)
                 Hero.Body.localPosition = new Vector3(0f, StepBob(_stepT, 7.5f, 0f), 0f);
+            _stepSfxT -= dt;
+            if (_stepSfxT <= 0f)
+            {
+                Sfx.Play("step");
+                _stepSfxT = 0.24f;
+            }
 
             var pos = (Vector2)Hero.Root.localPosition;
             var next = pos + input.normalized * Hero.Speed * dt;

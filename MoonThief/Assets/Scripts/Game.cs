@@ -1024,7 +1024,7 @@ namespace MoonThief
                 Quests.MarkFired(ev.Id);
                 if (ev.Gold > 0) State.Gold += ev.Gold;
                 if (!string.IsNullOrEmpty(ev.Gift)) State.AddBag(ev.Gift);
-                Sfx.Play(ev.Tragic ? "faint" : "chest");
+                Sfx.Play(ev.Tragic ? "faint" : ev.Gold > 0 ? "coin" : "chest");
                 Menus.ShowToast(Strings.Get(ev.TextKey), ev.Tragic ? 5.4f : 4.4f);
                 _encounterCooldown = Mathf.Max(_encounterCooldown, 2.5f);
                 RefreshHud();
@@ -1134,8 +1134,9 @@ namespace MoonThief
             }
             if (chest.HasValue)
             {
+                int shardsBefore = State.MoonShards;
                 World.OpenChest(chest.Value);
-                Sfx.Play("chest");
+                Sfx.Play(State.MoonShards > shardsBefore ? "shard" : "chest");
                 World.ShowBanner(World.LastLootText);
                 RefreshHud();
                 SaveRun();
@@ -1178,7 +1179,7 @@ namespace MoonThief
             _doorReturn = World.HeroPos + new Vector2(0f, -1.1f);
             _inHouse = true;
             _doorCooldown = 1.4f;
-            Sfx.Play("ui");
+            Sfx.Play("door");
             DoTransition(() =>
             {
                 World.gameObject.SetActive(false);
@@ -1208,7 +1209,7 @@ namespace MoonThief
             if (!_inHouse) return;
             _inHouse = false;
             _doorCooldown = 1.4f;
-            Sfx.Play("ui");
+            Sfx.Play("door");
             DoTransition(() =>
             {
                 if (_houseView != null) Fx.Kill(_houseView.gameObject);
@@ -1260,7 +1261,7 @@ namespace MoonThief
                     Quests.Complete(quest);
                     OpenDialog(npc, new[] { quest.DoneKey, "q.reward" });
                     Menus.ShowToast(Strings.Get("jr.questdone", Strings.Get(quest.TitleKey)), 3.6f);
-                    Sfx.Play("chest");
+                    Sfx.Play("coin");
                     SaveRun();
                     return;
                 }
