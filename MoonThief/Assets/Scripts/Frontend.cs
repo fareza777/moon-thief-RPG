@@ -264,6 +264,7 @@ namespace MoonThief
         float _ciHold;
         float _ciRead;                 // seconds the finished line has been readable
         bool _settingsFromPause;
+        bool _wipeArmed;        // ERASE SAVE arms itself for one tap instead of asking twice
 
         public bool IsUp => _sc != Sc.None;
         public Sc Current => _sc;
@@ -782,38 +783,58 @@ namespace MoonThief
             Select(_sel);
         }
 
-        void RefreshSettingsRows()
+        void RefreshSettingsRows() => RefreshSettingsRows(false);
+
+        void RefreshSettingsRows(bool keepArm)
         {
-            string[] labels =
+            if (!keepArm) _wipeArmed = false;
+            var labels = new List<string>
             {
                 Strings.Get("set.textspeed"),
                 Strings.Get("set.music"),
                 Strings.Get("set.sound"),
                 Strings.Get("set.shake"),
                 Strings.Get("set.autobattle"),
-                Strings.Get("menu.back"),
             };
-            var acts = new Action[]
+            var acts = new List<Action>
             {
                 () => { Prefs.SpeedIndex = (Prefs.SpeedIndex + 1) % 4; Prefs.Store(); RefreshSettingsRows(); Select(_sel); },
                 () => { Prefs.MusicLevel = (Prefs.MusicLevel + 4) % 5; Prefs.Store(); RefreshSettingsRows(); Select(_sel); },
                 () => { Prefs.SoundLevel = (Prefs.SoundLevel + 4) % 5; Prefs.Store(); RefreshSettingsRows(); Select(_sel); },
                 () => { Prefs.Shake = !Prefs.Shake; Prefs.Store(); RefreshSettingsRows(); Select(_sel); },
                 () => { Prefs.Auto = !Prefs.Auto; Prefs.Store(); RefreshSettingsRows(); Select(_sel); },
-                () => { if (_settingsFromPause) ShowPause(); else ShowMain(); },
             };
-            string[] vals =
+            var vals = new List<string>
             {
                 Prefs.SpeedName,
                 Prefs.MusicLevel <= 0 ? Strings.Get("set.off") : (Prefs.MusicLevel * 25) + "%",
                 Prefs.SoundLevel <= 0 ? Strings.Get("set.off") : (Prefs.SoundLevel * 25) + "%",
                 Prefs.Shake ? Strings.Get("set.on") : Strings.Get("set.off"),
                 Prefs.Auto ? Strings.Get("set.on") : Strings.Get("set.off"),
-                "",
             };
-            float rowsTop = LayoutCard(_setPanel, 16.4f, 6, true);
+
+            // the wipe lives only on the title-side card: erasing mid-run would be
+            // rewritten by the next autosave, which reads as the button doing nothing
+            if (!_settingsFromPause)
+            {
+                labels.Add(_wipeArmed ? Strings.Get("set.erase.sure") : Strings.Get("set.erase"));
+                acts.Add(() =>
+                {
+                    if (!_wipeArmed) { _wipeArmed = true; RefreshSettingsRows(true); Select(_sel); return; }
+                    _wipeArmed = false;
+                    SaveSystem.Erase();
+                    ShowMain();
+                    ShowToast(Strings.Get("set.erased"), 3f);
+                });
+                vals.Add("");
+            }
+            labels.Add(Strings.Get("menu.back"));
+            acts.Add(() => { if (_settingsFromPause) ShowPause(); else ShowMain(); });
+            vals.Add("");
+
+            float rowsTop = LayoutCard(_setPanel, 16.4f, labels.Count, true);
             _setTitle.transform.localPosition = new Vector3(0f, _cardTop - 2.15f, 0f);
-            float bottom = LayRows(_setRows, labels, acts, vals, rowsTop, 6);
+            float bottom = LayRows(_setRows, labels.ToArray(), acts.ToArray(), vals.ToArray(), rowsTop, labels.Count);
             _setFoot.transform.localPosition = new Vector3(0f, FootY(bottom), 0f);
             Select(_sel);
         }

@@ -42,6 +42,9 @@ set.speed.fast|FAST
 set.speed.instant|INSTANT
 set.sound|SOUND
 set.shake|SCREEN SHAKE
+set.erase|ERASE SAVE
+set.erase.sure|SURE? ONE MORE TAP
+set.erased|Save erased. The night is clear.
 set.on|ON
 set.off|OFF
 set.saved|PROGRESS SAVED
