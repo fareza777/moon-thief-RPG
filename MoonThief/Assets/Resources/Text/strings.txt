@@ -195,6 +195,9 @@ zone.chapdone|THE ROAD OPENS...
 zone.bossdown|THE LAST SHARD IS YOURS
 zone.retreat|You fall back to the village.
 zone.shard|A MOON SHARD hums in your hands
+zone.name.village|QUIET HOLLOW
+zone.name.fields|THE LONG FIELDS
+zone.name.wood|THE DARK WOOD
 
 # ---- interact / loot
 loot.moonshard|A MOON SHARD hums in your hands

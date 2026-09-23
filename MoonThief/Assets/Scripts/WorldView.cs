@@ -1419,6 +1419,14 @@ namespace MoonThief
         /// and the runtime audit caught them printing over each other in the village.</summary>
         public bool BannerUp { get; private set; }
 
+        /// <summary>A banner mid-fade dies with the coroutine when the world is tucked away
+        /// (a house, a battle, the title card): pick its fade back up on return, or the
+        /// frozen words hang over the next room forever.</summary>
+        void OnEnable()
+        {
+            if (ZoneChip != null && ZoneChip.enabled) StartCoroutine(BannerFade());
+        }
+
         public void ShowBanner(string text)
         {
             if (ZoneBanner == null) return;

@@ -71,10 +71,12 @@ namespace MoonThief
                 return n;
             }
 
-            /// <summary>Records a place the hero has walked into (drives the bard's quest).</summary>
-            public static void NoteZone(string key)
+            /// <summary>Records a place the hero has walked into (drives the bard's quest).
+            /// True only on the first visit, so a zone banner can fire once, ever.</summary>
+            public static bool NoteZone(string key)
             {
-                if (!string.IsNullOrEmpty(key) && !Zones.Contains(key)) Zones.Add(key);
+                if (!string.IsNullOrEmpty(key) && !Zones.Contains(key)) { Zones.Add(key); return true; }
+                return false;
             }
 
             /// <summary>The most filling food in the bag, or null. The battle's Morsel command eats
@@ -784,6 +786,11 @@ namespace MoonThief
             World.PlaceHero(_resumePos ?? World.Map.VillageCenter);
             _resumePos = null;
 
+            // the arrive card already names the ground beneath the hero's feet: note that
+            // zone quietly so the crossing banner does not repeat it a step later
+            State.NoteZone(World.HeroPos.y > 58f ? "zone.wood"
+                : World.HeroPos.y > 26f ? "zone.fields" : "zone.village");
+
             World.ShowBanner(Strings.Get("zone.arrive." + Mathf.Clamp(chapter, 1, 3)));
             Sfx.Mus.Play("explore");
             MakeHud();
@@ -967,8 +974,12 @@ namespace MoonThief
             }
             else
             {
-                State.NoteZone(World.HeroPos.y > 58f ? "zone.wood"
-                    : World.HeroPos.y > 26f ? "zone.fields" : "zone.village");
+                string zk = World.HeroPos.y > 58f ? "zone.wood"
+                    : World.HeroPos.y > 26f ? "zone.fields" : "zone.village";
+                // first time crossing a border the place announces itself, once, ever
+                if (State.NoteZone(zk))
+                    World.ShowBanner(Strings.Get("zone.name." + zk.Substring(5))
+                        + "\n" + Strings.Get("hud.nightshort", State.Chapter));
                 if (TryWorldEvent()) return;
             }
 
