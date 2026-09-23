@@ -939,6 +939,8 @@ namespace MoonThief
         public void ToggleAuto()
         {
             Auto = !Auto;
+            Prefs.Auto = Auto;
+            Prefs.Store();   // a stance, remembered for every fight after this one too
             View.SetAuto(Auto);
             Sfx.Play("autoon");
             View.SetMessage(Strings.Get(Auto ? "bt.auto.on" : "bt.auto.off"));
@@ -973,6 +975,7 @@ namespace MoonThief
             View.SetEncounter(specs);
             View.HideCard();
             View.SetMenuVisible(false);
+            Auto = Prefs.Auto;
             View.SetAuto(Auto);
             View.IntroSlide();
             bool hasBoss = false;

@@ -85,3 +85,11 @@ None — the game has no logins or network dependencies. Audio will NOT work on 
 - **FLEE HOME persistence — FIXED in 3a1b81d.** `OnRunLost` now calls `SaveRun`, so after FLEE HOME the save records the village pos (~30,8) and CONTINUE wakes the hero in the village (not the pre-flee boss approach). Verified end-to-end. `LeaveToTitle` still does NOT save (intended — menu quit without SAVE loses position).
 - **Arrive banner getting stuck — FIXED in 76e21ff.** Previously a `World.SetActive(false)` (house/battle/title) during a banner's ~2.8s fade killed the `BannerFade` coroutine → frozen banner on re-show. Now `WorldView.OnEnable` restarts `BannerFade` when `ZoneChip.enabled` → the banner picks its fade back up and clears ~3s. Verified: teleport onto a door (16.5,9.2), auto-enter during arrive banner → exit → banner fades away cleanly, no >15s freeze.
 - Movement is slow (~1.3-3.6 tiles/s effective) on VNC/low-fps; reads save pos to confirm motion rather than eyeballing pixels.
+
+## Round-12 polish (0ab5c67) — verified
+- **LEAVE TO TITLE now SaveRuns first** — hero resumes at the exact tile walked to (previously dropped at the last autosave). Verify: walk to a distinct spot → pause → LEAVE TO TITLE → save's heroX/Y = that spot → CONTINUE resumes there.
+- **CONTINUE row stamps `NIGHT {n}`** (hud.nightshort) not "N2" — from save's `chapter`.
+- **Credits (ABOUT)** has a 6th body line `version     1.0.0` (strings `version {0}`). Body fits the card — lines are tightly packed but legible, no clipping.
+- **Bestiary tap** → flavor toast: seen beast → `mon.X.d` line (e.g. slime2 "Softer than it looks. Meaner too."), unseen `?????` → "Nobody has met this one yet." (jr.unseen). Toast ~2.6s — capture fast.
+- **Hero-down plays a faint sting** (PlayerDowned:707) — audio, untestable on the no-audio VM.
+- All four behave; regression clean.

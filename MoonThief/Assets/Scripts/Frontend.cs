@@ -16,6 +16,7 @@ namespace MoonThief
         public static bool IntroSeen;
         public static int MusicLevel = 4;      // 0 off .. 4 full
         public static bool OnbSeen;            // the three onboarding cards only run once
+        public static bool Auto;               // the party's standing battle stance
 
         public static float RevealSpeed => SpeedIndex switch
         {
@@ -42,6 +43,7 @@ namespace MoonThief
             IntroSeen = PlayerPrefs.GetInt("mt.intro", 0) == 1;
             MusicLevel = Mathf.Clamp(PlayerPrefs.GetInt("mt.muslvl", PlayerPrefs.GetInt("mt.music", 1) * 4), 0, 4);
             OnbSeen = PlayerPrefs.GetInt("mt.onb", 0) == 1;
+            Auto = PlayerPrefs.GetInt("mt.auto", 0) == 1;
             Sfx.Volume = SoundLevel * 0.25f;
             Sfx.Muted = SoundLevel <= 0;
             Sfx.Mus.Volume = MusicLevel * 0.25f;
@@ -56,6 +58,7 @@ namespace MoonThief
             PlayerPrefs.SetInt("mt.intro", IntroSeen ? 1 : 0);
             PlayerPrefs.SetInt("mt.muslvl", MusicLevel);
             PlayerPrefs.SetInt("mt.onb", OnbSeen ? 1 : 0);
+            PlayerPrefs.SetInt("mt.auto", Auto ? 1 : 0);
             PlayerPrefs.Save();
             Sfx.Volume = SoundLevel * 0.25f;
             Sfx.Muted = SoundLevel <= 0;
@@ -786,6 +789,7 @@ namespace MoonThief
                 Strings.Get("set.music"),
                 Strings.Get("set.sound"),
                 Strings.Get("set.shake"),
+                Strings.Get("set.autobattle"),
                 Strings.Get("menu.back"),
             };
             var acts = new Action[]
@@ -794,6 +798,7 @@ namespace MoonThief
                 () => { Prefs.MusicLevel = (Prefs.MusicLevel + 4) % 5; Prefs.Store(); RefreshSettingsRows(); Select(_sel); },
                 () => { Prefs.SoundLevel = (Prefs.SoundLevel + 4) % 5; Prefs.Store(); RefreshSettingsRows(); Select(_sel); },
                 () => { Prefs.Shake = !Prefs.Shake; Prefs.Store(); RefreshSettingsRows(); Select(_sel); },
+                () => { Prefs.Auto = !Prefs.Auto; Prefs.Store(); RefreshSettingsRows(); Select(_sel); },
                 () => { if (_settingsFromPause) ShowPause(); else ShowMain(); },
             };
             string[] vals =
@@ -802,11 +807,12 @@ namespace MoonThief
                 Prefs.MusicLevel <= 0 ? Strings.Get("set.off") : (Prefs.MusicLevel * 25) + "%",
                 Prefs.SoundLevel <= 0 ? Strings.Get("set.off") : (Prefs.SoundLevel * 25) + "%",
                 Prefs.Shake ? Strings.Get("set.on") : Strings.Get("set.off"),
+                Prefs.Auto ? Strings.Get("set.on") : Strings.Get("set.off"),
                 "",
             };
-            float rowsTop = LayoutCard(_setPanel, 16.4f, 5, true);
+            float rowsTop = LayoutCard(_setPanel, 16.4f, 6, true);
             _setTitle.transform.localPosition = new Vector3(0f, _cardTop - 2.15f, 0f);
-            float bottom = LayRows(_setRows, labels, acts, vals, rowsTop, 5);
+            float bottom = LayRows(_setRows, labels, acts, vals, rowsTop, 6);
             _setFoot.transform.localPosition = new Vector3(0f, FootY(bottom), 0f);
             Select(_sel);
         }
