@@ -69,5 +69,5 @@ None — the game has no logins or network dependencies. Audio will NOT work on 
 - Reading hero pos live: Esc→SAVE PROGRESS writes the file with live heroX/heroY.
 
 ## Known issues / quirks observed (verify before re-flagging)
-- **World HUD missing on CONTINUE (reproducible, minor):** on CONTINUE the world HUD (NIGHT/SHARD/NEXT text + NPC name plates + moon icon) fails to render until a UI card is opened and closed (Esc→RESUME restores it). NEW GAME→village shows HUD fine. Likely `SetTextVisible(true)` not re-fired on the continue path. Seen on a5c2327 — may be pre-existing, unrelated to that commit.
+- **World HUD missing on CONTINUE — FIXED in 6b19f1f.** Previously CONTINUE rendered the village without the world HUD (NIGHT/SHARD/NEXT + name plates + moon) until a card was opened/closed. Now `LeaveToTitle` + `BuildChapterNow` force `SetTextVisible(true)`, so the HUD shows immediately on continue. Verified fixed on 6b19f1f (cold-launch continue + pause→leave→continue + NEW GAME all render HUD at once).
 - Movement is slow (~1.3-3.6 tiles/s effective) on VNC/low-fps; reads save pos to confirm motion rather than eyeballing pixels.

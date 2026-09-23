@@ -151,7 +151,7 @@ namespace MoonThief
     /// </summary>
     public class MenuView : MonoBehaviour
     {
-        public enum Sc { None, Splash, Main, Settings, Credits, Pause, Cinema, ChapterCard, Journal, Page, Onboard, Shop }
+        public enum Sc { None, Splash, Main, Settings, Credits, Pause, Cinema, ChapterCard, Journal, Page, Onboard, Shop, Confirm }
 
         /// <summary>Everything the pause card can open. One enum keeps the hub, the back stack
         /// and the self-test in agreement about what is on screen.</summary>
@@ -217,6 +217,7 @@ namespace MoonThief
                 switch (_sc)
                 {
                     case Sc.Pause: return _pauseRows;
+                    case Sc.Confirm: return _pauseRows;   // the confirm card borrows the pause card's furniture
                     case Sc.Settings: return _setRows;
                     case Sc.Credits: return _credRows;
                     case Sc.Journal: return _jrRows;
@@ -723,7 +724,7 @@ namespace MoonThief
             };
             var acts = new Action[]
             {
-                () => OnStartNew?.Invoke(),
+                () => { if (hasSave) ShowConfirm(() => OnStartNew?.Invoke()); else OnStartNew?.Invoke(); },
                 () => OnLoadSave?.Invoke(),
                 () => OnStory?.Invoke(),
                 () => ShowSettings(false),
@@ -971,6 +972,28 @@ namespace MoonThief
             return _credText.MeasureHeight(_credText.Text);
         }
 
+        /// <summary>A yes/no card over the pause furniture, for choices that should not be
+        /// one tap away from a save (START OVER rewrites the night). The yes action is left
+        /// as a delegate so the same card can ask other questions later.</summary>
+        public void ShowConfirm(Action yes)
+        {
+            HideAll();
+            _sc = Sc.Confirm;
+            _sel = 1;
+            _t = 0f;
+            _pauseRoot.gameObject.SetActive(true);
+            _pauseTitle.Set(Strings.Get("conf.title"));
+            _pauseSub.Set(Strings.Get("conf.sub"));
+            var acts = new Action[] { () => yes?.Invoke(), () => ShowMain() };
+            float rowsTop = LayoutCard(_pausePanel, 16.4f, 2, true);
+            _pauseTitle.transform.localPosition = new Vector3(0f, _cardTop - 2.15f, 0f);
+            float bottom = LayRows(_pauseRows,
+                new[] { Strings.Get("conf.yes"), Strings.Get("conf.no") },
+                acts, new[] { "", "" }, rowsTop, 2);
+            _pauseSub.transform.localPosition = new Vector3(0f, FootY(bottom), 0f);
+            Select(1);   // the safe answer is selected first
+        }
+
         public void ShowPause()
         {
             HideAll();
@@ -978,6 +1001,7 @@ namespace MoonThief
             _sel = 0;
             _t = 0f;
             _pauseRoot.gameObject.SetActive(true);
+            _pauseTitle.Set(Strings.Get("pause.title"));
             // the footnote of the pause card is both its status line ("saved") and, before that,
             // the one hint a player needs at the moment they stop playing
             _pauseSub.Set(Strings.Get("pause.hint"));
@@ -1662,6 +1686,7 @@ namespace MoonThief
             {
                 if (_sc == Sc.Settings) { Sfx.Play("ui"); if (_settingsFromPause) ShowPause(); else ShowMain(); return; }
                 if (_sc == Sc.Pause) { Sfx.Play("ui"); OnResume?.Invoke(); return; }
+                if (_sc == Sc.Confirm) { Sfx.Play("ui"); ShowMain(); return; }
                 if (_sc == Sc.Credits) { Sfx.Play("ui"); ShowMain(); return; }
                 if (_sc == Sc.Journal) { Sfx.Play("ui"); ShowPause(); return; }
                 if (_sc == Sc.Page) { Sfx.Play("ui"); ShowJournal(); return; }

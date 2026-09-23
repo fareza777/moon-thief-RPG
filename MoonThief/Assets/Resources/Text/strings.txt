@@ -176,7 +176,14 @@ card.moon|The moon stays gone.
 # ---- buttons
 btn.continue|CONTINUE
 btn.retry|TRY AGAIN
+btn.flee|FLEE HOME
 btn.title|BACK TO TITLE
+
+# ---- the START OVER card: the one choice that should never be a mis-tap away
+conf.title|START OVER?
+conf.sub|Your saved night will be replaced.
+conf.yes|START OVER
+conf.no|KEEP MY SAVE
 
 # ---- world zones. Two lines: the night in the big face, the place in the small one.
 zone.arrive.1|NIGHT ONE\nquiet hollow

@@ -1259,6 +1259,7 @@ namespace MoonThief
                     });
                     Menus.ShowToast(Strings.Get("jr.newquest", Strings.Get(quest.TitleKey)), 3.6f);
                     Sfx.Play("chest");
+                    SaveRun();
                     return;
                 }
                 if (ready)

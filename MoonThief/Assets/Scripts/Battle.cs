@@ -1323,6 +1323,7 @@ namespace MoonThief
             if (tRig == null) return;
             StartCoroutine(Fx.FlashTint(tRig.Anim, new Color(1f, 0.5f, 0.4f), 2, 0.07f, 0.07f));
             StartCoroutine(Fx.Shake(tRig.Root, crit ? 0.2f : 0.12f, crit ? 0.3f : 0.22f));
+            if (crit) StartCoroutine(Fx.Shake(View.Stage, 0.13f, 0.18f));
             View.FloatNumber(tRig.Home + new Vector3(0f, 1.2f, 0f), "-" + dmg,
                 crit ? new Color(1f, 0.85f, 0.3f) : new Color(1f, 0.95f, 0.75f));
             Sfx.Play(crit ? "crit" : "hit");
@@ -1496,8 +1497,8 @@ namespace MoonThief
             View.SetMenuVisible(false);
             View.ShowCard(Strings.Get("card.losstitle"),
                 new[] { Strings.Get("card.lossline") },
-                new[] { Strings.Get("btn.retry") },
-                new Action[] { () => StartBattle(_specs) },
+                new[] { Strings.Get("btn.retry"), Strings.Get("btn.flee") },
+                new Action[] { () => StartBattle(_specs), () => OnDefeat?.Invoke() },
                 new Color(1f, 0.6f, 0.6f));
         }
     }
