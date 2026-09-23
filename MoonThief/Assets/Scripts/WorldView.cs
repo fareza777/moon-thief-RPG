@@ -73,6 +73,7 @@ namespace MoonThief
         // throws when it pops. Same loop, different sprites and velocities.
         class Dust { public SpriteRenderer Sr; public Vector2 V; public float T; public float MaxT; public float A; }
         readonly List<Dust> _dust = new List<Dust>();
+        SpriteRenderer _touchCue;
         // One direction strip per sheet and facing. A turn swaps to an array that already
         // exists, so actors of the same kind share sprites and no walk cycle is built twice.
         readonly Dictionary<string, Sprite[]> _clipCache = new Dictionary<string, Sprite[]>();
@@ -1419,6 +1420,7 @@ namespace MoonThief
             _friends.Clear(); _crumbs.Clear(); _dust.Clear();
             _bossProp = null; _bossHidden = false;
             Hero = null; Map = null; HudRoot = null; _vignette = null; _objArrow = null;
+            _touchCue = null;
         }
 
         /// <summary>After a fight the world used to wipe every monster and roll a fresh herd on
@@ -1743,6 +1745,46 @@ namespace MoonThief
             }
         }
 
+        /// <summary>A warm pulse under whatever would answer an interact tap right now:
+        /// the closest villager, chest, or the boss in reach. Discovery without a prompt
+        /// word - the floor itself says "this one".</summary>
+        void DriveTouchCue()
+        {
+            Vector2? at = null;
+            var npc = NearestNpc(HeroPos, 1.4f);
+            if (npc.NameKey != null)
+            {
+                var a = FindNpc(npc.NameKey);
+                if (a != null && a.Root != null) at = (Vector2)a.Root.localPosition;
+            }
+            else if (NearBoss && _bossProp != null && _bossProp.enabled)
+            {
+                at = (Vector2)_bossProp.transform.localPosition;
+            }
+            else
+            {
+                int chestAt = NearestChest(HeroPos, 1.2f);
+                if (chestAt >= 0) at = _chests[chestAt].Pos;
+                else if (NearDoor(HeroPos, out int doorAt))
+                {
+                    var c = Map.Doors[doorAt];
+                    at = new Vector2(c.x + 0.5f, c.y + 0.5f);
+                }
+            }
+            if (at.HasValue)
+            {
+                if (_touchCue == null)
+                {
+                    _touchCue = SpriteRendererUtil.Make(_root, "touchCue", TexArt.Glow(), 1900);
+                    _touchCue.transform.localScale = new Vector3(1.7f, 0.65f, 1f);
+                }
+                _touchCue.enabled = true;
+                _touchCue.transform.localPosition = new Vector3(at.Value.x, at.Value.y - 0.2f, 0f);
+                _touchCue.color = new Color(1f, 0.9f, 0.6f, 0.2f + 0.12f * Mathf.Sin(_time * 6f));
+            }
+            else if (_touchCue != null) _touchCue.enabled = false;
+        }
+
         /// <summary>Sea and moss keep pace a few crumbs back on the hero's own footprints,
         /// hopping between steps the way the critters do. Only a down-facing frame exists
         /// in the pack for them, so the trail reads as company, not as a mirror.</summary>
@@ -2025,6 +2067,7 @@ namespace MoonThief
             // the friends keep their slots on the breadcrumb line
             DriveFriends(dt);
             DriveDust(dt);
+            DriveTouchCue();
 
             // respawn tickets: a felled monster comes back after its delay, and only while
             // the hero is somewhere else - nothing materialises on top of the player
