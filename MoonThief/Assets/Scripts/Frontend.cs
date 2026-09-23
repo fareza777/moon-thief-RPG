@@ -764,7 +764,7 @@ namespace MoonThief
         string SaveStamp()
         {
             var d = SaveSystem.Read();
-            return d == null || string.IsNullOrEmpty(d.stamp) ? "" : "N" + d.chapter;
+            return d == null || string.IsNullOrEmpty(d.stamp) ? "" : Strings.Get("hud.nightshort", d.chapter);
         }
 
         public void ShowSettings(bool fromPause)
