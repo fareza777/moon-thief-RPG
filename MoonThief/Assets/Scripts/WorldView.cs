@@ -64,6 +64,11 @@ namespace MoonThief
         readonly List<Transform> _flies = new List<Transform>();
         readonly List<SpriteRenderer> _water = new List<SpriteRenderer>();
         readonly List<Actor> _critters = new List<Actor>();
+        // the friends at the hero's heels and the breadcrumb path they walk: a crumb lands
+        // under the hero every quarter tile and each friend marches to its own slot back
+        // along the line, so the trail bends exactly the way the hero bent
+        readonly List<Actor> _friends = new List<Actor>();
+        readonly List<Vector3> _crumbs = new List<Vector3>();
         // One direction strip per sheet and facing. A turn swaps to an array that already
         // exists, so actors of the same kind share sprites and no walk cycle is built twice.
         readonly Dictionary<string, Sprite[]> _clipCache = new Dictionary<string, Sprite[]>();
@@ -1388,6 +1393,7 @@ namespace MoonThief
             if (_root != null) Fx.Kill(_root.gameObject);
             Monsters.Clear(); Npcs.Clear(); _props.Clear(); _glows.Clear(); _glowAmp.Clear(); _flies.Clear();
             _water.Clear(); _critters.Clear(); _respawns.Clear();
+            _friends.Clear(); _crumbs.Clear();
             _bossProp = null; _bossHidden = false;
             Hero = null; Map = null; HudRoot = null; _vignette = null; _objArrow = null;
         }
@@ -1494,6 +1500,19 @@ namespace MoonThief
             var p = new Vector2(x, y);
             if (!CanStand(p)) p = NearestStandable(p);
             Hero.Root.localPosition = new Vector3(p.x, p.y, 0f);
+            // the trail starts over under the hero: the friends gather at his heels and
+            // the first crumb of the new walk is where he stands
+            _crumbs.Clear();
+            _crumbs.Add(Hero.Root.localPosition);
+            for (int i = 0; i < _friends.Count; i++)
+            {
+                var f = _friends[i];
+                var back = p + new Vector2(0f, -0.55f * (i + 1));
+                f.Root.localPosition = CanStand(back) ? new Vector3(back.x, back.y, 0f)
+                    : Hero.Root.localPosition;
+                if (f.Body != null) f.Body.localPosition = Vector3.zero;
+                SortActor(f);
+            }
             RefreshNamePlates();
         }
 
@@ -1533,7 +1552,27 @@ namespace MoonThief
             AddGlow(hglow, 0.22f);
             _heroGlow = hglow;
             _heroGlowIdx = _glows.Count - 1;
+
+            // the friends the thief raises: sea and moss walk the road behind amber the
+            // way they stand behind them in a fight. Only a down-facing frame exists in
+            // the pack, so they hop like the critters do - the night reads them as company.
+            for (int i = 0; i < FriendArt.Length; i++)
+            {
+                var f = MakeActor(Vector2.zero, WorldOrder(0f), isNpc: false);
+                f.Root.name = "friend" + i;
+                f.Name = null;
+                f.Speed = 4.6f;
+                var fr = Bank.Frames(FriendArt[i]);
+                if (fr.Length > 0) f.Anim.Play(fr, 1f, true);
+                _friends.Add(f);
+            }
         }
+
+        static readonly string[] FriendArt =
+        {
+            "Art/Hero/hero/color_2/walk/hero_walk_DOWN",
+            "Art/Hero/hero/color_3/walk/hero_walk_DOWN",
+        };
 
         bool _heroWalking;
         float _stepT;
@@ -1590,7 +1629,48 @@ namespace MoonThief
             pos.x = Mathf.Clamp(pos.x, 2.5f, GameMap.W - 2.5f);
             pos.y = Mathf.Clamp(pos.y, 2.5f, GameMap.H - 2.5f);
             Hero.Root.localPosition = new Vector3(pos.x, pos.y, 0f);
+            if (_friends.Count > 0 &&
+                (_crumbs.Count == 0 || Vector3.Distance(Hero.Root.localPosition, _crumbs[0]) > 0.25f))
+            {
+                _crumbs.Insert(0, Hero.Root.localPosition);
+                if (_crumbs.Count > 160) _crumbs.RemoveAt(_crumbs.Count - 1);
+            }
             return true;
+        }
+
+        /// <summary>Sea and moss keep pace a few crumbs back on the hero's own footprints,
+        /// hopping between steps the way the critters do. Only a down-facing frame exists
+        /// in the pack for them, so the trail reads as company, not as a mirror.</summary>
+        void DriveFriends(float dt)
+        {
+            if (_crumbs.Count == 0) return;
+            for (int i = 0; i < _friends.Count; i++)
+            {
+                var f = _friends[i];
+                if (f == null || f.Root == null) continue;
+                int idx = Mathf.Min((i + 1) * 6, _crumbs.Count - 1);
+                var target = (Vector2)_crumbs[idx];
+                var pos = (Vector2)f.Root.localPosition;
+                float d = Vector2.Distance(pos, target);
+                if (d > 3f)
+                {
+                    // a corner or a door left the friend too far back: cut straight to its
+                    // crumb instead of walking a kilometre of wall
+                    f.Root.localPosition = target;
+                    if (f.Body != null) f.Body.localPosition = Vector3.zero;
+                    continue;
+                }
+                if (d <= 0.05f)
+                {
+                    if (f.Body != null) f.Body.localPosition = Vector3.zero;
+                    continue;
+                }
+                float step = Mathf.Min(d, 5.4f * dt);
+                pos = Vector2.MoveTowards(pos, target, step);
+                f.Root.localPosition = new Vector3(pos.x, pos.y, 0f);
+                if (f.Body != null)
+                    f.Body.localPosition = new Vector3(0f, StepBob(_time, 8f, i * 1.7f), 0f);
+            }
         }
 
         Sprite[] _breath;
@@ -1718,6 +1798,7 @@ namespace MoonThief
             for (int i = 0; i < Monsters.Count; i++) SortActor(Monsters[i]);
             for (int i = 0; i < Npcs.Count; i++) SortActor(Npcs[i]);
             for (int i = 0; i < _critters.Count; i++) SortActor(_critters[i]);
+            for (int i = 0; i < _friends.Count; i++) SortActor(_friends[i]);
 
             // fireflies: slow drift + blink over the fields, dimmer deep in the forest
             for (int i = 0; i < _flies.Count; i++)
@@ -1835,6 +1916,9 @@ namespace MoonThief
                     if (a.Anim != null) a.Anim.Fps = 5.5f;
                 }
             }
+
+            // the friends keep their slots on the breadcrumb line
+            DriveFriends(dt);
 
             // respawn tickets: a felled monster comes back after its delay, and only while
             // the hero is somewhere else - nothing materialises on top of the player
