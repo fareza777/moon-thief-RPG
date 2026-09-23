@@ -972,6 +972,10 @@ namespace MoonThief
                 if (TryWorldEvent()) return;
             }
 
+            // the tune follows the zone: warm hearth music inside the village wall and its
+            // houses, the wandering folk pulse out in the fields and the wood
+            Sfx.Mus.Play(_inHouse || World.HeroPos.y <= 26f ? "village" : "explore");
+
             // camera follows the hero on both axes, clamped to the map; the HUD layer follows too
             FollowHero();
             World.SetObjective(ObjectivePos());

@@ -263,6 +263,18 @@ namespace MoonThief
                             Lead = Seq(-1, -1, 62, -1, -1, 65, -1, -1, -1, 64, -1, -1, 62, -1, -1, -1,
                                        -1, -1, 65, -1, -1, 69, -1, 67, -1, -1, 65, -1, -1, -1, -1, -1)
                         });
+                    case "village":
+                        // hearth-warm C major under the lamplight: open fifths in the bass,
+                        // a music-box lead - home against the wandering folk pulse outside
+                        return Render(new Song
+                        {
+                            Step = 0.18f, BassWave = Wave.Tri, LeadWave = Wave.Square,
+                            LeadVol = 0.14f, BassVol = 0.2f, HatVol = 0.03f, Pad = 0.1f,
+                            Bass = Seq(48, -2, -2, -1, 45, -2, -2, -1, 41, -2, -2, -1, 43, -2, -2, -1,
+                                       48, -2, -2, -1, 45, -2, -2, -1, 43, -2, -2, -1, 40, -2, -2, -1),
+                            Lead = Seq(72, -1, -2, 76, -1, -1, -2, -1, 74, -1, -2, 72, -1, -1, -2, -1,
+                                       76, -1, -2, 79, -1, -1, -2, -1, 76, -1, -2, -1, -1, -1, -2, -1)
+                        });
                     case "battle":
                         // driving D minor, eighth-note bass, short lead stabs
                         return Render(new Song
