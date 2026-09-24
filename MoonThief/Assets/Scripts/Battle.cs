@@ -1424,9 +1424,14 @@ namespace MoonThief
             View.SetSelected(0);
             View.ShowHint(true);
             // the strike button names the move this hero actually does: amber strikes,
-            // sea sweeps the whole field, moss mends the hurtest friend
+            // sea sweeps the whole field, moss mends the hurtest friend. At high flow the
+            // moon is already lending its weight (FlowMul) - say so on the button
             int style = f.Style;
-            View.Menu[0].Text.Set(Strings.Get(style == 1 ? "menu.sweep" : style == 2 ? "menu.mend" : "menu.strike"));
+            bool moonlit = _flow >= 4;
+            View.Menu[0].Text.Set(Strings.Get(
+                moonlit ? (style == 1 ? "menu.msweep" : style == 2 ? "menu.mmend" : "menu.mstrike")
+                        : (style == 1 ? "menu.sweep" : style == 2 ? "menu.mend" : "menu.strike")));
+            View.Menu[0].Text.SetColor(moonlit ? new Color(0.72f, 0.82f, 1f) : Color.white);
             View.Menu[0].Icon.sprite = TexArt.MenuIcon(style == 1 ? 13 : style == 2 ? 29 : 0);
             // commands that cannot fire go grey: morsel needs bag food and a fresh
             // portion, befriend needs room in the two-heart stable

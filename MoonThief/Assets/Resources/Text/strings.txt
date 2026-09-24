@@ -131,6 +131,9 @@ menu.attack|ATTACK
 menu.strike|STRIKE
 menu.sweep|SWEEP
 menu.mend|MEND
+menu.mstrike|MOON STRIKE
+menu.msweep|MOON SWEEP
+menu.mmend|MOON MEND
 menu.befriend|BEFRIEND
 menu.morsel|MORSEL
 menu.run|FLEE
