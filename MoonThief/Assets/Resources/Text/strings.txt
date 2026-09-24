@@ -130,6 +130,7 @@ bt.one|A wild {0} blocks the way!
 bt.two|{0} and a friend appear!
 bt.boss|The {0} bars your way!
 bt.slam|The {0} rears up and SLAMS down!
+bt.enraged|The {0} is cornered - it fights without mercy now!
 bt.yourturn|{0} - your move.
 bt.friendturn|{0} fights for you!
 bt.enemyturn|{0} strikes!
@@ -147,6 +148,7 @@ bt.auto.off|AUTO off.
 bt.attack.0|{0} lunges!
 bt.attack.1|{0} sweeps the whole field!
 bt.attack.2|{0} mends {1}!
+bt.attack.2c|{0} weaves a warm mending over {1}!
 bt.attack.2b|{0} throws a pebble at {1}!
 bt.attack.crit|{0} finds the weak seam! {1} damage!
 bt.weak|WEAK!

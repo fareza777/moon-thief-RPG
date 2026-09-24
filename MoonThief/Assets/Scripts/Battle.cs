@@ -721,7 +721,9 @@ namespace MoonThief
                 rig.BarCol = c;
                 if (rig.HpShown < 0f) rig.HpShown = rig.F.Hp01;
                 DrawFill(rig);
-                rig.Name.SetColor(alive ? new Color(0.92f, 0.94f, 1f) : new Color(0.5f, 0.46f, 0.56f));
+                rig.Name.SetColor(!alive ? new Color(0.5f, 0.46f, 0.56f)
+                    : rig.F.Hp01 <= 0.22f ? new Color(1f, 0.62f, 0.55f)   // hurt enough to worry: the name warms
+                    : new Color(0.92f, 0.94f, 1f));
                 if (rig.NameChip != null) Plate(rig.NameChip, rig.Name, rig.F.Name, rig.F.Boss, rig.F.Species != null);
             }
             for (int i = 0; i < EnemyRigs.Length; i++)
@@ -1118,6 +1120,7 @@ namespace MoonThief
             _qi = 0;
             _morselUsed = false;
             _befriended = 0;
+            _enraged = false;
             _levelAtStart = Game.State.Level;
             AwaitingInput = false;
             // each night has its own ground: the hollow's woods, the long fields, the deep
@@ -1284,9 +1287,22 @@ namespace MoonThief
         IEnumerator EnemyTurn(Fighter e)
         {
             _ph = Ph.Acting;
-            // the guard does not swat like the wild things: now and then it rears up and
-            // brings the whole weight of the night down on one hero
-            bool slam = e.Boss && UnityEngine.Random.value < 0.35f;
+            // cornered, the guard loses its patience: under a third of its bar it rears
+            // up far more often and the blows land heavier
+            if (e.Boss && e.Hp01 < 0.35f && !_enraged)
+            {
+                _enraged = true;
+                View.SetMessage(Strings.Get("bt.enraged", e.Name));
+                var rig = View.RigOf(e);
+                if (rig != null)
+                {
+                    StartCoroutine(Fx.FlashTint(rig.Anim, new Color(1f, 0.3f, 0.2f), 3, 0.1f, 0.1f));
+                    StartCoroutine(Fx.Shake(View.Stage, 0.2f, 0.35f));
+                }
+                Sfx.Play("boss");
+                yield return Fx.Wait(1.1f);
+            }
+            bool slam = e.Boss && UnityEngine.Random.value < (_enraged ? 0.6f : 0.35f);
             View.SetMessage(Strings.Get(slam ? "bt.slam" : "bt.enemyturn", e.Name));
             yield return Fx.Wait(slam ? 0.85f : 0.5f);
 
@@ -1314,7 +1330,7 @@ namespace MoonThief
             var tRig = View.RigOf(target);
             yield return Lunge(eRig, tRig.Home, 0.3f);
 
-            int dmg = Mathf.RoundToInt(UnityEngine.Random.Range(e.AtkMin, e.AtkMax + 1) * (slam ? 1.6f : 1f));
+            int dmg = Mathf.RoundToInt(UnityEngine.Random.Range(e.AtkMin, e.AtkMax + 1) * (slam ? 1.6f : 1f) * (_enraged ? 1.25f : 1f));
             target.Hp = Mathf.Max(0, target.Hp - dmg);
             var stagger = Bank.Frames(BattleData.ClipPath(target.ColorDir, "hit"));
             if (stagger.Length > 0) tRig.Anim.Play(stagger, 14f, false);
@@ -1416,6 +1432,8 @@ namespace MoonThief
             }
         }
 
+        bool _enraged;
+
         public void Confirm()
         {
             if (!AwaitingInput) return;
@@ -1464,13 +1482,15 @@ namespace MoonThief
                 {
                     var wRig = View.RigOf(weak);
                     yield return Lunge(aRig, wRig != null ? wRig.Home : aRig.Home, 0.3f);
+                    bool mendCrit = UnityEngine.Random.value < 0.2f;
                     int heal = Mathf.Max(4, (actor.AtkMin + actor.AtkMax) / 2 + Game.State.Level);
+                    if (mendCrit) heal = Mathf.RoundToInt(heal * 1.6f);
                     weak.Hp = Mathf.Min(weak.MaxHp, weak.Hp + heal);
-                    View.SetMessage(Strings.Get("bt.attack.2", actor.Name, weak.Name));
+                    View.SetMessage(Strings.Get(mendCrit ? "bt.attack.2c" : "bt.attack.2", actor.Name, weak.Name));
                     if (wRig != null)
                     {
-                        View.Sparkle(wRig.Home + new Vector3(0f, 1.1f, 0f), new Color(0.6f, 1f, 0.75f), 8);
-                        View.FloatNumber(wRig.Home + new Vector3(0f, 1.2f, 0f), Strings.Get("bt.heal", heal), new Color(0.7f, 1f, 0.7f));
+                        View.Sparkle(wRig.Home + new Vector3(0f, 1.1f, 0f), new Color(0.6f, 1f, 0.75f), mendCrit ? 14 : 8);
+                        View.FloatNumber(wRig.Home + new Vector3(0f, 1.2f, 0f), Strings.Get("bt.heal", heal), new Color(0.7f, 1f, 0.7f), mendCrit ? 3 : 2);
                     }
                     Sfx.Play("heal");
                     View.Refresh();
