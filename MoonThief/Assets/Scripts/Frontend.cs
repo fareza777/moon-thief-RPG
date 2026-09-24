@@ -1336,6 +1336,7 @@ namespace MoonThief
             List<Sprite> sprites = null;
             string title;
             string sub = "";
+            string foot = null;
 
             switch (kind)
             {
@@ -1395,6 +1396,7 @@ namespace MoonThief
                 case Page2.Equipment:
                     title = "jr.equip";
                     sub = Strings.Get("jr.equip.sub");
+                    foot = "jr.equip.tip";
                     Add(labels, vals, acts, Strings.Get("jr.slot.blade"), WornWord(0),
                         () => { CycleWorn(ItemKind.Blade); ShowPage(Page2.Equipment); });
                     Add(labels, vals, acts, Strings.Get("jr.slot.cloth"), WornWord(1),
@@ -1655,7 +1657,7 @@ namespace MoonThief
             _pageSub.transform.localPosition = new Vector3(0f, _cardTop - 3.5f, 0f);
             float bottom = LayRows(_pageRows, labels.ToArray(), acts.ToArray(), vals.ToArray(), rowsTop, labels.Count, icons?.ToArray(), sprites?.ToArray());
             _pageFoot.transform.localPosition = new Vector3(0f, FootY(bottom), 0f);
-            _pageFoot.Set(Strings.Get("jr.pagehint"));
+            _pageFoot.Set(Strings.Get(foot ?? "jr.pagehint"));
         }
 
         public void ShowToast(string text, float seconds = 3.2f)

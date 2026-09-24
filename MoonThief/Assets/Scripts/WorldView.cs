@@ -1085,12 +1085,22 @@ namespace MoonThief
             }
             else
             {
-                int gold = Map.Interior ? 20 : 12;
-                Game.State.Gold += gold;
                 var rng = new System.Random(Game.State.ChestsOpened * 7919 + MapChapter * 31 + (int)(chest.Pos.x * 13f));
-                string item = Items.RollLoot(Game.State.Chapter, rng);
-                Game.State.AddBag(item);
-                LastLootText = Strings.Get("loot.found", Strings.Get(item), gold);
+                if (rng.NextDouble() < 0.2f)
+                {
+                    // one cache in five is only a purse: more gold, no ware - the
+                    // "old coins" line the strings table always carried
+                    Game.State.Gold += Map.Interior ? 26 : 18;
+                    LastLootText = Strings.Get("loot.oldcoin");
+                }
+                else
+                {
+                    int gold = Map.Interior ? 20 : 12;
+                    Game.State.Gold += gold;
+                    string item = Items.RollLoot(Game.State.Chapter, rng);
+                    Game.State.AddBag(item);
+                    LastLootText = Strings.Get("loot.found", Strings.Get(item), gold);
+                }
             }
             if (chest.Sr != null)
             {
