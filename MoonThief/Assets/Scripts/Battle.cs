@@ -475,10 +475,11 @@ namespace MoonThief
                 // a floating/tall foe's name would sit inside the HUD strip -- but lowering it
                 // onto the sprite leaves the body covering the label, so it moves under the foe's
                 // HP bar (the bar sits at home.y-0.55 .. -0.35) instead
-                float aboveHead = home.y + rig.BodyHeight + 1.05f;
+                float aboveHead = home.y + rig.BodyHeight + 1.35f;
                 // a tall foe's head nearly touches the HUD strip, and the turn/next chevrons
-                // hover a half-unit over it - a nameplate parked at +0.45 overlapped both, so
-                // it rides a unit up when there is room and drops under the sprite when not
+                // hover a half-unit over it - a nameplate parked at +0.45 overlapped both, and
+                // at +1.05 the plate's hanging text still brushed the chevron tops; it rides
+                // well clear when there is room and drops under the sprite when not
                 float nameTop = aboveHead <= HudBottom - 0.4f ? aboveHead : home.y - 1.0f;
                 rig.Name.transform.localPosition = new Vector3(home.x, nameTop, 0f);
                 rig.Name.Set(f.Name);
