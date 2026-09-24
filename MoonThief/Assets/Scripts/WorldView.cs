@@ -1612,18 +1612,37 @@ namespace MoonThief
         /// fields"). Game parks the notice while this is up: both are drawn in the same strip,
         /// and the runtime audit caught them printing over each other in the village.</summary>
         public bool BannerUp { get; private set; }
+        Coroutine _bannerCo;
 
         /// <summary>A banner mid-fade dies with the coroutine when the world is tucked away
         /// (a house, a battle, the title card): pick its fade back up on return, or the
         /// frozen words hang over the next room forever.</summary>
         void OnEnable()
         {
-            if (ZoneChip != null && ZoneChip.enabled) StartCoroutine(BannerFade());
+            if (ZoneChip != null && ZoneChip.enabled) { BannerUp = true; StartBannerFade(); }
+        }
+
+        void OnDisable()
+        {
+            // a killed fade never runs its finally: drop the flag here or held toasts never flush
+            _bannerCo = null;
+            BannerUp = false;
+        }
+
+        void StartBannerFade()
+        {
+            // one fade at a time: a banner shown while the last one is still fading would
+            // otherwise have its text wiped by the old fade's end (and its flag cleared early)
+            if (_bannerCo != null) StopCoroutine(_bannerCo);
+            _bannerCo = StartCoroutine(BannerFade());
         }
 
         public void ShowBanner(string text)
         {
             if (ZoneBanner == null) return;
+            // stop the old fade first: if its finally runs on stop, it must not clear the
+            // flag we are about to raise for this banner
+            if (_bannerCo != null) StopCoroutine(_bannerCo);
             BannerUp = true;
             // "NIGHT 2\nthe long fields" is two lines: the night in the big face, the place in
             // the small one
@@ -1645,38 +1664,46 @@ namespace MoonThief
                 ZoneChip.transform.localScale = new Vector3(Mathf.Max(2.4f, w + 1.3f), 2.3f, 1f);
                 ZoneChip.transform.localPosition = new Vector3(0f, HalfH - 5.55f, 0f);
             }
-            if (Application.isPlaying) StartCoroutine(BannerFade());
+            if (Application.isPlaying) StartBannerFade();
         }
 
         System.Collections.IEnumerator BannerFade()
         {
             yield return Fx.Wait(2.2f);
-            BannerUp = false;
-            float e = 0f;
-            while (e < 0.6f)
+            try
             {
-                // the view can be torn down mid-fade (rebuilt room, next chapter): the labels
-                // are gone by then, and touching them would fault - just let the banner die
+                float e = 0f;
+                while (e < 0.6f)
+                {
+                    // the view can be torn down mid-fade (rebuilt room, next chapter): the
+                    // labels are gone by then, and touching them would fault - let it die
+                    if (ZoneBanner == null) yield break;
+                    e += Time.deltaTime;
+                    float a = 1f - Mathf.Clamp01(e / 0.6f);
+                    var c = ZoneBanner.Tint; c.a = a;
+                    ZoneBanner.SetColor(c);
+                    if (ZoneBannerSub != null) { var sc = ZoneBannerSub.Tint; sc.a = a * 0.9f; ZoneBannerSub.SetColor(sc); }
+                    if (ZoneChip != null)
+                    {
+                        var cc = ZoneChip.color; cc.a = 210f / 255f * a; ZoneChip.color = cc;
+                    }
+                    yield return null;
+                }
                 if (ZoneBanner == null) yield break;
-                e += Time.deltaTime;
-                float a = 1f - Mathf.Clamp01(e / 0.6f);
-                var c = ZoneBanner.Tint; c.a = a;
-                ZoneBanner.SetColor(c);
-                if (ZoneBannerSub != null) { var sc = ZoneBannerSub.Tint; sc.a = a * 0.9f; ZoneBannerSub.SetColor(sc); }
+                ZoneBanner.Set("", true);
+                ZoneBanner.SetColor(new Color(1f, 0.95f, 0.8f, 1f));
+                if (ZoneBannerSub != null) { ZoneBannerSub.Set("", true); ZoneBannerSub.SetColor(new Color(0.82f, 0.85f, 1f, 1f)); }
                 if (ZoneChip != null)
                 {
-                    var cc = ZoneChip.color; cc.a = 210f / 255f * a; ZoneChip.color = cc;
+                    ZoneChip.enabled = false;
+                    ZoneChip.color = new Color32(10, 8, 20, 210);
                 }
-                yield return null;
             }
-            if (ZoneBanner == null) yield break;
-            ZoneBanner.Set("", true);
-            ZoneBanner.SetColor(new Color(1f, 0.95f, 0.8f, 1f));
-            if (ZoneBannerSub != null) { ZoneBannerSub.Set("", true); ZoneBannerSub.SetColor(new Color(0.82f, 0.85f, 1f, 1f)); }
-            if (ZoneChip != null)
+            finally
             {
-                ZoneChip.enabled = false;
-                ZoneChip.color = new Color32(10, 8, 20, 210);
+                // the flag outlives the hold AND the fade: a held toast flushing at fade
+                // start would still land on the last visible glyphs
+                BannerUp = false;
             }
         }
 

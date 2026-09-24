@@ -144,6 +144,11 @@ def audit_frame(f, rows):
 
     for i in range(len(texts)):
         for j in range(i + 1, len(texts)):
+            # a floater's whole job is to hover over the world for a moment: a bark over a
+            # name, a pop over a sprite. Text-on-text still counts when neither floats.
+            if any(k in texts[i]["name"].lower() for k in FLOATERS) \
+                    or any(k in texts[j]["name"].lower() for k in FLOATERS):
+                continue
             if overlaps(texts[i]["box"], texts[j]["box"]):
                 out.append(("CLASH", texts[i]["name"], "<> " + texts[j]["name"] + " [" + texts[i]["text"][:20] + "]"))
 
