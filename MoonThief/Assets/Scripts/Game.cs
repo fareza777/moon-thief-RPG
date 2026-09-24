@@ -938,7 +938,9 @@ namespace MoonThief
             if (State.MoonShards >= ShardsNeeded) return Strings.Get("quest.3");
             if (World != null && World.ChestsLeft > 0 && State.Chapter < 3)
                 return Strings.Get("quest.2", ShardsNeeded - State.MoonShards);
-            return Strings.Get("quest.4");
+            // the corner names the night's real gatekeeper, not the finale's - a walkthrough
+            // line that reads "Face the Pale Guard" in night one is steering the hero wrong
+            return Strings.Get("quest.4", Strings.Get(BattleData.BossNameKey(State.Chapter)));
         }
 
         string _questText;
