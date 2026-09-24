@@ -306,6 +306,9 @@ namespace MoonThief
         void Start()
         {
             if (EditorMode) return;
+            // a phone's Unity default is 30fps - everything here reads sluggish at 30.
+            // 60 is the target every animation is timed for.
+            Application.targetFrameRate = 60;
             if (!Application.isMobilePlatform && !Application.isEditor)
                 Screen.SetResolution(576, 1024, false);
             BuildAll(Application.isMobilePlatform ? ComputeHalfHeight() : 16f);

@@ -2269,6 +2269,7 @@ namespace MoonThief
             Game.State.MorselsUsed++;
             var def = Items.Get(food);
             View.SetMessage(Strings.Get("bt.morsel2", Strings.Get(food), def.Power));
+            Sfx.Play("heal");
             foreach (var p in View.Party)
             {
                 if (!p.Alive || p.Hp >= p.MaxHp) continue;
