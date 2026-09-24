@@ -418,7 +418,7 @@ jr.beast|HP {0}   ATK {1}-{2}   WEAK {3}
 jr.unknown|?????
 jr.friend|FRIEND
 jr.unseen|Nobody has met this one yet.
-jr.quests.sub|ACTIVE {0}   DONE {1}
+jr.quests.sub|MAIN {0}   SIDE {1}
 jr.map|MAP
 jr.map.sub|the night's road, south to north
 jr.main|MAIN

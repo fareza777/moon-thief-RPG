@@ -1199,7 +1199,7 @@ namespace MoonThief
             // its neighbours stayed at 2, and the row it labels is already called JOURNAL
             var vals = new string[]
             {
-                "", Quests.ActiveCount + "/" + (Quests.All.Length - 3), "", "", "",
+                "", Quests.DoneCount + "/" + Quests.All.Length, "", "", "",
             };
             float rowsTop = LayoutCard(_pausePanel, 16.4f, 5, true);
             _pauseTitle.transform.localPosition = new Vector3(0f, _cardTop - 2.15f, 0f);
@@ -1276,7 +1276,7 @@ namespace MoonThief
             {
                 "L" + Game.State.Level, Game.State.Bag.Count.ToString(), WornCount() + "/3",
                 Game.State.Seen.Count + "/" + (BattleData.Bestiary.Length + 1),
-                Quests.ActiveCount + "/" + (Quests.All.Length - 3),
+                Quests.DoneCount + "/" + Quests.All.Length,
                 Strings.Get("zone.short." + Game.State.CurZone), "",
             };
             float bottom = LayRows(_jrRows, labels, acts, vals, rowsTop, 7, new[] { 16, 17, 18, 19, 20, 24, 14 });
@@ -1423,7 +1423,7 @@ namespace MoonThief
 
                 default:
                     title = "jr.quests";
-                    sub = Strings.Get("jr.quests.sub", Quests.ActiveCount, Quests.DoneCount);
+                    sub = Strings.Get("jr.quests.sub", Quests.MainLeft, Quests.SideActive);
                     icons = new List<int>();
                     foreach (var q in Quests.All)
                     {

@@ -312,12 +312,24 @@ namespace MoonThief
             return null;
         }
 
-        public static int ActiveCount
+        /// <summary>Mains drive the whole run, so they count until actually done - a header
+        /// reading "0 active" under a list of three main quests lies to the player.</summary>
+        public static int MainLeft
         {
             get
             {
                 int n = 0;
-                foreach (var q in All) if (Step(q.Id) == 1) n++;
+                foreach (var q in All) if (q.Main && Step(q.Id) != 3) n++;
+                return n;
+            }
+        }
+
+        public static int SideActive
+        {
+            get
+            {
+                int n = 0;
+                foreach (var q in All) if (!q.Main && Step(q.Id) == 1) n++;
                 return n;
             }
         }
