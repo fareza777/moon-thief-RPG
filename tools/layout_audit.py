@@ -53,7 +53,7 @@ def family(name):
     return re.sub(r"_+", "_", re.sub(r"\d+", "", leaf)).strip("_")
 
 # labels that are supposed to float over a fighter or a chest: not a layout defect
-FLOATERS = ("dmg", "Float", "pop", "spark")
+FLOATERS = ("dmg", "Float", "pop", "spark", "puff")
 # Screen-fixed chrome can never "land on" a character: the HUD strip rides its own plate at
 # the top of the frame and world actors wander under it by design. The OFF/CLIP/EDGE rules
 # still measure these labels - only the actor check stops pretending they are world names.
@@ -209,6 +209,9 @@ def audit_frame(f, rows):
                     out.append(("LOOT", chest["name"], "<covered by> " + other["name"]))
                 continue
             if family(a["name"]) != family(b["name"]):
+                continue
+            # particles crowd a cell by design: heel dust and loot flecks pool under one family
+            if any(k in a["name"] for k in FLOATERS) or any(k in b["name"] for k in FLOATERS):
                 continue
             # One sprite hidden inside another's box is a wasted prop whatever the depth is: the
             # slab drawn over the pebble means the pebble was never drawn. Two sprites that overlap

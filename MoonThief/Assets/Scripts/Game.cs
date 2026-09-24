@@ -672,7 +672,9 @@ namespace MoonThief
             _dlgPortrait.transform.localPosition = new Vector3(G.Left + 1.85f, bottom + 2.1f, 0f);
             _dlgPortPlate.size = new Vector2(3.0f, 3.6f);
             _dlgPortPlate.transform.localPosition = new Vector3(G.Left + 1.85f, bottom + 2.1f, 0f);
-            _dlgNext.transform.localPosition = new Vector3(G.Right - 0.7f, bottom + 0.35f, 0f);
+            // raised off the very bottom edge of the card: at +0.35 the blinking tip rode the
+            // last two pixels of the screen and the frame audit calls that an EDGE defect
+            _dlgNext.transform.localPosition = new Vector3(G.Right - 0.7f, bottom + 0.62f, 0f);
         }
 
         Transform DialogRoot { get; set; }

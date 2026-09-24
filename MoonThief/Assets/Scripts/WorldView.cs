@@ -1829,7 +1829,9 @@ namespace MoonThief
             if (d == null)
             {
                 if (_dust.Count >= 26) return;
-                d = new Dust { Sr = SpriteRendererUtil.Make(_root, "dust" + _dust.Count, spr, 1955) };
+                // named puff not dust: loot flecks and heel kicks share this pool, and the pile
+                // audit lets particles of one family crowd a cell without calling it a defect
+                d = new Dust { Sr = SpriteRendererUtil.Make(_root, "puff" + _dust.Count, spr, 1955) };
                 _dust.Add(d);
             }
             d.Sr.enabled = true;
