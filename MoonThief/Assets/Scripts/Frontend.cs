@@ -240,6 +240,7 @@ namespace MoonThief
         SpriteRenderer _jrPanel, _pagePanel;
         string[] _pageLabels = new string[0], _pageVals = new string[0];
         int[] _pageIcons;
+        Sprite[] _pageIconSprites;
         Action[] _pageActs = new Action[0];
         float _cardTop;                 // the card laid out last: cards are centred on the origin
         string _pageTitleKey;
@@ -1192,6 +1193,7 @@ namespace MoonThief
             var vals = new List<string>();
             var acts = new List<Action>();
             List<int> icons = null;
+            List<Sprite> sprites = null;
             string title;
             string sub = "";
 
@@ -1263,8 +1265,16 @@ namespace MoonThief
                 case Page2.Bestiary:
                     title = "jr.bestiary";
                     sub = Strings.Get("jr.bestiary.sub", Game.State.Seen.Count, BattleData.Bestiary.Length + 1);
-                    foreach (var spec in BattleData.Bestiary) AddBeast(labels, vals, acts, spec);
+                    sprites = new List<Sprite>();
+                    foreach (var spec in BattleData.Bestiary)
+                    {
+                        AddBeast(labels, vals, acts, spec);
+                        sprites.Add(Game.State.Seen.ContainsKey(spec.Name)
+                            ? TexArt.MapMonster(spec.MapSheet, 1) : null);
+                    }
                     AddBeast(labels, vals, acts, BattleData.Boss);
+                    sprites.Add(Game.State.Seen.ContainsKey(BattleData.Boss.Name)
+                        ? TexArt.MapMonster(BattleData.Boss.MapSheet, 1) : null);
                     break;
 
                 default:
@@ -1286,6 +1296,7 @@ namespace MoonThief
             _pageVals = vals.ToArray();
             _pageActs = acts.ToArray();
             _pageIcons = icons?.ToArray();
+            _pageIconSprites = sprites?.ToArray();
 
             HideAll();
             _sc = Sc.Page;
@@ -1350,12 +1361,14 @@ namespace MoonThief
             var vals = new List<string>();
             var acts = new List<Action>();
             var icons = _pageIcons == null ? null : new List<int>();
+            var sprites = _pageIconSprites == null ? null : new List<Sprite>();
             for (int i = 0; i < count; i++)
             {
                 labels.Add(_pageLabels[start + i]);
                 vals.Add(_pageVals[start + i]);
                 acts.Add(_pageActs[start + i]);
                 icons?.Add(_pageIcons[start + i]);
+                sprites?.Add(_pageIconSprites[start + i]);
             }
             if (pages > 1)
             {
@@ -1363,16 +1376,18 @@ namespace MoonThief
                 vals.Add("");
                 acts.Add(() => { _pageIndex = (_pageIndex + 1) % pages; LayoutPage(); Select(0); });
                 icons?.Add(-1);
+                sprites?.Add(null);
             }
             labels.Add(Strings.Get("menu.back"));
             vals.Add("");
             acts.Add(ShowJournal);
             icons?.Add(14);
+            sprites?.Add(null);
 
             float rowsTop = LayoutCard(_pagePanel, 16.4f, labels.Count, true);
             _pageTitle.transform.localPosition = new Vector3(0f, _cardTop - 1.9f, 0f);
             _pageSub.transform.localPosition = new Vector3(0f, _cardTop - 3.5f, 0f);
-            float bottom = LayRows(_pageRows, labels.ToArray(), acts.ToArray(), vals.ToArray(), rowsTop, labels.Count, icons?.ToArray());
+            float bottom = LayRows(_pageRows, labels.ToArray(), acts.ToArray(), vals.ToArray(), rowsTop, labels.Count, icons?.ToArray(), sprites?.ToArray());
             _pageFoot.transform.localPosition = new Vector3(0f, FootY(bottom), 0f);
             _pageFoot.Set(Strings.Get("jr.pagehint"));
         }
@@ -1466,7 +1481,7 @@ namespace MoonThief
         /// card that has one calls this with the value LayRows returned.</summary>
         static float FootY(float lastRowBottom) => lastRowBottom - 1.12f;
 
-        float LayRows(List<Row> rows, string[] labels, Action[] acts, string[] vals, float topY, int count, int[] icons = null)
+        float LayRows(List<Row> rows, string[] labels, Action[] acts, string[] vals, float topY, int count, int[] icons = null, Sprite[] sprites = null)
         {
             // One pitch for the whole list: evenly spaced rows read as a table, and the returned
             // bottom edge is what the card and its footnote are placed from.
@@ -1490,7 +1505,11 @@ namespace MoonThief
                 var r = rows[i];
                 bool used = i < count;
                 int icon = icons != null && i < icons.Length ? icons[i] : -1;
-                r.Icon.sprite = used && icon >= 0 ? TexArt.MenuIcon(icon) : null;
+                Sprite spr = !used ? null
+                    : sprites != null && i < sprites.Length && sprites[i] != null ? sprites[i]
+                    : icon >= 0 ? TexArt.MenuIcon(icon) : null;
+                bool hasIcon = spr != null;
+                r.Icon.sprite = spr;
                 r.Panel.gameObject.SetActive(used);
                 r.Text.gameObject.SetActive(used);
                 r.Chev.gameObject.SetActive(used);
@@ -1508,7 +1527,7 @@ namespace MoonThief
                 // inner edge. Values use the list-wide column size computed above; the label alone
                 // steps down when the pair still overflows, so the column stays one size.
                 const float gap = 0.7f;
-                float iconW = icon >= 0 ? 1.25f : 0f;
+                float iconW = hasIcon ? 1.25f : 0f;
                 float labelX = -RowW * 0.5f + TextInset + iconW;
                 float valX = RowW * 0.5f - ValInset;
                 float room = valX - labelX;
@@ -1529,7 +1548,7 @@ namespace MoonThief
 
                 r.Panel.size = new Vector2(RowW, RowH);
                 r.Panel.transform.localPosition = new Vector3(0f, y - RowH * 0.5f, 0f);
-                if (icon >= 0)
+                if (hasIcon)
                 {
                     r.Icon.transform.localPosition = new Vector3(labelX - iconW + 0.6f, y - RowH * 0.5f, 0f);
                     r.Icon.enabled = true;
