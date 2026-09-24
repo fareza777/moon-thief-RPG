@@ -2434,6 +2434,12 @@ namespace MoonThief
             Debug.Log("[selftest] shop rows=" + Menus.ActiveRowCount);
             Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);   // buy first ware
             yield return new WaitForSecondsRealtime(0.2f);
+            // the SELL card is a different layout (bag rows, its own footer hint, half prices):
+            // step down to the SELL row - it sits second from last, before BACK - and open it
+            for (int s = 0; s < Menus.ActiveRowCount - 2; s++) Menus.Tick(0.05f, Vector2.zero, false, 1, false, false);
+            Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);
+            yield return new WaitForSecondsRealtime(0.4f);
+            Shot("21b-shop-sell");
             ClosePause();
             yield return new WaitForSeconds(0.3f);
 
@@ -2466,6 +2472,20 @@ namespace MoonThief
             yield return new WaitForSecondsRealtime(0.5f);
             Shot("28b-map");
             Debug.Log("[selftest] map rows=" + Menus.ActiveRowCount);
+            // the four pages nobody has photographed yet: character stats, the bag,
+            // worn gear, and the bestiary with its FRIEND column
+            Menus.EditorJournal(0);
+            yield return new WaitForSecondsRealtime(0.5f);
+            Shot("28c-character");
+            Menus.EditorJournal(1);
+            yield return new WaitForSecondsRealtime(0.5f);
+            Shot("28d-items");
+            Menus.EditorJournal(2);
+            yield return new WaitForSecondsRealtime(0.5f);
+            Shot("28e-equipment");
+            Menus.EditorJournal(3);
+            yield return new WaitForSecondsRealtime(0.5f);
+            Shot("28f-bestiary");
             ClosePause();
 
             // hunt the nearest wild monster so an encounter is guaranteed, not lucky. Steering is
