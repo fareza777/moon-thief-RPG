@@ -1729,7 +1729,7 @@ namespace MoonThief
                 View.FloatNumber(rig.Home + new Vector3(0f, 1.9f, 0f),
                     Strings.Get("bt.poison"), new Color(0.55f, 1f, 0.5f));
             }
-            Sfx.Play("hurt");
+            Sfx.Play("venom");   // a sizzle, not a smack: the venom does its own work
             f.Hp = Mathf.Max(0, f.Hp - 2);
             View.Refresh();
             yield return Fx.Wait(0.5f);
@@ -2161,6 +2161,7 @@ namespace MoonThief
                 yield break;
             }
             View.SetMessage(Strings.Get("bt.flee"));
+            Sfx.Play("whoosh");
             // the party itself melts back into the dark before the world takes over
             foreach (var p in View.Party)
                 if (p.Alive)
