@@ -33,6 +33,7 @@ namespace MoonThief
             public static readonly string[] Worn = new string[3];                  // blade, cloth, charm
             public static readonly List<string> Zones = new List<string>();        // places walked into
             public static string CurZone = "village";                              // the zone the hero stands in now
+            public static string ObjZone;                                          // the zone the compass points at
             public static readonly List<string> ChestsDone = new List<string>();   // chests already opened
             public static readonly Dictionary<string, int> Seen = new Dictionary<string, int>();
 
@@ -957,7 +958,21 @@ namespace MoonThief
         /// Indoors it is parked - a room that fits on one screen needs no compass.</summary>
         Vector2? ObjectivePos()
         {
-            if (World == null || World.Map == null || World.Map.Interior) return null;
+            if (World == null || World.Map == null || World.Map.Interior) { State.ObjZone = null; return null; }
+            Vector2? p = ObjectivePosInner();
+            // the journal's map page reads the zone this falls in to mark the night's errand
+            if (p.HasValue)
+            {
+                float y = p.Value.y;
+                State.ObjZone = y >= GameMap.H - 8 ? "gate"
+                    : y > 58f ? "wood" : y > 26f ? "fields" : "village";
+            }
+            else State.ObjZone = null;
+            return p;
+        }
+
+        Vector2? ObjectivePosInner()
+        {
             if (!_metMira)
             {
                 var mira = World.FindNpc("npc.elder");

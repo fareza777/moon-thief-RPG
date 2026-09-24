@@ -1389,9 +1389,14 @@ namespace MoonThief
                     Add(labels, vals, acts, Strings.Get("zone.name.fields"), Strings.Get("jr.map.fields"), null);
                     Add(labels, vals, acts, Strings.Get("zone.name.wood"), Strings.Get("jr.map.wood"), null);
                     Add(labels, vals, acts, boss, Strings.Get("jr.map.gate"), null);
-                    // the row you stand in says so
+                    // the row you stand in says so; the row the compass points at says it
+                    // holds the night's errand - when they differ, the map reads as a route
                     int at = Game.State.CurZone == "wood" ? 2 : Game.State.CurZone == "fields" ? 1 : 0;
                     vals[at] = Strings.Get("jr.map.here");
+                    var mapZones = new[] { "village", "fields", "wood", "gate" };
+                    for (int i = 0; i < 4; i++)
+                        if (i != at && Game.State.ObjZone == mapZones[i])
+                            vals[i] = Strings.Get("jr.map.quest");
                     icons = new List<int> { 16, 17, 19, 0 };
                     break;
 
