@@ -2379,6 +2379,7 @@ namespace MoonThief
                         if (mf.GetComponent<MeshRenderer>() != null && mf.GetComponent<MeshRenderer>().enabled)
                             Debug.Log("[scenemesh] " + mf.transform.name + " parent=" + (mf.transform.parent != null ? mf.transform.parent.name : "-") +
                                 " verts=" + (mf.sharedMesh != null ? mf.sharedMesh.vertexCount : -1));
+                    _houseView.DumpGroundVerts();
                 }
             }
 

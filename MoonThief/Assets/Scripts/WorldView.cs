@@ -295,6 +295,23 @@ namespace MoonThief
                 if (sr != null) sr.enabled = false;
         }
 
+        /// <summary>Selftest only: print the ground mesh's real vertex data for a few cells -
+        /// position, uv, vertex color - so a dark cell can be blamed on uv or color directly.</summary>
+        public void DumpGroundVerts()
+        {
+            if (_groundMf == null || _groundMf.sharedMesh == null) return;
+            var m = _groundMf.sharedMesh;
+            var vs = m.vertices; var us = m.uv; var cs = m.colors32;
+            var sb = new System.Text.StringBuilder();
+            foreach (var c in new[] { new Vector2Int(12, 20), new Vector2Int(7, 17), new Vector2Int(4, 12), new Vector2Int(8, 12), new Vector2Int(10, 15) })
+            {
+                int i = (c.y * GameMap.W + c.x) * 4;
+                if (i + 3 >= vs.Length) { sb.AppendLine($"{c} out"); continue; }
+                sb.AppendLine($"{c} v0={vs[i]} uv0={us[i]} c0={cs[i]} | v2={vs[i + 2]} uv2={us[i + 2]} c2={cs[i + 2]}");
+            }
+            UnityEngine.Debug.Log("[groundverts]\n" + sb);
+        }
+
         /// <summary>Diagnostics: one line per interior cell, tile id + shade - the dump the
         /// prop audit cannot fake, because it replays the mesh's own chooser.</summary>
         public void DumpRoomTiles()
