@@ -2293,10 +2293,15 @@ namespace MoonThief
             Sfx.Mus.Intensity = 1f;
             AwaitingInput = false;
             View.SetMenuVisible(false);
+            // slinking home costs a handful of gold: standing back up for another
+            // try is the free path, and the card says so
+            int tithe = Mathf.Min(Game.State.Gold, 15 + Game.State.Chapter * 5);
+            var lines = new List<string> { Strings.Get("card.lossline") };
+            if (tithe > 0) lines.Add(Strings.Get("card.tithe", tithe));
             View.ShowCard(Strings.Get("card.losstitle"),
-                new[] { Strings.Get("card.lossline") },
+                lines.ToArray(),
                 new[] { Strings.Get("btn.retry"), Strings.Get("btn.flee") },
-                new Action[] { () => StartBattle(_specs), () => OnDefeat?.Invoke() },
+                new Action[] { () => StartBattle(_specs), () => { Game.State.Gold -= tithe; OnDefeat?.Invoke(); } },
                 new Color(1f, 0.6f, 0.6f));
         }
     }
