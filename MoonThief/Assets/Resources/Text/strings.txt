@@ -149,6 +149,7 @@ bt.attack.1|{0} sweeps the whole field!
 bt.attack.2|{0} mends {1}!
 bt.attack.2b|{0} throws a pebble at {1}!
 bt.attack.crit|{0} finds the weak seam! {1} damage!
+bt.weak|WEAK!
 bt.heal|+{0}
 
 # ---- monsters
@@ -339,7 +340,7 @@ jr.items.sub|{0} THINGS CARRIED
 jr.equip.sub|Tap a slot to swap it.
 jr.equip.tip|Bonus applies to the party.
 jr.bestiary.sub|MET {0} OF {1}
-jr.beast|HP {0}   ATK {1}-{2}
+jr.beast|HP {0}   ATK {1}-{2}   WEAK {3}
 jr.unknown|?????
 jr.unseen|Nobody has met this one yet.
 jr.quests.sub|ACTIVE {0}   DONE {1}

@@ -964,6 +964,40 @@ namespace MoonThief
             return null;
         }
 
+        /// <summary>The creature's family read off its battler file: SlimeA and SlimeD are the
+        /// same kind of thing whatever their tier. Weaknesses hang off this, so a recolour or a
+        /// named oddity (the palebell is a ghost) inherits the weakness its sprite promises.</summary>
+        public static string FamilyOf(MonsterSpec s)
+        {
+            var b = s.Battler ?? "";
+            var n = b.Substring(b.LastIndexOf('/') + 1);
+            var sb = new System.Text.StringBuilder(n.Length);
+            foreach (var c in n)
+            {
+                if (!char.IsLetter(c)) break;
+                sb.Append(char.ToLowerInvariant(c));
+            }
+            return sb.ToString();
+        }
+
+        /// <summary>Style vs species: every friend's trick has a family it was made for. Amber's
+        /// claws open fleshy beasts, sea's arc scatters swarm and sting, moss's moon-petals
+        /// banish the dead. A true answer is worth half again the damage, so picking the right
+        /// attacker matters more than picking the strongest.</summary>
+        public static bool StyleBeats(int style, MonsterSpec foe)
+        {
+            switch (FamilyOf(foe))
+            {
+                case "slime":
+                case "mushroom": return style == 0;
+                case "wasp":
+                case "scorpion": return style == 1;
+                case "ghost":
+                case "skeleton": return style == 2;
+                default: return false;   // genius and minotaur have no soft seam
+            }
+        }
+
         /// <summary>A random encounter for a chapter. Usually one foe, sometimes two.</summary>
         public static MonsterSpec[] Roll(int chapter, System.Random rng)
         {

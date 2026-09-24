@@ -1330,10 +1330,20 @@ namespace MoonThief
             bool known = Game.State.Seen.ContainsKey(spec.Name);
             labels.Add(known ? Strings.Get(spec.Name) : Strings.Get("jr.unknown"));
             vals.Add(known
-                ? Strings.Get("jr.beast", spec.Hp, spec.AtkMin, spec.AtkMax)
+                ? Strings.Get("jr.beast", spec.Hp, spec.AtkMin, spec.AtkMax, WeaknessOf(spec))
                 : "?");
             var s2 = spec;
             acts.Add(() => ShowToast(known ? Strings.Get(s2.Name + ".d") : Strings.Get("jr.unseen"), 2.6f));
+        }
+
+        /// <summary>Which friend this species is soft against, named on the card so the
+        /// weakness table is a thing you can learn instead of a thing you guess at.</summary>
+        static string WeaknessOf(MonsterSpec spec)
+        {
+            if (BattleData.StyleBeats(0, spec)) return Strings.Get("hero.amber");
+            if (BattleData.StyleBeats(1, spec)) return Strings.Get("hero.sea");
+            if (BattleData.StyleBeats(2, spec)) return Strings.Get("hero.moss");
+            return "-";
         }
 
         static void Add(List<string> labels, List<string> vals, List<Action> acts,

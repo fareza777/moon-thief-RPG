@@ -1248,8 +1248,9 @@ namespace MoonThief
             yield return Fx.Wait(0.4f);
             yield return Lunge(aRig, tRig != null ? tRig.Home : aRig.Home, 0.3f);
             bool crit = UnityEngine.Random.value < 0.18f;
-            int dmg = Mathf.RoundToInt(UnityEngine.Random.Range(f.AtkMin, f.AtkMax + 1) * (crit ? 1.6f : 1f));
-            HitFoe(target, dmg, crit);
+            bool weakHit = WeakTo(0, target);
+            int dmg = Mathf.RoundToInt(UnityEngine.Random.Range(f.AtkMin, f.AtkMax + 1) * (crit ? 1.6f : 1f) * (weakHit ? 1.5f : 1f));
+            HitFoe(target, dmg, crit, weakHit);
             View.Refresh();
             yield return Fx.Wait(0.45f);
             yield return Lunge(aRig, aRig.Home, 0.3f);
@@ -1446,8 +1447,9 @@ namespace MoonThief
                 var tRig = View.RigOf(target);
                 View.SetMessage(Strings.Get("bt.attack.2b", actor.Name, target.Name));
                 yield return Lunge(aRig, tRig.Home, 0.3f);
-                int pebble = Mathf.Max(1, UnityEngine.Random.Range(actor.AtkMin, actor.AtkMax + 1) / 2);
-                HitFoe(target, pebble, false);
+                bool weakHit = WeakTo(2, target);
+                int pebble = Mathf.Max(1, Mathf.RoundToInt(UnityEngine.Random.Range(actor.AtkMin, actor.AtkMax + 1) * (weakHit ? 0.75f : 0.5f)));
+                HitFoe(target, pebble, false, weakHit);
                 yield return Fx.Wait(0.4f);
                 yield return Lunge(aRig, aRig.Home, 0.3f);
                 PlayIdle(aRig);
@@ -1468,9 +1470,12 @@ namespace MoonThief
                 var firstRig = View.RigOf(View.Enemies[ti]);
                 yield return Lunge(aRig, firstRig != null ? firstRig.Home : aRig.Home, 0.35f);
                 int roll = UnityEngine.Random.Range(actor.AtkMin, actor.AtkMax + 1);
-                int dmg = Mathf.Max(1, Mathf.RoundToInt(roll * 0.65f));
                 for (int i = 0; i < View.Enemies.Length; i++)
-                    if (View.Enemies[i].Alive) HitFoe(View.Enemies[i], dmg, false);
+                {
+                    if (!View.Enemies[i].Alive) continue;
+                    bool weakHit = WeakTo(1, View.Enemies[i]);
+                    HitFoe(View.Enemies[i], Mathf.Max(1, Mathf.RoundToInt(roll * (weakHit ? 0.975f : 0.65f))), false, weakHit);
+                }
                 View.Refresh();
                 yield return Fx.Wait(0.5f);
                 yield return Lunge(aRig, aRig.Home, 0.3f);
@@ -1498,9 +1503,10 @@ namespace MoonThief
                 var tRig = View.RigOf(target);
                 yield return Lunge(aRig, tRig.Home, 0.35f);
                 bool crit = UnityEngine.Random.value < 0.25f;
-                int dmg = Mathf.RoundToInt(UnityEngine.Random.Range(actor.AtkMin, actor.AtkMax + 1) * (crit ? 1.7f : 1f));
+                bool weakHit = WeakTo(0, target);
+                int dmg = Mathf.RoundToInt(UnityEngine.Random.Range(actor.AtkMin, actor.AtkMax + 1) * (crit ? 1.7f : 1f) * (weakHit ? 1.5f : 1f));
                 View.SetMessage(crit ? Strings.Get("bt.attack.crit", actor.Name, dmg) : Strings.Get("bt.attack.0", actor.Name));
-                HitFoe(target, dmg, crit);
+                HitFoe(target, dmg, crit, weakHit);
                 View.Refresh();
                 yield return Fx.Wait(0.45f);
                 yield return Lunge(aRig, aRig.Home, 0.3f);
@@ -1515,18 +1521,29 @@ namespace MoonThief
             }
         }
 
-        /// <summary>Damage + feedback for one foe: tint flash, shake, the floating number.</summary>
-        void HitFoe(Fighter target, int dmg, bool crit)
+        /// <summary>Damage + feedback for one foe: tint flash, shake, the floating number.
+        /// A weakness hit earns its own banner above the number so the table is learnable.</summary>
+        void HitFoe(Fighter target, int dmg, bool crit, bool weak = false)
         {
             target.Hp = Mathf.Max(0, target.Hp - dmg);
             var tRig = View.RigOf(target);
             if (tRig == null) return;
             StartCoroutine(Fx.FlashTint(tRig.Anim, new Color(1f, 0.5f, 0.4f), 2, 0.07f, 0.07f));
-            StartCoroutine(Fx.Shake(tRig.Root, crit ? 0.2f : 0.12f, crit ? 0.3f : 0.22f));
+            StartCoroutine(Fx.Shake(tRig.Root, crit || weak ? 0.2f : 0.12f, crit || weak ? 0.3f : 0.22f));
             if (crit) StartCoroutine(Fx.Shake(View.Stage, 0.13f, 0.18f));
             View.FloatNumber(tRig.Home + new Vector3(0f, 1.2f, 0f), "-" + dmg,
-                crit ? new Color(1f, 0.85f, 0.3f) : new Color(1f, 0.95f, 0.75f));
+                crit ? new Color(1f, 0.85f, 0.3f) : weak ? new Color(0.65f, 1f, 0.95f) : new Color(1f, 0.95f, 0.75f));
+            if (weak)
+                View.FloatNumber(tRig.Home + new Vector3(0f, 1.9f, 0f), Strings.Get("bt.weak"), new Color(0.65f, 1f, 0.95f));
             Sfx.Play(crit ? "crit" : "hit");
+        }
+
+        /// <summary>True when the acting friend's style cuts this foe's family seam.</summary>
+        static bool WeakTo(int style, Fighter foe)
+        {
+            if (foe.Species == null) return false;
+            var s = BattleData.Species(foe.Species);
+            return s.HasValue && BattleData.StyleBeats(style, s.Value);
         }
 
         IEnumerator FadeOut(BattleView.Rig rig, bool keepRoot = false)
