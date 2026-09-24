@@ -2194,16 +2194,16 @@ namespace MoonThief
             _titleRoot.gameObject.SetActive(false);
             _endRoot.gameObject.SetActive(false);
             BattleViewRef.gameObject.SetActive(false);
-            if (World != null)
-            {
-                World.gameObject.SetActive(true);
-                if (World.Ready) World.Teardown();
-            }
             // only remember the view we came FROM when we actually came from outside - a
             // chained interior visit would otherwise stash the about-to-be-killed house
-            // view as the "overworld", and LeaveHouse would hand back a dead WorldView
-            if (!_inHouse) _overworld = World;
-            if (_overworld != null) _overworld.gameObject.SetActive(false);   // EnterHouse hides it too - its canopy mesh reads as black patches inside the room
+            // view as the "overworld", and LeaveHouse would hand back a dead WorldView.
+            // no Teardown: the overworld must stay whole so LeaveHouse can walk back into it
+            if (World != null && !_inHouse)
+            {
+                _overworld = World;
+                _overworld.gameObject.SetActive(false);   // EnterHouse hides it too - its canopy mesh reads as black patches inside the room
+                _doorReturn = World.Map != null ? World.Map.VillageCenter : new Vector2(9.5f, 12.5f);
+            }
             if (_houseRoot == null)
             {
                 _houseRoot = new GameObject("house").transform;
