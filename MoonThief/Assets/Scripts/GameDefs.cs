@@ -199,14 +199,14 @@ namespace MoonThief
         {
             switch (g)
             {
-                case Ground.Grass: return new Color32(38, 72, 46, 255);
-                case Ground.Path:  return new Color32(104, 72, 46, 255);
-                case Ground.Water: return new Color32(40, 62, 112, 255);
-                case Ground.Tree:  return new Color32(22, 56, 36, 255);
-                case Ground.Rock:  return new Color32(92, 90, 100, 255);
-                case Ground.Wall:  return new Color32(48, 38, 52, 255);
-                case Ground.Floor: return new Color32(108, 76, 52, 255);
-                default:           return new Color32(12, 12, 20, 255);
+                case Ground.Grass: return new Color32(52, 98, 62, 255);
+                case Ground.Path:  return new Color32(138, 96, 60, 255);
+                case Ground.Water: return new Color32(52, 82, 148, 255);
+                case Ground.Tree:  return new Color32(28, 74, 46, 255);
+                case Ground.Rock:  return new Color32(122, 118, 132, 255);
+                case Ground.Wall:  return new Color32(64, 50, 70, 255);
+                case Ground.Floor: return new Color32(142, 100, 68, 255);
+                default:           return new Color32(14, 14, 24, 255);
             }
         }
 

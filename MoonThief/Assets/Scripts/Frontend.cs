@@ -580,7 +580,7 @@ namespace MoonThief
             _mapSr = SpriteRendererUtil.Make(_pageRoot, "pgMapImg", null, 6002);
             _mapSr.enabled = false;
             _mapHeroDot = SpriteRendererUtil.Make(_pageRoot, "pgMapHero", TexArt.Dot(), 6005);
-            _mapHeroDot.transform.localScale = Vector3.one * 0.055f;
+            _mapHeroDot.transform.localScale = Vector3.one * 0.085f;
             _mapHeroDot.color = new Color(1f, 0.82f, 0.4f);
             _mapHeroDot.enabled = false;
             _mapQuestDot = SpriteRendererUtil.Make(_pageRoot, "pgMapQuest", TexArt.Spark(), 6005);

@@ -421,12 +421,6 @@ jr.unseen|Nobody has met this one yet.
 jr.quests.sub|ACTIVE {0}   DONE {1}
 jr.map|MAP
 jr.map.sub|the night's road, south to north
-jr.map.hollow|rest, stalls
-jr.map.fields|the errands
-jr.map.wood|the way north
-jr.map.gate|the way out
-jr.map.here|- HERE
-jr.map.quest|- QUEST
 jr.main|MAIN
 jr.new|NEW
 jr.active|ACTIVE
