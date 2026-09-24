@@ -527,6 +527,7 @@ namespace MoonThief
             Menus.GetMap = () => World != null && World.Map != null && !World.Map.Interior ? World.Map : null;
             Menus.GetHeroPos = () => World != null && World.Map != null && !World.Map.Interior ? (Vector2?)World.HeroPos : null;
             Menus.GetObjectivePos = () => ObjectivePos();
+            Menus.GetChests = () => World != null && World.Map != null && !World.Map.Interior ? World.ShutChestPos() : null;
         }
 
         void BuildTitle()

@@ -1038,6 +1038,17 @@ namespace MoonThief
 
         public Vector2 ChestPos(int i) => _chests[i].Pos;
 
+        /// <summary>Where the night's still-shut chests sit - the journal's world map drops
+        /// a gold mote on each, so an unlooted cache reads off the card at a glance.</summary>
+        public List<Vector2> ShutChestPos()
+        {
+            var list = new List<Vector2>();
+            if (_chests == null) return list;
+            for (int i = 0; i < _chests.Length; i++)
+                if (!_chests[i].Opened) list.Add(_chests[i].Pos);
+            return list;
+        }
+
         /// <summary>How many chests are still shut in this chapter (drives the quest line).</summary>
         public int ChestsLeft
         {

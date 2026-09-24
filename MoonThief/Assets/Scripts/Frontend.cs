@@ -252,7 +252,9 @@ namespace MoonThief
         public Func<GameMap> GetMap;
         public Func<Vector2?> GetHeroPos;
         public Func<Vector2?> GetObjectivePos;
+        public Func<List<Vector2>> GetChests;
         SpriteRenderer _mapSr, _mapHeroDot, _mapQuestDot;
+        readonly SpriteRenderer[] _mapChestDots = new SpriteRenderer[8];
         readonly PixelLabel[] _mapZoneLbl = new PixelLabel[4];
         Sprite _mapSpr;
         string[] _pageLabels = new string[0], _pageVals = new string[0];
@@ -587,6 +589,13 @@ namespace MoonThief
             _mapQuestDot.transform.localScale = Vector3.one * 0.16f;
             _mapQuestDot.color = new Color(0.74f, 0.62f, 1f);
             _mapQuestDot.enabled = false;
+            for (int i = 0; i < 8; i++)
+            {
+                _mapChestDots[i] = SpriteRendererUtil.Make(_pageRoot, "pgMapChest" + i, TexArt.Dot(), 6004);
+                _mapChestDots[i].transform.localScale = Vector3.one * 0.055f;
+                _mapChestDots[i].color = new Color(1f, 0.9f, 0.45f);
+                _mapChestDots[i].enabled = false;
+            }
             for (int i = 0; i < 4; i++)
             {
                 _mapZoneLbl[i] = PixelLabelUtil.Make(_pageRoot, "pgMapZone" + i, 1, new Color(0.86f, 0.86f, 0.96f), TextAlign.Left, 6007);
@@ -761,6 +770,7 @@ namespace MoonThief
                 _mapSr.enabled = false;
                 _mapHeroDot.enabled = false;
                 _mapQuestDot.enabled = false;
+                for (int i = 0; i < 8; i++) _mapChestDots[i].enabled = false;
                 for (int i = 0; i < 4; i++) _mapZoneLbl[i].gameObject.SetActive(false);
             }
         }
@@ -1531,6 +1541,15 @@ namespace MoonThief
                         mapCy + (op.Value.y - GameMap.H * 0.5f) * upc, 0f);
                     _mapQuestDot.enabled = true;
                 }
+                var chests = GetChests != null ? GetChests() : null;
+                if (chests != null)
+                    for (int i = 0; i < chests.Count && i < _mapChestDots.Length; i++)
+                    {
+                        _mapChestDots[i].transform.localPosition = new Vector3(
+                            mapCx + (chests[i].x - GameMap.W * 0.5f) * upc,
+                            mapCy + (chests[i].y - GameMap.H * 0.5f) * upc, 0f);
+                        _mapChestDots[i].enabled = true;
+                    }
             }
             else _mapObj = null;
 
