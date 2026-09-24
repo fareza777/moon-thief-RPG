@@ -1757,7 +1757,13 @@ namespace MoonThief
                 Game.State.AddBag(key);
                 drops.Add(key);
             }
-            foreach (var d in drops) lines.Add(Strings.Get("card.drop", Strings.Get(d)));
+            if (drops.Count > 0)
+            {
+                var names = new List<string>();
+                foreach (var d in drops) names.Add(Strings.Get(d));
+                // one spoils line, however many things fell - the card's frame is not negotiable
+                lines.Add(Strings.Get("card.drop", string.Join(" + ", names)));
+            }
 
             if (_befriended > 0) lines.Add(Strings.Get("card.befriended", _befriended, _specs.Length));
             lines.Add(_befriended > 0 ? Strings.Get("card.joined") : Strings.Get("card.moon"));
