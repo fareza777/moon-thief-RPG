@@ -545,4 +545,7 @@ ev.dog|A hunting dog will not leave the gate. It has waited long enough to forge
 end.notyet|The crystal is cold. {0} more to find.
 end.tap|TAP OR ENTER TO CONTINUE
 end.stats|LEVEL {0}    {1} {2}    {3} GOLD\n{4} {5} FACED THE NIGHT
+end.stats.lone|LEVEL {0}    {1} GOLD\n{2} {3} FACED THE NIGHT
 end.text|The shards rise\nfrom your hands and\nclimb the sky.\n\nThe moon takes\nits old place over\nthe fields.\nYour new friends\nwalk home beside\nyou.\n\nThe village wakes\nto its first gold\nmorning.
+end.text.one|The shards rise\nfrom your hands and\nclimb the sky.\n\nThe moon takes\nits old place over\nthe fields.\nYour new friend\nwalks home beside\nyou.\n\nThe village wakes\nto its first gold\nmorning.
+end.text.lone|The shards rise\nfrom your hands and\nclimb the sky.\n\nThe moon takes\nits old place over\nthe fields.\nYou walk home\nunder its watch.\n\nThe village wakes\nto its first gold\nmorning.

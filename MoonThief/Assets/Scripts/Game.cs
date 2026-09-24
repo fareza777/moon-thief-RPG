@@ -1645,10 +1645,16 @@ namespace MoonThief
                 _endRoot.gameObject.SetActive(true);
                 Sfx.Mus.Duck = 1f; Sfx.Mus.Play("end");
                 _endLines.RevealSpeed = 0f;
-                _endLines.Set(Strings.Get("end.text", State.Befriended));
-                _endStats.Set(Strings.Get("end.stats", State.Level, State.Befriended,
-                    State.Befriended == 1 ? "FRIEND" : "FRIENDS", State.Gold,
-                    State.Defeats, State.Defeats == 1 ? "BEAST" : "BEASTS"));
+                // three tellings of the same dawn: alone, one companion, or a company
+                string textKey = State.Befriended == 0 ? "end.text.lone"
+                    : State.Befriended == 1 ? "end.text.one" : "end.text";
+                _endLines.Set(Strings.Get(textKey));
+                _endStats.Set(State.Befriended == 0
+                    ? Strings.Get("end.stats.lone", State.Level, State.Gold,
+                        State.Defeats, State.Defeats == 1 ? "BEAST" : "BEASTS")
+                    : Strings.Get("end.stats", State.Level, State.Befriended,
+                        State.Befriended == 1 ? "FRIEND" : "FRIENDS", State.Gold,
+                        State.Defeats, State.Defeats == 1 ? "BEAST" : "BEASTS"));
                 SaveSystem.Erase();          // the tale is told; the menu offers a fresh night
             }, 0.4f, 0.6f);
         }
