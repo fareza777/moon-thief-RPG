@@ -94,7 +94,13 @@ namespace MoonThief
         {
             switch (d.Kind)
             {
-                case ItemKind.Food: return "+" + d.Power + " " + Strings.Get("jr.hp");
+                case ItemKind.Food:
+                    var fx = "+" + d.Power + " " + Strings.Get("jr.hp");
+                    // every dish has a second comfort - say so where it is bought and bagged
+                    if (d.Key == "item.honey") fx += "+" + Strings.Get("jr.cure");
+                    else if (d.Key == "item.tea") fx += "+" + Strings.Get("jr.wake");
+                    else if (d.Key == "item.soup") fx += "+" + Strings.Get("jr.mom");
+                    return fx;
                 case ItemKind.Blade: return "+" + d.Power + " " + Strings.Get("jr.atk");
                 case ItemKind.Cloth: return "+" + d.Power + " " + Strings.Get("jr.maxhp");
                 case ItemKind.Charm: return "+" + d.Power + " " + Strings.Get("jr.all");

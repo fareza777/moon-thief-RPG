@@ -154,6 +154,8 @@ bt.slam|The {0} rears up and SLAMS down!
 bt.enraged|The {0} is cornered - it fights without mercy now!
 bt.dazed|DAZED
 bt.tripped|TRIPPED
+bt.cleansed|CLEANSED
+bt.warmed|WARM
 bt.poison|POISON
 bt.poisoned|POISONED
 bt.phased|PHASED THROUGH!
@@ -383,6 +385,9 @@ jr.chests|CHESTS OPENED
 jr.gold|GOLD
 jr.atk|ATK
 jr.hp|HP
+jr.cure|CURE
+jr.wake|WAKE
+jr.mom|MOM
 jr.maxhp|MAX HP
 jr.all|ALL
 jr.key|KEEPSAKE

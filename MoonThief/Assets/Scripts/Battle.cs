@@ -2247,6 +2247,35 @@ namespace MoonThief
                 if (rig != null) View.FloatNumber(rig.Home + new Vector3(0f, 1.2f, 0f), "+" + def.Power,
                     new Color(0.7f, 1f, 0.7f));
             }
+            // each dish carries a second comfort: honey draws out venom, hot tea puts a
+            // dazed friend back on their feet, a bowl of soup steadies the momentum
+            switch (food)
+            {
+                case "item.honey":
+                    foreach (var p in View.Party)
+                    {
+                        if (!p.Alive || p.Poison <= 0) continue;
+                        p.Poison = 0;
+                        var rig = View.RigOf(p);
+                        if (rig != null) View.FloatNumber(rig.Home + new Vector3(0f, 1.9f, 0f),
+                            Strings.Get("bt.cleansed"), new Color(0.85f, 1f, 0.6f));
+                    }
+                    break;
+                case "item.tea":
+                    foreach (var p in View.Party)
+                    {
+                        if (!p.Alive || !p.Dazed) continue;
+                        p.Dazed = false;
+                        var rig = View.RigOf(p);
+                        if (rig != null) View.FloatNumber(rig.Home + new Vector3(0f, 1.9f, 0f),
+                            Strings.Get("bt.warmed"), new Color(1f, 0.85f, 0.6f));
+                    }
+                    break;
+                case "item.soup":
+                    _flow = Mathf.Min(9, _flow + 1);
+                    View.SetRound(_round, _flow);
+                    break;
+            }
             View.Refresh();
             yield return Fx.Wait(0.9f);
             EndTurn();
