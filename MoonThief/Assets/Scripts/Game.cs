@@ -814,6 +814,7 @@ namespace MoonThief
             // leave to title -> continue reuses this same WorldView)
             World.SetTextVisible(true);
             World.PlaceHero(_resumePos ?? World.Map.VillageCenter);
+            World.SyncFriends();
             _resumePos = null;
 
             // the arrive card already names the ground beneath the hero's feet: note that

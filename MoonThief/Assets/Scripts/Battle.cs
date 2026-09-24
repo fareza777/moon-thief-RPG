@@ -22,13 +22,15 @@ namespace MoonThief
             public PixelLabel Name;
             public Vector3 Home;
             public float BodyHeight, BobPhase;
+            public float HpShown = -1f, BarLeft, BarTop, BarMaxW, BarH;
+            public Color BarCol;
             public bool CapturedFx;
         }
 
         public class MenuCell
         {
             public string Label;
-            public SpriteRenderer Panel, Chevron;
+            public SpriteRenderer Panel, Chevron, Icon;
             public PixelLabel Text;
             public Rect Hit;
         }
@@ -48,7 +50,7 @@ namespace MoonThief
         public Rig[] EnemyRigs = new Rig[0];
         public readonly List<MenuCell> Menu = new List<MenuCell>();
 
-        SpriteRenderer _backdrop, _floorTint, _hudPanel, _menuPanel, _msgPanel, _moonIcon, _targetChev;
+        SpriteRenderer _backdrop, _floorTint, _hudPanel, _menuPanel, _msgPanel, _moonIcon, _targetChev, _turnChev;
         SpriteRenderer _autoChip;
         PixelLabel _hudNight, _hudRound, _msg, _hint, _autoLabel;
         Transform _overlayRoot;
@@ -143,6 +145,10 @@ namespace MoonThief
             _targetChev = SpriteRendererUtil.Make(Stage, "bchev", TexArt.Chevron(), 36);
             _targetChev.transform.localEulerAngles = new Vector3(0f, 0f, -90f);
             _targetChev.enabled = false;
+            _turnChev = SpriteRendererUtil.Make(Stage, "bturn", TexArt.Chevron(), 36);
+            _turnChev.transform.localEulerAngles = new Vector3(0f, 0f, 180f);
+            _turnChev.color = new Color(1f, 0.85f, 0.4f);
+            _turnChev.enabled = false;
 
             _overlayRoot = new GameObject("boverlay").transform;
             _overlayRoot.SetParent(Stage, false);
@@ -167,11 +173,14 @@ namespace MoonThief
                 cell.Panel = Sliced("mcell" + i, TexArt.Panel(), 55);
                 Box(cell.Panel, x, y - cellH, cellW, cellH, Color.white);
                 cell.Chevron = SpriteRendererUtil.Make(Stage, "mchev" + i, TexArt.Chevron(), 60);
-                cell.Chevron.transform.localPosition = new Vector3(x + 0.55f, y - cellH * 0.5f, 0f);
-                cell.Chevron.transform.localScale = Vector3.one * 1.6f;
+                cell.Chevron.transform.localPosition = new Vector3(x + 0.32f, y - cellH * 0.5f, 0f);
+                cell.Chevron.transform.localScale = Vector3.one * 1.4f;
                 cell.Chevron.enabled = false;
+                cell.Icon = SpriteRendererUtil.Make(Stage, "micon" + i, TexArt.MenuIcon(i), 59);
+                cell.Icon.transform.localPosition = new Vector3(x + 0.95f, y - cellH * 0.5f, 0f);
+                cell.Icon.transform.localScale = Vector3.one * 1.5f;
                 cell.Text = Label("mlabel" + i, 2, Color.white, TextAlign.Left, 58);
-                cell.Text.transform.localPosition = new Vector3(x + 1.0f, y - (cellH - PixelFont.GlyphHUnits(2)) * 0.5f, 0f);
+                cell.Text.transform.localPosition = new Vector3(x + 1.85f, y - (cellH - PixelFont.GlyphHUnits(2)) * 0.5f, 0f);
                 cell.Text.Set(cell.Label);
                 // the painted cell, plus a thin margin. HitMenu() also accepts a near miss
                 // (nearest centre) so a thumb does not have to be pixel accurate
@@ -545,6 +554,7 @@ namespace MoonThief
             foreach (var c in Menu)
             {
                 c.Panel.enabled = on;
+                if (c.Icon != null) c.Icon.enabled = on;
                 c.Text.gameObject.SetActive(on);
             }
             if (on) SetSelected(_selCell);
@@ -584,6 +594,37 @@ namespace MoonThief
                 rig.Home.x - BodyWidth(rig) * 0.5f - 0.75f, rig.Home.y + 0.25f + bob, 0f);
         }
 
+        Rig _turnRig;
+
+        /// <summary>Marks whose move it is - a little gold chevron bobbing over their head.</summary>
+        public void SetTurnRig(Rig rig)
+        {
+            _turnRig = rig;
+            _turnChev.enabled = rig != null;
+        }
+
+        /// <summary>Draws a rig's hp fill at its displayed width, which may lag the real hp.</summary>
+        void DrawFill(Rig rig)
+        {
+            if (rig?.BarFill == null || rig.F == null) return;
+            float w = rig.BarMaxW * Mathf.Clamp01(rig.HpShown);
+            rig.BarFill.enabled = rig.F.Alive && w > 0.03f;
+            if (rig.BarFill.enabled)
+                Box(rig.BarFill, rig.BarLeft + 0.0625f, rig.BarTop, w - 0.0625f, rig.BarH, rig.BarCol);
+        }
+
+        void TickBar(Rig rig)
+        {
+            if (rig == null || rig.HpShown < 0f) return;
+            if (Mathf.Abs(rig.F.Hp01 - rig.HpShown) < 0.0015f)
+            {
+                if (rig.HpShown != rig.F.Hp01) { rig.HpShown = rig.F.Hp01; DrawFill(rig); }
+                return;
+            }
+            rig.HpShown = Mathf.MoveTowards(rig.HpShown, rig.F.Hp01, Time.deltaTime * 0.9f);
+            DrawFill(rig);
+        }
+
         /// <summary>Rendered width of a rig, for anything that has to stand beside it.</summary>
         static float BodyWidth(Rig rig)
         {
@@ -621,6 +662,16 @@ namespace MoonThief
             }
             if (_targetChev.enabled && _target >= 0 && _target < EnemyRigs.Length)
                 PlaceTargetChev(EnemyRigs[_target], Mathf.Sin(_time * 5f) * 0.08f);
+            if (_turnChev.enabled && _turnRig != null)
+            {
+                var tr = _turnRig;
+                _turnChev.transform.localPosition = new Vector3(tr.Home.x,
+                    tr.Home.y + tr.BodyHeight + 0.5f + Mathf.Sin(_time * 5f) * 0.07f, 0f);
+                _turnChev.transform.localScale = Vector3.one * 1.6f;
+            }
+            // hp bars bleed toward the real value instead of snapping
+            foreach (var rig in PartyRigs) TickBar(rig);
+            foreach (var rig in EnemyRigs) TickBar(rig);
         }
 
         public void Refresh()
@@ -635,9 +686,10 @@ namespace MoonThief
                 Box(rig.BarBg, left, PartyFeet - 0.44f, 2.2f, 0.28f, new Color32(12, 10, 22, 255));
                 var c = rig.F.Hp01 > 0.5f ? new Color32(126, 226, 143, 255)
                     : rig.F.Hp01 > 0.22f ? new Color32(240, 208, 110, 255) : new Color32(232, 106, 106, 255);
-                float w = 2.2f * rig.F.Hp01;
-                rig.BarFill.enabled = alive && w > 0.03f;
-                if (rig.BarFill.enabled) Box(rig.BarFill, left + 0.0625f, PartyFeet - 0.415f, w - 0.0625f, 0.17f, c);
+                rig.BarLeft = left; rig.BarTop = PartyFeet - 0.415f; rig.BarMaxW = 2.2f; rig.BarH = 0.17f;
+                rig.BarCol = c;
+                if (rig.HpShown < 0f) rig.HpShown = rig.F.Hp01;
+                DrawFill(rig);
                 rig.Name.SetColor(alive ? new Color(0.92f, 0.94f, 1f) : new Color(0.5f, 0.46f, 0.56f));
                 if (rig.NameChip != null) Plate(rig.NameChip, rig.Name, rig.F.Name, rig.F.Boss, rig.F.Species != null);
             }
@@ -652,10 +704,10 @@ namespace MoonThief
                 {
                     float left = rig.Home.x - 1.3f;
                     Box(rig.BarBg, left, rig.Home.y - 0.62f, 2.6f, 0.28f, new Color32(12, 10, 22, 255));
-                    float w = 2.6f * rig.F.Hp01;
-                    if (w > 0.03f)
-                        Box(rig.BarFill, left + 0.0625f, rig.Home.y - 0.56f, w - 0.0625f, 0.16f,
-                            rig.F.Boss ? new Color32(255, 150, 110, 255) : new Color32(232, 196, 120, 255));
+                    rig.BarLeft = left; rig.BarTop = rig.Home.y - 0.56f; rig.BarMaxW = 2.6f; rig.BarH = 0.16f;
+                    rig.BarCol = rig.F.Boss ? new Color32(255, 150, 110, 255) : new Color32(232, 196, 120, 255);
+                    if (rig.HpShown < 0f) rig.HpShown = rig.F.Hp01;
+                    DrawFill(rig);
                 }
             }
         }
@@ -1106,6 +1158,7 @@ namespace MoonThief
 
         void BeginPlayerTurn(Fighter f)
         {
+            View.SetTurnRig(View.RigOf(f));
             // a befriended beast acts on its own - no command menu, it just helps
             if (f.Species != null && Application.isPlaying)
             {
@@ -1544,6 +1597,7 @@ namespace MoonThief
         void EndTurn()
         {
             _ph = Ph.Round;
+            View.SetTurnRig(null);
             if (AllEnemiesGone()) { Win(); return; }
             if (PartyWiped()) { Lose(); return; }
             _qi++;

@@ -560,6 +560,85 @@ namespace MoonThief
             return _chevron;
         }
 
+        static Sprite _icoAtk, _icoFriend, _icoFood, _icoRun;
+
+        /// <summary>Tiny pictogram beside each battle command so the four cells read at a
+        /// glance: sword for strike, heart for befriend, apple for morsel, boot for run.</summary>
+        public static Sprite MenuIcon(int kind)
+        {
+            switch (kind)
+            {
+                case 0: return _icoAtk ??= MaskIcon("icoAtk", MaskSword);
+                case 1: return _icoFriend ??= MaskIcon("icoFriend", MaskHeart);
+                case 2: return _icoFood ??= MaskIcon("icoFood", MaskApple);
+                default: return _icoRun ??= MaskIcon("icoRun", MaskBoot);
+            }
+        }
+
+        static Sprite MaskIcon(string name, string[] rows)
+        {
+            int h = rows.Length, w = rows[0].Length;
+            return Make(name, w, h, (x, y) =>
+            {
+                switch (rows[h - 1 - y][x])
+                {
+                    case 'w': return new Color32(235, 240, 250, 255);
+                    case 'g': return new Color32(255, 214, 120, 255);
+                    case 'r': return new Color32(240, 110, 110, 255);
+                    case 'p': return new Color32(255, 150, 170, 255);
+                    case 'b': return new Color32(150, 105, 70, 255);
+                    case 'd': return new Color32(90, 65, 45, 255);
+                    case 'n': return new Color32(130, 220, 150, 255);
+                    default: return new Color32(0, 0, 0, 0);
+                }
+            }, Vector4.zero);
+        }
+
+        static readonly string[] MaskSword = {
+            ".....w...",
+            "....ww...",
+            "...ww....",
+            "..ww.....",
+            ".ww......",
+            "gggw.....",
+            ".bb......",
+            ".bb......",
+            ".gg......",
+        };
+        static readonly string[] MaskHeart = {
+            ".........",
+            ".pp..pp..",
+            "pppppppp.",
+            "pppppppp.",
+            ".pppppp..",
+            "..pppp...",
+            "...pp....",
+            ".........",
+            ".........",
+        };
+        static readonly string[] MaskApple = {
+            "...n.....",
+            "..nn.....",
+            ".rrrrr...",
+            "rrrrrrr..",
+            "rrrrrrr..",
+            "rrrrrrr..",
+            ".rrrrr...",
+            "..rrr....",
+            ".........",
+        };
+        static readonly string[] MaskBoot = {
+            ".........",
+            ".bb......",
+            ".bb......",
+            ".bb......",
+            ".bbb.....",
+            ".bbbbbb..",
+            ".bbbbbb..",
+            ".dddddd..",
+            ".........",
+        };
+
         /// <summary>Joystick base ring.</summary>
         public static Sprite Ring()
         {
