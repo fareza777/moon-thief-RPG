@@ -208,11 +208,11 @@ mon.thick|THICKET
 mon.palebell|PALE BELL
 mon.stalker|DUSK STALKER
 mon.squire|SHADE SQUIRE
-mon.slime.d|It misses the moon too.
-mon.slime2.d|Softer than it looks. Meaner too.
+mon.slime.d|It misses the moon too. Its goo holds your feet when it lands.
+mon.slime2.d|Softer than it looks. Meaner too. Its smear trips the careless.
 mon.imp.d|Grew from a kettle nobody emptied. Dropped, it breathes spores on whoever struck close.
-mon.slimeB.d|The dark squeezes into puddles now.
-mon.gloop.d|Smells like the pond. The bad side.
+mon.slimeB.d|The dark squeezes into puddles now. Stand in it and you fall.
+mon.gloop.d|Smells like the pond. The bad side. Its weight drags you down too.
 mon.impB.d|Older than the hollow. Grumpier. Its last breath is spores - strike from afar.
 mon.wasp.d|Still looking for a lamp to die on. Nearly dead, it'd rather fly home.
 mon.wasp2.d|Stings first. Asks never. Corners badly - slips away before the end.
