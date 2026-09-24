@@ -1466,6 +1466,7 @@ namespace MoonThief
                 yield return FadeOut(tRig);
                 View.SetMessage(Strings.Get("bt.fainted", target.Name));
                 yield return Fx.Wait(0.6f);
+                TrySpore(f, target);   // pets get the same lungful of spores as heroes
             }
             EndTurn();
         }
@@ -1930,6 +1931,8 @@ namespace MoonThief
                     View.SetMessage(Strings.Get("bt.fainted", last));
                     yield return Fx.Wait(0.6f);
                 }
+                for (int i = 0; i < View.Enemies.Length; i++)
+                    if (!View.Enemies[i].Alive) TrySpore(actor, View.Enemies[i]);
                 EndTurn();
                 yield break;
             }
@@ -1954,6 +1957,7 @@ namespace MoonThief
                     yield return FadeOut(tRig);
                     View.SetMessage(Strings.Get("bt.fainted", target.Name));
                     yield return Fx.Wait(0.6f);
+                    TrySpore(actor, target);
                 }
                 else if (target.Boss && target.Hp < hpBefore && target.Hp01 < 0.5f && UnityEngine.Random.value < 0.25f)
                 {
@@ -2045,6 +2049,27 @@ namespace MoonThief
             if (foe.Species == null) return false;
             var s = BattleData.Species(foe.Species);
             return s.HasValue && BattleData.StyleBeats(style, s.Value);
+        }
+
+        /// <summary>Family of a live fighter, "" when its species isn't in the bestiary.</summary>
+        static string FamOf(Fighter f)
+        {
+            if (f.Species == null) return "";
+            var s = BattleData.Species(f.Species);
+            return s.HasValue ? BattleData.FamilyOf(s.Value) : "";
+        }
+
+        /// <summary>A puffball's last breath is spores: whatever stood close enough to
+        /// strike breathes them in. Ranged hits - the pebble - never reach this far.</summary>
+        void TrySpore(Fighter striker, Fighter target)
+        {
+            if (target.Alive || FamOf(target) != "mushroom") return;
+            if (striker == null || !striker.Alive || striker.Poison > 0) return;
+            var sRig = View.RigOf(striker);
+            striker.Poison = 3;
+            if (sRig != null)
+                View.FloatNumber(sRig.Home + new Vector3(0f, 1.75f, 0f),
+                    Strings.Get("bt.poisoned"), new Color(0.55f, 1f, 0.5f));
         }
 
         IEnumerator FadeOut(BattleView.Rig rig, bool keepRoot = false)
