@@ -465,6 +465,7 @@ namespace MoonThief
                 // text lying straight on top of them read as a smear
                 rig.NameChip = SpriteRendererUtil.Make(Stage, "enameChip" + i, TexArt.Solid(), 7);
                 Plate(rig.NameChip, rig.Name, f.Name, f.Boss);
+                if (f.Rare) rig.Name.SetColor(new Color(0.72f, 0.84f, 1f));
                 EnemyRigs[i] = rig;
             }
             SetTarget(0);
@@ -848,7 +849,11 @@ namespace MoonThief
                     float left = rig.Home.x - 1.3f;
                     Box(rig.BarBg, left, rig.Home.y - 0.62f, 2.6f, 0.28f, new Color32(12, 10, 22, 255));
                     rig.BarLeft = left; rig.BarTop = rig.Home.y - 0.56f; rig.BarMaxW = 2.6f; rig.BarH = 0.16f;
-                    rig.BarCol = rig.F.Boss ? new Color32(255, 150, 110, 255) : new Color32(232, 196, 120, 255);
+                    // the bar sells the body: a gatekeeper burns orange, a moonlit
+                    // thing gleams the pale blue it wears in the dark
+                    rig.BarCol = rig.F.Boss ? new Color32(255, 150, 110, 255)
+                        : rig.F.Rare ? new Color32(140, 170, 255, 255)
+                        : new Color32(232, 196, 120, 255);
                     if (rig.HpShown < 0f) rig.HpShown = rig.F.Hp01;
                     DrawFill(rig);
                 }
