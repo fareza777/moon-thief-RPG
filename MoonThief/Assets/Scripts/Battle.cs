@@ -51,7 +51,7 @@ namespace MoonThief
         public Rig[] EnemyRigs = new Rig[0];
         public readonly List<MenuCell> Menu = new List<MenuCell>();
 
-        SpriteRenderer _backdrop, _floorTint, _hudPanel, _menuPanel, _msgPanel, _moonIcon, _targetChev, _turnChev;
+        SpriteRenderer _backdrop, _floorTint, _hudPanel, _menuPanel, _msgPanel, _moonIcon, _targetChev, _turnChev, _nextChev;
         SpriteRenderer _autoChip;
         PixelLabel _hudNight, _hudRound, _msg, _hint, _autoLabel;
         Transform _overlayRoot;
@@ -150,6 +150,10 @@ namespace MoonThief
             _turnChev.transform.localEulerAngles = new Vector3(0f, 0f, 180f);
             _turnChev.color = new Color(1f, 0.85f, 0.4f);
             _turnChev.enabled = false;
+            _nextChev = SpriteRendererUtil.Make(Stage, "bnext", TexArt.Chevron(), 36);
+            _nextChev.transform.localEulerAngles = new Vector3(0f, 0f, 180f);
+            _nextChev.color = new Color(0.75f, 0.78f, 0.9f, 0.85f);
+            _nextChev.enabled = false;
 
             _overlayRoot = new GameObject("boverlay").transform;
             _overlayRoot.SetParent(Stage, false);
@@ -651,7 +655,7 @@ namespace MoonThief
                 rig.Home.x - BodyWidth(rig) * 0.5f - 0.75f, rig.Home.y + 0.25f + bob, 0f);
         }
 
-        Rig _turnRig;
+        Rig _turnRig, _nextRig;
 
         /// <summary>Marks whose move it is - a little chevron bobbing over their head,
         /// gold for ours, red for theirs.</summary>
@@ -660,6 +664,14 @@ namespace MoonThief
             _turnRig = rig;
             _turnChev.enabled = rig != null;
             _turnChev.color = hostile ? new Color(1f, 0.5f, 0.45f) : new Color(1f, 0.85f, 0.4f);
+        }
+
+        /// <summary>A dimmer silver chevron on whoever strikes next - the queue's edge
+        /// is information a player can plan around.</summary>
+        public void SetNextRig(Rig rig)
+        {
+            _nextRig = rig;
+            _nextChev.enabled = rig != null;
         }
 
         /// <summary>Draws a rig's hp fill at its displayed width, which may lag the real hp.</summary>
@@ -752,6 +764,15 @@ namespace MoonThief
                 _turnChev.transform.localPosition = new Vector3(tr.Home.x,
                     tr.Home.y + tr.BodyHeight + 0.5f + Mathf.Sin(_time * 5f) * 0.07f, 0f);
                 _turnChev.transform.localScale = Vector3.one * 1.6f;
+            }
+            if (_nextRig != null && (_nextRig.F == null || !_nextRig.F.Alive))
+                _nextChev.enabled = false;   // it fell before its turn came
+            if (_nextChev.enabled && _nextRig != null)
+            {
+                var nr = _nextRig;
+                _nextChev.transform.localPosition = new Vector3(nr.Home.x,
+                    nr.Home.y + nr.BodyHeight + 0.34f + Mathf.Sin(_time * 4.2f) * 0.05f, 0f);
+                _nextChev.transform.localScale = Vector3.one * 1.0f;
             }
             // the daze star spins over whoever took a slam last turn
             foreach (var rig in EnemyRigs) { TickStun(rig); TickWard(rig); }
@@ -1284,6 +1305,11 @@ namespace MoonThief
                 _qi++;
             }
             var cur = _queue[_qi];
+            // the silver chevron answers "who's after this one" before the turn plays out
+            Fighter nxt = null;
+            for (int i = _qi + 1; i < _queue.Count; i++)
+                if (_queue[i].Alive && !_queue[i].Dazed) { nxt = _queue[i]; break; }
+            View.SetNextRig(nxt != null ? View.RigOf(nxt) : null);
             if (cur.Side == Side.Party) BeginPlayerTurn(cur);
             else if (Application.isPlaying) StartCoroutine(EnemyTurn(cur));
             else EnemyTurnImmediate(cur);
@@ -2150,11 +2176,21 @@ namespace MoonThief
             Game.State.Xp += xp;
             Game.State.Gold += gold;
 
+            // nobody fell: the night pays a little extra for a clean fight
+            bool flawless = true;
+            foreach (var p in View.Party) if (!p.Alive) flawless = false;
+            if (flawless)
+            {
+                int bonus = 20 + Game.State.Chapter * 10;
+                Game.State.Gold += bonus;
+                gold += bonus;
+            }
             var lines = new List<string>
             {
                 Strings.Get("card.xp", xp),
                 Strings.Get("card.gold", gold),
             };
+            if (flawless) lines.Add(Strings.Get("card.flawless"));
             if (Game.State.Level > _levelAtStart)
             {
                 lines.Add(Strings.Get("card.levelup", Game.State.Level));
