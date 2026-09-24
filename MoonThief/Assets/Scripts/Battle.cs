@@ -1174,6 +1174,12 @@ namespace MoonThief
             int style = f.Style;
             View.Menu[0].Text.Set(Strings.Get(style == 1 ? "menu.sweep" : style == 2 ? "menu.mend" : "menu.strike"));
             View.Menu[0].Icon.sprite = TexArt.MenuIcon(style == 1 ? 13 : style == 2 ? 29 : 0);
+            // morsel goes grey when it can't fire: the bag holds no food, or the
+            // party already shared this battle's portion
+            bool morselOk = !_morselUsed && Game.State.BestFood() != null;
+            var morselCol = morselOk ? Color.white : new Color(1f, 1f, 1f, 0.35f);
+            View.Menu[2].Text.SetColor(morselCol);
+            if (View.Menu[2].Icon != null) View.Menu[2].Icon.color = morselCol;
             View.SetMessage(Strings.Get("bt.yourturn", f.Name));
             // auto-battle acts after a short beat, so the player sees whose turn it was
             if (Auto && Application.isPlaying)
