@@ -250,7 +250,7 @@ namespace MoonThief
         bool _tapMoved;
         PixelLabel _dlgText, _dlgName, _dlgNext, _hudZone, _hudShards;
         int _dlgChars;
-        SpriteRenderer _dlgPanel, _dlgPanelName, _dlgPortrait;
+        SpriteRenderer _dlgPanel, _dlgPanelName, _dlgPortrait, _dlgPortPlate;
         bool _dlgOpen;
         string[] _dlgLines;
         int _dlgIndex;
@@ -591,7 +591,14 @@ namespace MoonThief
             _dlgText.MaxWidthUnits = 14.4f;
             _dlgText.RevealSpeed = 55f;
 
-            // speaker portrait: the NPC's own overworld sheet, scaled up inside the box
+            // speaker portrait: the NPC's own overworld sheet, scaled up inside the box,
+            // framed by its own small plate and name tag instead of floating on the panel
+            _dlgPortPlate = SpriteRendererUtil.Make(root, "dlgPortPlate", TexArt.Panel(), 3000);
+            _dlgPortPlate.drawMode = SpriteDrawMode.Sliced;
+            _dlgPortPlate.color = new Color(0.92f, 0.88f, 1f);
+            _dlgPanelName = SpriteRendererUtil.Make(root, "dlgPanelName", TexArt.Panel(), 3001);
+            _dlgPanelName.drawMode = SpriteDrawMode.Sliced;
+            _dlgPanelName.color = new Color(0.78f, 0.72f, 0.95f);
             _dlgPortrait = SpriteRendererUtil.Make(root, "dlgPortrait", null, 3001);
             // 3.0, not 3.4: the pack's chara cell is 16 px wide, so 3.4 grew the portrait to 54 px
             // and its right edge landed 3 px *past* the first letter of the line it introduces.
@@ -622,9 +629,13 @@ namespace MoonThief
             _dlgPanel.transform.localPosition = new Vector3(0f, bottom + h * 0.5f, 0f);
             // the portrait owns the left column (G.Left+0.3 .. G.Left+3.3) and the text starts
             // 0.2 units clear of its edge, whatever NPC is speaking
-            _dlgName.transform.localPosition = new Vector3(G.Left + 3.5f, top - 0.5f, 0f);
+            _dlgName.transform.localPosition = new Vector3(G.Left + 3.9f, top - 0.5f, 0f);
+            _dlgPanelName.size = new Vector2(_dlgName.MeasureWidth(_dlgName.Text) + 0.4f, 1.35f);
+            _dlgPanelName.transform.localPosition = new Vector3(G.Left + 3.7f + _dlgPanelName.size.x * 0.5f, top - 0.5f, 0f);
             _dlgText.transform.localPosition = new Vector3(G.Left + 3.5f, top - 1.15f, 0f);
             _dlgPortrait.transform.localPosition = new Vector3(G.Left + 1.75f, bottom + 2.1f, 0f);
+            _dlgPortPlate.size = new Vector2(3.0f, 3.6f);
+            _dlgPortPlate.transform.localPosition = new Vector3(G.Left + 1.75f, bottom + 2.1f, 0f);
             _dlgNext.transform.localPosition = new Vector3(G.Right - 0.7f, bottom + 0.35f, 0f);
         }
 
@@ -2194,6 +2205,15 @@ namespace MoonThief
             Shot("11-village");
             Debug.Log("[selftest] hero=" + World.HeroPos + " mons=" + World.Monsters.Count
                 + " respawns=" + World.PendingRespawns);
+
+            // the dialog frame - portrait plate, name tag, typewriter - is the one
+            // interactive surface every earlier pass left unphotographed
+            EditorTalk();
+            yield return new WaitForSeconds(0.9f);
+            Shot("11b-dialog");
+            Debug.Log("[selftest] dialog open=" + _dlgOpen);
+            CloseDialog();
+            yield return new WaitForSeconds(0.2f);
 
             // Marn's stall: open the shop card for real, buy one thing, leave
             State.Gold = 40;
