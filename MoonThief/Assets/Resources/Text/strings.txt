@@ -154,6 +154,7 @@ bt.rises|IT RISES AGAIN!
 bt.ward|The {0} wreathes the Guard in light.
 bt.warded|WARDED
 bt.squiremend|The {0} mends its thane.
+bt.riposte|The {0} strikes right back!
 bt.miss|MISS
 bt.yourturn|{0} - your move.
 bt.friendturn|{0} fights for you!

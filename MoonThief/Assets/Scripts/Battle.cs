@@ -1916,6 +1916,7 @@ namespace MoonThief
                 bool weakHit = WeakTo(0, target);
                 int dmg = Mathf.RoundToInt(UnityEngine.Random.Range(actor.AtkMin, actor.AtkMax + 1) * (crit ? 1.7f : 1f) * (weakHit ? 1.5f : 1f) * FlowMul());
                 View.SetMessage(crit ? Strings.Get("bt.attack.crit", actor.Name, dmg) : Strings.Get("bt.attack.0", actor.Name));
+                int hpBefore = target.Hp;
                 HitFoe(target, dmg, crit, weakHit);
                 View.Refresh();
                 yield return Fx.Wait(0.45f);
@@ -1926,6 +1927,28 @@ namespace MoonThief
                     yield return FadeOut(tRig);
                     View.SetMessage(Strings.Get("bt.fainted", target.Name));
                     yield return Fx.Wait(0.6f);
+                }
+                else if (target.Boss && target.Hp < hpBefore && target.Hp01 < 0.5f && UnityEngine.Random.value < 0.25f)
+                {
+                    // a wounded gatekeeper does not suffer a blow in silence: it answers
+                    // on the spot, and only once it is hurt - the lesson is to press anyway
+                    View.SetMessage(Strings.Get("bt.riposte", target.Name));
+                    yield return Fx.Wait(0.3f);
+                    yield return Lunge(tRig, aRig.Home, 0.28f);
+                    int rep = Mathf.Max(1, Mathf.RoundToInt(UnityEngine.Random.Range(target.AtkMin, target.AtkMax + 1) * 0.5f));
+                    actor.Hp = Mathf.Max(0, actor.Hp - rep);
+                    StartCoroutine(Fx.FlashTint(aRig.Anim, new Color(1f, 0.5f, 0.4f), 2, 0.07f, 0.07f));
+                    View.FloatNumber(aRig.Home + new Vector3(0f, 1.2f, 0f), "-" + rep, new Color(1f, 0.6f, 0.5f));
+                    Sfx.Play("hurt");
+                    yield return Lunge(tRig, tRig.Home, 0.28f);
+                    View.Refresh();
+                    yield return Fx.Wait(0.5f);
+                    if (!actor.Alive)
+                    {
+                        yield return FadeOut(aRig, true);
+                        View.SetMessage(Strings.Get("bt.herodown", actor.Name));
+                        yield return Fx.Wait(0.6f);
+                    }
                 }
                 EndTurn();
             }
