@@ -4,7 +4,7 @@
 title.name|THE MOON THIEF
 title.tagline|The moon is gone. Find the shards and raise it again.
 title.footer|a tale in three nights
-title.tap|TAP TO BEGIN
+title.tap|TAP OR ENTER TO BEGIN
 
 # ---- splash
 splash.studio|F7 DEVELOPER GAMES
@@ -21,7 +21,7 @@ menu.about|ABOUT
 menu.share|SHARE
 menu.rate|RATE US
 menu.credits|CREDITS
-menu.hint|TAP A ROW TO PICK
+menu.hint|PICK A ROW
 share.copied|Store link copied - send it to a friend.
 share.text|The Moon Thief - a tale in three nights. {0}
 rate.store|Opening the store page...
@@ -80,7 +80,7 @@ pause.settings|SETTINGS
 pause.totitle|LEAVE TO TITLE
 
 # ---- cinematic intro
-ci.skip|TAP TO SKIP
+ci.skip|TAP OR ENTER TO SKIP
 ci.0a|Quiet Hollow, on the last\ngood night of the year.
 ci.1|Night came early.
 ci.2|The moon did not rise.
@@ -141,7 +141,7 @@ bt.befriendfail|{0} is not ready yet.
 bt.stablefull|Your stable is full.
 bt.morsel|You lay down a moonlit morsel.
 bt.nomore|The bag is empty.
-bt.hint|tap a command, then a foe
+bt.hint|pick a command, then a foe
 bt.auto.on|AUTO on - the party fights itself.
 bt.auto.off|AUTO off.
 bt.attack.0|{0} lunges!
@@ -306,8 +306,8 @@ loot.found|You found {0} and {1} gold.
 # ---- the journal
 pause.journal|JOURNAL
 jr.title|JOURNAL
-jr.hint|TAP A ROW TO OPEN, BACK TO RETURN
-jr.pagehint|TAP A ROW, BACK RETURNS TO THE JOURNAL
+jr.hint|PICK A ROW TO OPEN, BACK TO RETURN
+jr.pagehint|PICK A ROW, BACK RETURNS TO THE JOURNAL
 jr.sub|LEVEL {0}    {1} GOLD
 jr.character|CHARACTER
 jr.items|BAG
@@ -472,6 +472,6 @@ ev.dog|A hunting dog will not leave the gate. It has waited long enough to forge
 
 # ---- ending
 end.notyet|The crystal is cold. {0} more to find.
-end.tap|TAP TO CONTINUE
+end.tap|TAP OR ENTER TO CONTINUE
 end.stats|LEVEL {0}    {1} FRIENDS    {2} GOLD
 end.text|The shards rise\nfrom your hands and\nclimb the sky.\n\nThe moon takes\nits old place over\nthe fields.\nYour new friends\nwalk home beside\nyou.\n\nThe village wakes\nto its first gold\nmorning.
