@@ -256,7 +256,7 @@ namespace MoonThief
 
         PixelLabel _splashTop, _splashSub, _splashPres, _setTitle, _pauseTitle, _pauseSub, _hint, _toast;
         PixelLabel _credTitle, _credSub, _credText, _credThanks;
-        PixelLabel _ciText, _ciSkip, _ciCount, _ccNight, _ccPlace;
+        PixelLabel _ciText, _ciSkip, _ciCount, _ccNight, _ccPlace, _ccGoal;
         PixelLabel _onbTitle, _onbBody, _shopTitle, _shopSub, _shopFoot;
         SpriteRenderer _onbPanel, _shopPanel;
         readonly List<SpriteRenderer> _onbDots = new List<SpriteRenderer>();
@@ -517,6 +517,9 @@ namespace MoonThief
             _ccNight.transform.localPosition = new Vector3(0f, 1.6f, 0f);
             _ccPlace = PixelLabelUtil.Make(_ccRoot, "place", 1, new Color(0.78f, 0.8f, 0.95f), TextAlign.Center, 7102);
             _ccPlace.transform.localPosition = new Vector3(0f, -0.6f, 0f);
+            _ccGoal = PixelLabelUtil.Make(_ccRoot, "goal", 1, new Color(0.92f, 0.85f, 0.62f), TextAlign.Center, 7102);
+            _ccGoal.transform.localPosition = new Vector3(0f, -2.4f, 0f);
+            _ccGoal.MaxWidthUnits = 15.5f;
         }
 
         /// <summary>Builds the journal hub and the paged list card it opens. Both are laid out
@@ -1103,6 +1106,8 @@ namespace MoonThief
             var parts = Strings.Get("ci.ch." + Mathf.Clamp(chapter, 1, 3)).Split('\n');
             _ccNight.Set(parts.Length > 0 ? parts[0] : "");
             _ccPlace.Set(parts.Length > 1 ? parts[1] : "");
+            // and what tonight wants: a goal line so the card is a briefing, not a poster
+            _ccGoal.Set(Strings.Has("ci.goal." + chapter) ? Strings.Get("ci.goal." + chapter) : "");
         }
 
         public void Hide()

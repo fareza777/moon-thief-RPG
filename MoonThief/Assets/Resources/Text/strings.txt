@@ -97,6 +97,9 @@ ci.9|Hang the moon back\nwhere it belongs.
 ci.ch.1|NIGHT ONE\nthe village of Quiet Hollow
 ci.ch.2|NIGHT TWO\nthe long fields
 ci.ch.3|NIGHT THREE\nthe dark wood
+ci.goal.1|gather what shines. something stalks the north gate.
+ci.goal.2|two more sleep out in the fields. the thane holds the wall.
+ci.goal.3|the last shard walks on two legs. reach the guard at the crystal.
 
 # ---- hud
 hud.nightshort|NIGHT {0}
