@@ -1279,8 +1279,9 @@ namespace MoonThief
             }
 
             int step = BattleStep();
-            if (step != 0 && Director.AwaitingInput) { Sfx.Play("ui"); Director.SelectCell(step); return; }
-            if (Input.GetKeyDown(KeyCode.Tab) && Director.AwaitingInput) { Sfx.Play("ui"); Director.CycleTarget(1); return; }
+            // a cursor step ticks; the confirm still clicks - same split the cards got
+            if (step != 0 && Director.AwaitingInput) { Sfx.Play("blip"); Director.SelectCell(step); return; }
+            if (Input.GetKeyDown(KeyCode.Tab) && Director.AwaitingInput) { Sfx.Play("blip"); Director.CycleTarget(1); return; }
             if (KeyConfirm())
             {
                 Sfx.Play("ui");

@@ -1901,7 +1901,9 @@ namespace MoonThief
             for (int k = 0; k < n; k++)
             {
                 i = (i + d + n) % n;
-                if (Rows[i].Enabled) { Select(i); Sfx.Play("ui"); return; }
+                // the cursor gets the soft tick; confirm keeps the click, so moving and
+                // choosing no longer sound like the same act
+                if (Rows[i].Enabled) { Select(i); Sfx.Play("blip"); return; }
             }
         }
 
