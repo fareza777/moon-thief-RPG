@@ -790,7 +790,15 @@ namespace MoonThief
                 rig.Body.localPosition = new Vector3(0f, Mathf.Sin(_time * 1.5f + rig.BobPhase) * 0.035f, 0f);
             }
             if (_targetChev.enabled && _target >= 0 && _target < EnemyRigs.Length)
-                PlaceTargetChev(EnemyRigs[_target], Mathf.Sin(_time * 5f) * 0.08f);
+            {
+                // a felled mark is no mark at all: the aim slides to whoever still stands
+                if (!Enemies[_target].Alive)
+                {
+                    for (int i = 0; i < Enemies.Length; i++)
+                        if (Enemies[i].Alive) { SetTarget(i); break; }
+                }
+                else PlaceTargetChev(EnemyRigs[_target], Mathf.Sin(_time * 5f) * 0.08f);
+            }
             if (_turnChev.enabled && _turnRig != null)
             {
                 var tr = _turnRig;
