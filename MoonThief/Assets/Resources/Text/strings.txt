@@ -50,6 +50,9 @@ set.off|OFF
 set.saved|PROGRESS SAVED
 set.music|MUSIC
 set.autobattle|AUTO BATTLE
+set.difficulty|DIFFICULTY
+set.diff.story|STORY
+set.diff.normal|NORMAL
 
 # ---- onboarding (first boot, three cards)
 onb.title.1|WALK

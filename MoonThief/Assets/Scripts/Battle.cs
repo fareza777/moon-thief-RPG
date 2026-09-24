@@ -206,8 +206,11 @@ namespace MoonThief
             var friends = new List<MonsterSpec>();
             foreach (var key in Game.State.Friends)
             {
-                var s = BattleData.Species(key);
-                if (s.HasValue) friends.Add(s.Value);
+                // a moonlit catch keeps its shimmer: "moon." prefix, silver skin, a little
+                // more bulk than the wild kind
+                bool moonlit = key.StartsWith("moon.");
+                var s = BattleData.Species(moonlit ? key.Substring(5) : key);
+                if (s.HasValue) { var v = s.Value; v.Rare = moonlit; friends.Add(v); }
             }
 
             Party = new Fighter[specs.Length + friends.Count];
@@ -249,8 +252,8 @@ namespace MoonThief
                         Name = Strings.Get(ms.Name),
                         Side = Side.Party,
                         Species = ms.Name,
-                        MaxHp = ms.Hp + flv,
-                        Hp = ms.Hp + flv,
+                        Rare = ms.Rare,
+                        MaxHp = Mathf.RoundToInt(ms.Hp * (ms.Rare ? 1.2f : 1f)) + flv,
                         AtkMin = ms.AtkMin,
                         AtkMax = ms.AtkMax,
                         Speed = ms.Speed,
@@ -258,6 +261,7 @@ namespace MoonThief
                         BattlerPath = ms.Battler,
                         Scale = FitScale(Bank.One(ms.Battler), 3.2f, 2)
                     };
+                    Party[i].Hp = Party[i].MaxHp;
                 }
                 var home = new Vector3(xs[i], PartyFeet, 0f);
                 var rig = MakeRig(Party[i], home, 20 + i);
@@ -275,6 +279,7 @@ namespace MoonThief
                 rig.Anim.Play(friend
                     ? new[] { Bank.One(Party[i].BattlerPath) }
                     : Bank.Frames(BattleData.ClipPath(specs[i].ColorDir, "breath_idle")), 6f, true);
+                if (friend && Party[i].Rare) rig.Sr.color = new Color(0.72f, 0.84f, 1f);
                 // the turn chevron floats BodyHeight above the feet - enemy rigs set it from
                 // their sprite bounds, party rigs forgot to and the arrow sank into the sprite
                 rig.BodyHeight = rig.Sr.sprite != null ? rig.Sr.sprite.bounds.size.y * Party[i].Scale : 2f;
@@ -1241,14 +1246,17 @@ namespace MoonThief
         }
 
         /// <summary>The auto-battle brain: mend anyone badly hurt if we still carry food,
-        /// otherwise strike the weakest standing foe. Deliberately simple - it should feel
+        /// otherwise strike the weakest standing foe. A mender's ATTACK is its mend, so
+        /// picking ATTACK already tends the party. Deliberately simple - it should feel
         /// like a sensible party, not a solver.</summary>
         void AutoPick(Fighter actor)
         {
             if (!AwaitingInput || !Auto) return;   // a hand got there first
             bool hurt = false;
             foreach (var p in View.Party) if (p.Alive && p.Hp01 < 0.45f) hurt = true;
-            if (hurt && !_morselUsed && Game.State.BestFood() != null)
+            // a mender's own ATTACK is its mend - it tends the party for free, so the
+            // food stays in the bag
+            if (hurt && actor.Style != 2 && !_morselUsed && Game.State.BestFood() != null)
             {
                 View.SetSelected(2);
                 Confirm();
@@ -1350,13 +1358,16 @@ namespace MoonThief
             var tRig = View.RigOf(target);
             yield return Lunge(eRig, tRig.Home, 0.3f);
 
-            int dmg = Mathf.RoundToInt(UnityEngine.Random.Range(e.AtkMin, e.AtkMax + 1) * (slam ? 1.6f : 1f) * (_enraged ? 1.25f : 1f));
+            int dmg = Mathf.RoundToInt(UnityEngine.Random.Range(e.AtkMin, e.AtkMax + 1)
+                * (slam ? 1.6f : 1f) * (_enraged ? 1.25f : 1f) * (Prefs.Story ? 0.65f : 1f));
             target.Hp = Mathf.Max(0, target.Hp - dmg);
             if (_flow != 0) { _flow = 0; View.SetRound(_round); }   // momentum breaks on a hit taken
             var stagger = Bank.Frames(BattleData.ClipPath(target.ColorDir, "hit"));
             if (stagger.Length > 0) tRig.Anim.Play(stagger, 14f, false);
             else StartCoroutine(Fx.FlashTint(tRig.Anim, new Color(1f, 0.45f, 0.45f), 2, 0.08f, 0.08f));
             StartCoroutine(Fx.Shake(tRig.Root, slam ? 0.22f : 0.14f, 0.25f));
+            StartCoroutine(Fx.Slash(View.Stage, tRig.Home + new Vector3(0f, 0.85f, 0f),
+                new Color(1f, 0.55f, 0.45f, 0.85f), slam ? 1.4f : 1f));
             if (slam) StartCoroutine(Fx.Shake(View.Stage, 0.15f, 0.2f));
             if (slam && target.Alive && UnityEngine.Random.value < 0.25f)
             {
@@ -1397,6 +1408,7 @@ namespace MoonThief
             if (target != null)
             {
                 int dmg = UnityEngine.Random.Range(e.AtkMin, e.AtkMax + 1);
+                if (Prefs.Story) dmg = Mathf.Max(1, Mathf.RoundToInt(dmg * 0.65f));
                 target.Hp = Mathf.Max(0, target.Hp - dmg);
                 _flow = 0;
             }
@@ -1616,6 +1628,9 @@ namespace MoonThief
             if (tRig == null) return;
             StartCoroutine(Fx.FlashTint(tRig.Anim, new Color(1f, 0.5f, 0.4f), 2, 0.07f, 0.07f));
             StartCoroutine(Fx.Shake(tRig.Root, crit || weak ? 0.2f : 0.12f, crit || weak ? 0.3f : 0.22f));
+            StartCoroutine(Fx.Slash(View.Stage, tRig.Home + new Vector3(0f, 0.85f, 0f),
+                crit ? new Color(1f, 0.9f, 0.45f, 0.95f) : weak ? new Color(0.7f, 1f, 0.95f, 0.9f) : new Color(1f, 1f, 1f, 0.85f),
+                crit ? 1.5f : 1f));
             if (crit) StartCoroutine(Fx.Shake(View.Stage, 0.13f, 0.18f));
             View.FloatNumber(tRig.Home + new Vector3(0f, 1.2f, 0f), "-" + dmg,
                 crit ? new Color(1f, 0.85f, 0.3f) : weak ? new Color(0.65f, 1f, 0.95f) : new Color(1f, 0.95f, 0.75f),
@@ -1678,12 +1693,13 @@ namespace MoonThief
 
             if (UnityEngine.Random.value < chance && !target.Boss
                 && target.Species != null && !Game.State.Friends.Contains(target.Species)
+                && !Game.State.Friends.Contains("moon." + target.Species)
                 && Game.State.Friends.Count < 2)
             {
                 target.Captured = true;
                 _befriended++;
                 Game.State.Befriended++;
-                Game.State.Friends.Add(target.Species);
+                Game.State.Friends.Add(target.Rare ? "moon." + target.Species : target.Species);
                 View.Sparkle(tRig.Home + new Vector3(0f, tRig.BodyHeight * 0.5f, 0f), new Color(1f, 0.95f, 0.6f), 14);
                 Sfx.Play("befriend");
                 View.SetMessage(Strings.Get("bt.befriended", target.Name));

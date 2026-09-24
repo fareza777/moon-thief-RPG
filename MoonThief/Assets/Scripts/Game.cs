@@ -2413,8 +2413,9 @@ namespace MoonThief
                 StartBattle(BattleData.BossFight());
                 int t2 = 0;
                 float bossStart = Time.time;
-                // the boss plus its wisp add take longer than a wild pair - give it room
-                while (Phase == St.Battle && Time.time - bossStart < 90f)
+                // the boss plus its wisp add take longer than a wild pair - and enrage
+                // plus daze stretch it further - so give it room
+                while (Phase == St.Battle && Time.time - bossStart < 170f)
                 {
                     t2++;
                     if (Director.AwaitingInput) { Director.SelectCell(0); Director.Confirm(); }

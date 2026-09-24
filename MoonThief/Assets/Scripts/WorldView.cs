@@ -818,11 +818,16 @@ namespace MoonThief
             _cristalAnim.Play(frames, 6f, true);
         }
 
-        /// <summary>Fireflies: tiny drifting lights over the fields at night.</summary>
+        /// <summary>Fireflies: tiny drifting lights over the fields at night.
+        /// Each night has its own kind - green flies on the fields, cold wisps deep
+        /// in the forest, gold motes on the last march - and deeper nights swarm more.</summary>
         void BuildFireflies()
         {
             var rng = new System.Random(4242);
-            for (int i = 0; i < 26; i++)
+            var tint = MapChapter == 1 ? new Color(0.85f, 1f, 0.65f, 0f)
+                     : MapChapter == 2 ? new Color(0.6f, 0.95f, 1f, 0f)
+                     : new Color(1f, 0.95f, 0.7f, 0f);
+            for (int i = 0; i < 26 + MapChapter * 6; i++)
             {
                 var go = new GameObject("fly" + i);
                 go.transform.SetParent(_root, false);
@@ -833,7 +838,7 @@ namespace MoonThief
                 var sr = go.AddComponent<SpriteRenderer>();
                 sr.sprite = TexArt.Glow();
                 sr.sortingOrder = 2015;   // above the dimmer: a firefly has to be its own light
-                sr.color = new Color(0.85f, 1f, 0.65f, 0f);
+                sr.color = tint;
                 _flies.Add(go.transform);
             }
         }
@@ -1651,18 +1656,21 @@ namespace MoonThief
             for (int i = 0; i < Game.State.Friends.Count; i++)
             {
                 string key = Game.State.Friends[i];
+                bool moonlit = key.StartsWith("moon.");
+                var s = BattleData.Species(moonlit ? key.Substring(5) : key);
+                if (!s.HasValue) continue;
+                var spec = s.Value; spec.Rare = moonlit;
                 bool have = false;
                 for (int j = 0; j < _friends.Count; j++)
-                    if (_friends[j].Spec.Name == key) { have = true; break; }
+                    if (_friends[j].Spec.Name == spec.Name) { have = true; break; }
                 if (have) continue;
-                var s = BattleData.Species(key);
-                if (!s.HasValue) continue;
                 var f = MakeActor(Vector2.zero, WorldOrder(0f), isNpc: false);
                 f.Root.name = "friend" + _friends.Count;
                 f.Speed = 4.6f;
-                f.Spec = s.Value;
+                f.Spec = spec;
+                if (moonlit) f.Sr.color = new Color(0.72f, 0.84f, 1f);
                 // a warm tag tells it apart from the wild look-alikes roaming the same fields
-                MakeNamePlate(f, Strings.Get(s.Value.Name), FriendChip);
+                MakeNamePlate(f, Strings.Get(spec.Name), FriendChip);
                 var spr = TexArt.MapMonster(s.Value.MapSheet, 1);
                 if (spr != null) f.Anim.Play(new[] { spr }, 1f, true);
                 if (Hero?.Root != null)
