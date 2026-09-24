@@ -258,6 +258,7 @@ namespace MoonThief
         readonly PixelLabel[] _mapZoneLbl = new PixelLabel[4];
         Sprite _mapSpr;
         string[] _pageLabels = new string[0], _pageVals = new string[0];
+        string _pageFootKey;
         int[] _pageIcons;
         Sprite[] _pageIconSprites;
         Action[] _pageActs = new Action[0];
@@ -1444,6 +1445,7 @@ namespace MoonThief
                     break;
             }
 
+            _pageFootKey = foot;
             _pageLabels = labels.ToArray();
             _pageVals = vals.ToArray();
             _pageActs = acts.ToArray();
@@ -1657,7 +1659,7 @@ namespace MoonThief
             _pageSub.transform.localPosition = new Vector3(0f, _cardTop - 3.5f, 0f);
             float bottom = LayRows(_pageRows, labels.ToArray(), acts.ToArray(), vals.ToArray(), rowsTop, labels.Count, icons?.ToArray(), sprites?.ToArray());
             _pageFoot.transform.localPosition = new Vector3(0f, FootY(bottom), 0f);
-            _pageFoot.Set(Strings.Get(foot ?? "jr.pagehint"));
+            _pageFoot.Set(Strings.Get(_pageFootKey ?? "jr.pagehint"));
         }
 
         public void ShowToast(string text, float seconds = 3.2f)
