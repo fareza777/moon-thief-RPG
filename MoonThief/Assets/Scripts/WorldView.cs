@@ -62,6 +62,7 @@ namespace MoonThief
         // share one brightness or the field turns into a pond of light
         readonly List<float> _glowAmp = new List<float>();
         readonly List<Transform> _flies = new List<Transform>();
+        readonly List<SpriteRenderer> _flySprites = new List<SpriteRenderer>();   // cached: no per-frame GetComponent
         readonly List<SpriteRenderer> _water = new List<SpriteRenderer>();
         readonly List<Actor> _critters = new List<Actor>();
         // the friends at the hero's heels and the breadcrumb path they walk: a crumb lands
@@ -615,7 +616,7 @@ namespace MoonThief
                 bSr.transform.localScale = Vector3.one * 0.85f;
                 var bAnim = bSr.gameObject.AddComponent<Anim>();
                 bAnim.Setup(bSr, true, 0f);
-                bAnim.Play(MonsterClip(GameMap.BossMapSheet(), Dir.Down), 3f, true);
+                bAnim.Play(MonsterClip(GameMap.BossMapSheet(MapChapter), Dir.Down), 3f, true);
                 _bossProp = bSr;
                 var bGlow = SpriteRendererUtil.Make(_root, "bossGlow", TexArt.Glow(), 2011);
                 bGlow.transform.localPosition = new Vector3(b.x, b.y + 0.6f, 0f);
@@ -840,6 +841,7 @@ namespace MoonThief
                 sr.sortingOrder = 2015;   // above the dimmer: a firefly has to be its own light
                 sr.color = tint;
                 _flies.Add(go.transform);
+                _flySprites.Add(sr);
             }
         }
 
@@ -1439,7 +1441,7 @@ namespace MoonThief
         {
             Ready = false;
             if (_root != null) Fx.Kill(_root.gameObject);
-            Monsters.Clear(); Npcs.Clear(); _props.Clear(); _glows.Clear(); _glowAmp.Clear(); _flies.Clear();
+            Monsters.Clear(); Npcs.Clear(); _props.Clear(); _glows.Clear(); _glowAmp.Clear(); _flies.Clear(); _flySprites.Clear();
             _water.Clear(); _critters.Clear(); _respawns.Clear();
             _friends.Clear(); _crumbs.Clear(); _dust.Clear();
             _bossProp = null; _bossHidden = false;
@@ -2023,7 +2025,7 @@ namespace MoonThief
                     p.x + Mathf.Sin(_time * 0.35f + i * 1.7f) * dt * 0.55f,
                     p.y + Mathf.Cos(_time * 0.27f + i * 2.3f) * dt * 0.4f, p.z);
                 float blink = 0.5f + 0.5f * Mathf.Sin(_time * 2.4f + i * 1.31f);
-                var sr = f.GetComponent<SpriteRenderer>();
+                var sr = _flySprites[i];
                 var c = sr.color;
                 c.a = blink * (p.y > 59f ? 0.22f : 0.55f);
                 sr.color = c;

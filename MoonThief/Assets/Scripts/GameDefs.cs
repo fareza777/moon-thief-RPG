@@ -177,8 +177,11 @@ namespace MoonThief
 
         public Ground At(Vector2Int c) => InBounds(c) ? Grounds[c.y * W + c.x] : Ground.Block;
 
-        /// <summary>Overworld sheet of the chapter boss.</summary>
-        public static string BossMapSheet() => "Art/Mon/Monsters_04_0";
+        /// <summary>Overworld sheet of the chapter's gatekeeper.</summary>
+        public static string BossMapSheet(int chapter)
+            => chapter <= 1 ? "Art/Mon/Monsters_03_0"
+                : chapter == 2 ? "Pack/Monsters/Monsters_04_5"
+                : "Art/Mon/Monsters_04_0";
         public int DecoAt(Vector2Int c) => InBounds(c) ? Deco[c.y * W + c.x] : -1;
         public bool InBounds(Vector2Int c) => c.x >= 0 && c.y >= 0 && c.x < W && c.y < H;
         public bool IsSolid(Vector2Int c) => InBounds(c) && Solid[c.y * W + c.x];
@@ -949,7 +952,9 @@ namespace MoonThief
             // so the fields keep a face the player has not already befriended twice
             new MonsterSpec{ Name="mon.palebell",Battler="Art/Battlers/GhostA",    MapSheet="Pack/Monsters/Monsters_02_5", Tier=3, Chapter=3, Hp=30, AtkMin=5, AtkMax=8, Speed=5.0f },
             new MonsterSpec{ Name="mon.thick",   Battler="Art/Battlers/MushroomB", MapSheet="Pack/Monsters/Monsters_04_3", Tier=2, Chapter=2, Hp=36, AtkMin=6, AtkMax=9, Speed=3.4f },
-            new MonsterSpec{ Name="mon.thane",   Battler="Art/Battlers/MinotaurB", MapSheet="Pack/Monsters/Monsters_04_5", Tier=4, Chapter=3, Hp=58, AtkMin=7, AtkMax=12, Speed=3.8f },
+            // the Night Thane holds the road out of the second night - it is a gatekeeper,
+            // not a field spawn, so it carries the boss flag and Roll never deals it
+            new MonsterSpec{ Name="mon.thane",   Battler="Art/Battlers/MinotaurB", MapSheet="Pack/Monsters/Monsters_04_5", Tier=4, Chapter=2, Hp=62, AtkMin=6, AtkMax=11, Speed=3.8f, Boss=true },
         };
 
         public static readonly MonsterSpec Boss = new MonsterSpec
@@ -1003,7 +1008,7 @@ namespace MoonThief
         public static MonsterSpec[] Roll(int chapter, System.Random rng)
         {
             var pool = new List<MonsterSpec>();
-            foreach (var s in Bestiary) if (s.Chapter <= chapter) pool.Add(s);
+            foreach (var s in Bestiary) if (s.Chapter <= chapter && !s.Boss) pool.Add(s);
             var a = pool[rng.Next(pool.Count)];
             if (rng.Next(100) < 10) a.Rare = true;
             if (chapter >= 2 && rng.Next(100) < 35)
@@ -1014,11 +1019,36 @@ namespace MoonThief
             return new[] { a };
         }
 
-        /// <summary>The Pale Guard never walks alone: a lantern wisp screens it. The fight
-        /// used to be one big health bar, which made MORSEL and BEFRIEND pointless at the
-        /// climax - two targets keeps every command relevant to the last turn.</summary>
-        public static MonsterSpec[] BossFight()
+        /// <summary>Each night's road ends in its own keeper. The first is a lone dusk
+        /// stalker - a teaching fight, one target, every command already matters. The second
+        /// is the Night Thane with a shade squire screening it: two targets, so MORSEL and
+        /// BEFRIEND have a use under pressure. The third is the Pale Guard proper, screened
+        /// by a lantern wisp - the night owes you a real wall before the cristal.</summary>
+        public static MonsterSpec[] BossFight(int chapter)
         {
+            if (chapter <= 1)
+            {
+                return new[]
+                {
+                    new MonsterSpec{ Name="mon.stalker", Battler="Art/Battlers/ScorpionA",
+                        MapSheet="Art/Mon/Monsters_03_0", Tier=2, Chapter=1,
+                        Hp=42, AtkMin=4, AtkMax=7, Speed=4.0f, Boss=true }
+                };
+            }
+            if (chapter == 2)
+            {
+                var squire = Boss;
+                squire.Name = "mon.squire";
+                squire.Battler = "Art/Battlers/GhostA";
+                squire.MapSheet = "Art/Mon/Monsters_02_0";
+                squire.Hp = 20; squire.AtkMin = 5; squire.AtkMax = 8; squire.Speed = 5.0f;
+                squire.Boss = false; squire.Tier = 2;
+                var thane = Species("mon.thane").Value;
+                return new[] { thane, squire };
+            }
+            // the Pale Guard never walks alone: a lantern wisp screens it. The fight
+            // used to be one big health bar, which made MORSEL and BEFRIEND pointless at the
+            // climax - two targets keeps every command relevant to the last turn.
             var wisp = Boss;
             wisp.Name = "mon.wisp";
             wisp.Battler = "Art/Battlers/GeniusA";
@@ -1027,6 +1057,15 @@ namespace MoonThief
             wisp.Boss = false; wisp.Tier = 3;
             return new[] { Boss, wisp };
         }
+
+        /// <summary>Who the hero is talking to at the gate - name plate and taunt lines.</summary>
+        public static string BossNameKey(int chapter)
+            => chapter <= 1 ? "mon.stalker" : chapter == 2 ? "mon.thane" : "mon.minotaur";
+
+        public static string[] BossTaunts(int chapter)
+            => chapter <= 1 ? new[] { "boss1.t.1", "boss1.t.2" }
+                : chapter == 2 ? new[] { "boss2.t.1", "boss2.t.2" }
+                : new[] { "boss.taunt.1", "boss.taunt.2" };
     }
 
     // -------------------------------------------------------------------- npc + dialog

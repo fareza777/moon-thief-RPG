@@ -1260,14 +1260,15 @@ namespace MoonThief
             }
             if (World.NearBoss && !_bossDown)
             {
-                // the guard gets two lines before it swings: a taunt, then the fight
+                // the keeper gets two lines before it swings: a taunt, then the fight
                 var boss = new NpcDef
                 {
-                    Sheet = GameMap.BossMapSheet(), NameKey = "mon.minotaur",
-                    Lines = new[] { "boss.taunt.1", "boss.taunt.2" }, Monster = true,
+                    Sheet = GameMap.BossMapSheet(State.Chapter),
+                    NameKey = BattleData.BossNameKey(State.Chapter),
+                    Lines = BattleData.BossTaunts(State.Chapter), Monster = true,
                 };
                 OpenDialog(boss, boss.Lines);
-                _dlgThen = () => StartBattle(BattleData.BossFight());
+                _dlgThen = () => StartBattle(BattleData.BossFight(State.Chapter));
                 return;
             }
             if (Vector2.Distance(World.HeroPos, World.Map.CristalPos) < 2f)
@@ -2429,7 +2430,7 @@ namespace MoonThief
             // fight the boss
             if (World.NearBoss && !_bossDown)
             {
-                StartBattle(BattleData.BossFight());
+                StartBattle(BattleData.BossFight(State.Chapter));
                 int t2 = 0;
                 float bossStart = Time.time;
                 // let the real AUTO battle play the finale: it mends, spends a morsel when

@@ -1959,8 +1959,10 @@ namespace MoonThief
 
             if (boss)
             {
-                lines.Add(Strings.Get("card.bossline"));
-                View.ShowCard(Strings.Get("card.bosstitle"), lines.ToArray(),
+                // each night's keeper falls to its own card
+                int ch = Mathf.Clamp(Game.State.Chapter, 1, 3);
+                lines.Add(Strings.Get("card.bossline." + ch));
+                View.ShowCard(Strings.Get("card.bosstitle." + ch), lines.ToArray(),
                     new[] { Strings.Get("btn.continue") },
                     new Action[] { () => OnBossWon?.Invoke() },
                     new Color(1f, 0.9f, 0.55f));

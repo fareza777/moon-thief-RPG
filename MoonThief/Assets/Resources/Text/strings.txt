@@ -181,6 +181,8 @@ mon.minotaur|PALE GUARD
 mon.thane|NIGHT THANE
 mon.thick|THICKET
 mon.palebell|PALE BELL
+mon.stalker|DUSK STALKER
+mon.squire|SHADE SQUIRE
 mon.slime.d|It misses the moon too.
 mon.slime2.d|Softer than it looks. Meaner too.
 mon.imp.d|Grew from a kettle nobody emptied.
@@ -197,12 +199,20 @@ mon.minotaur.d|It wears the shard like a crown.
 mon.thane.d|The dark's own knight. No oath, just hunger.
 mon.thick.d|The hedge grew teeth last winter.
 mon.palebell.d|It rings. Something answers.
+mon.stalker.d|It ate the dusk patrol. Now it eats the road.
+mon.squire.d|A page that outlived its knight.
 
 # ---- result cards
 card.wintitle|THE WAY IS CLEAR
 card.bosstitle|THE GUARD FALLS
+card.bosstitle.1|THE STALKER FALLS
+card.bosstitle.2|THE THANE FALLS
+card.bosstitle.3|THE GUARD FALLS
 card.losstitle|THE NIGHT WINS
 card.bossline|The last shard slips out of its hands.
+card.bossline.1|The road north lies open.
+card.bossline.2|Its helm rings once on the stones, and is still.
+card.bossline.3|The last shard slips out of its hands.
 card.lossline|The party wakes by the crystal. The moon is still gone.
 card.xp|XP {0}
 card.gold|GOLD {0}
@@ -234,7 +244,11 @@ zone.bossdown|THE LAST SHARD IS YOURS
 zone.retreat|You fall back to the village.
 zone.shard|A MOON SHARD hums in your hands
 
-# ---- boss talk. The Pale Guard speaks before it swings.
+# ---- boss talk. Each night's gatekeeper speaks before it swings.
+boss1.t.1|The dusk stalker crouches on the road. It does not share.
+boss1.t.2|Bleed, little light. The dark is hungry too.
+boss2.t.1|The thane's helm is split by a shard. He wears it anyway.
+boss2.t.2|No oath. No quarter. The road is mine, and I hold it.
 boss.taunt.1|A hundred nights I stood this watch. The shard crown burns my head.
 boss.taunt.2|Take it if you can. Or kneel, little thief, and keep the dark.
 zone.name.village|QUIET HOLLOW
