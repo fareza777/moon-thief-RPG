@@ -2076,6 +2076,24 @@ namespace MoonThief
             }
         }
 
+        int _hitStop;
+
+        /// <summary>A heartbeat of near-frozen time on a crit - the classic hit-stop that makes
+        /// a lucky hit land heavier. Restores the clock only if nothing else (the pause card)
+        /// took it while the stop ran.</summary>
+        IEnumerator HitStop(float t)
+        {
+            _hitStop++;
+            if (Time.timeScale > 0.3f) Time.timeScale = 0.3f;
+            float e = 0f;
+            while (e < t) { e += Time.unscaledDeltaTime; yield return null; }
+            if (--_hitStop <= 0)
+            {
+                _hitStop = 0;
+                if (Time.timeScale > 0.2f && Time.timeScale < 0.9f) Time.timeScale = 1f;
+            }
+        }
+
         /// <summary>Damage + feedback for one foe: tint flash, shake, the floating number.
         /// A weakness hit earns its own banner above the number so the table is learnable.</summary>
         void HitFoe(Fighter target, int dmg, bool crit, bool weak = false)
@@ -2109,6 +2127,8 @@ namespace MoonThief
                 crit ? new Color(1f, 0.9f, 0.45f, 0.95f) : weak ? new Color(0.7f, 1f, 0.95f, 0.9f) : new Color(1f, 1f, 1f, 0.85f),
                 crit ? 1.5f : 1f));
             if (crit) StartCoroutine(Fx.Shake(View.Stage, 0.13f, 0.18f));
+            // a crit earns its weight: the world itself holds still for a heartbeat
+            if (crit) StartCoroutine(HitStop(0.06f));
             View.FloatNumber(tRig.Home + new Vector3(0f, 1.2f, 0f), "-" + dmg,
                 crit ? new Color(1f, 0.85f, 0.3f) : weak ? new Color(0.65f, 1f, 0.95f) : new Color(1f, 0.95f, 0.75f),
                 crit || weak ? 3 : 2);   // payoff hits read bigger than ordinary ones
