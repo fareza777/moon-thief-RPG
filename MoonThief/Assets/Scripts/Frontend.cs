@@ -1394,7 +1394,19 @@ namespace MoonThief
                             int n = Game.State.BagCount(key);
                             bool worn = IsWorn(key);
                             labels.Add(Strings.Get(key) + (n > 1 ? " x" + n : ""));
-                            vals.Add(worn ? Strings.Get("jr.worn") : Items.Effect(def));
+                            string val = worn ? Strings.Get("jr.worn") : Items.Effect(def);
+                            // same question the shop answers: a bagged blade is only
+                            // worth wearing if it beats what is on your back
+                            if (!worn && Items.IsEquip(def.Kind))
+                            {
+                                var onBack = Game.State.Worn[Items.SlotOf(def.Kind)];
+                                if (onBack != null)
+                                {
+                                    int diff = def.Power - Items.Get(onBack).Power;
+                                    val += " (" + (diff >= 0 ? "+" : "") + diff + ")";
+                                }
+                            }
+                            vals.Add(val);
                             icons.Add(def.Kind == ItemKind.Food ? 2
                                 : def.Kind == ItemKind.Blade ? 0
                                 : def.Kind == ItemKind.Cloth ? 18 : 25);
