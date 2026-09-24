@@ -777,7 +777,7 @@ namespace MoonThief
         // and land under the rising card - raise the hold right here, in the same call.
         void ShowZoneBanner(string text)
         {
-            ShowZoneBanner(text);
+            World.ShowBanner(text);
             if (Menus != null) Menus.HoldToasts = true;
         }
 
