@@ -293,6 +293,7 @@ namespace MoonThief
         // selftest only: boss walks must not be diverted through a front door - a hero who
         // ducks inside a house keeps steering for a BossPos that lives on the other map
         bool _testNoDoors;
+        readonly HashSet<int> _shotFight = new HashSet<int>();   // nights already photographed mid-fight
         int _houseIndex = -1;
         Vector2 _doorReturn;          // where to stand when the door closes behind you
         float _doorCooldown;
@@ -2526,6 +2527,14 @@ namespace MoonThief
                     {
                         // a stray wild fight on the road north: AUTO it, tap its card, keep walking
                         if (!Director.Auto) Director.ToggleAuto();
+                        // the night-2 and night-3 fights are the only chances to photograph
+                        // those arenas and their packs - the n1 hunt only ever sees night one
+                        if (!_shotFight.Contains(night))
+                        {
+                            _shotFight.Add(night);
+                            yield return new WaitForSeconds(1.2f);
+                            Shot("13b-fight-n" + night);
+                        }
                         if (BattleViewRef.OverlayButtonCount > 0)
                             BattleViewRef.CardButtonAt(0)?.Invoke();
                         else TickWorldForTest();
@@ -2570,8 +2579,14 @@ namespace MoonThief
                     // and a better solver than raw ATTACK spam that can wipe and re-fight.
                     if (!Director.Auto) Director.ToggleAuto();
                     int lastRoundLogged = -1;
+                    bool bossShot = false;
                     while (Phase == St.Battle && Time.time - bossStart < 170f)
                     {
+                        if (!bossShot && Time.time - bossStart > 2.5f)
+                        {
+                            bossShot = true;
+                            Shot("16b-bossfight-n" + night);
+                        }
                         if (Director.DebugRound != lastRoundLogged)
                         {
                             lastRoundLogged = Director.DebugRound;
