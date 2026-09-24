@@ -371,18 +371,33 @@ namespace MoonThief
             if (!toBlack) _fadeRoot.gameObject.SetActive(false);
         }
 
-        /// <summary>Dip to black, run the scene switch, dissolve back in.</summary>
+        /// <summary>Dip to black, run the scene switch, dissolve back in. Transitions are
+        /// serialized: two overlapping ones used to drive the same fade quad from two
+        /// coroutines at once - black ramps fighting ramps reads as a strobe, and both
+        /// middles still ran (which is how a queued battle's setup survived under a
+        /// teardown fade). Callers keep their order; each waits for the one ahead.</summary>
         void DoTransition(System.Action middle, float outDur = 0.25f, float inDur = 0.35f)
         {
             if (!Application.isPlaying || _fadeRoot == null) { middle?.Invoke(); return; }
-            StartCoroutine(CoTransition(middle, outDur, inDur));
+            _transQueue.Enqueue(new TransReq{ Middle = middle, Out = outDur, In = inDur });
+            if (!_transRunning) StartCoroutine(CoPumpTransitions());
         }
 
-        IEnumerator CoTransition(System.Action middle, float outDur, float inDur)
+        struct TransReq { public System.Action Middle; public float Out; public float In; }
+        readonly Queue<TransReq> _transQueue = new Queue<TransReq>();
+        bool _transRunning;
+
+        IEnumerator CoPumpTransitions()
         {
-            yield return CoFade(true, outDur);
-            middle?.Invoke();
-            yield return CoFade(false, inDur);
+            _transRunning = true;
+            while (_transQueue.Count > 0)
+            {
+                var req = _transQueue.Dequeue();
+                yield return CoFade(true, req.Out);
+                req.Middle?.Invoke();
+                yield return CoFade(false, req.In);
+            }
+            _transRunning = false;
         }
 
         /// <summary>Individual 3x3 stars at 1:1 pixel scale (a stretched star sheet renders
