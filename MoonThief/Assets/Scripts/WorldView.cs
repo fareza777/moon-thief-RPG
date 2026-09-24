@@ -237,7 +237,6 @@ namespace MoonThief
                     // so the pond edge reads without the (blank) edge tiles
                     if (g != Ground.Water && WaterNeighbor(x, y))
                     {
-                        s = (byte)(s * 0.55f);
                         Overlay(verts, uvs, tris, colors, x, y, new Color32(6, 8, 20, 120));
                     }
                     // A road is not a rectangle cut out of a meadow: the verge is trodden and
