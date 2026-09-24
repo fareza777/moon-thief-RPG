@@ -1667,6 +1667,10 @@ namespace MoonThief
             Sfx.Mus.Duck = 1f; Sfx.Mus.Play("explore");
             DoTransition(() =>
             {
+                // the fade lands 0.22s after the phase flips: a fight that began inside
+                // that gap owns the stage now - tearing it down mid-setup starved every
+                // battle coroutine when the selftest staged its loss in exactly that window
+                if (Phase == St.Battle) return;
                 BattleViewRef.gameObject.SetActive(false);
                 BattleViewRef.HideCard();
                 World.gameObject.SetActive(true);
@@ -1721,6 +1725,8 @@ namespace MoonThief
             Sfx.Mus.Duck = 1f; Sfx.Mus.Play("explore");
             DoTransition(() =>
             {
+                // same window as a victory: a new fight inside the fade owns the stage
+                if (Phase == St.Battle) return;
                 BattleViewRef.HideCard();
                 BattleViewRef.gameObject.SetActive(false);
                 Phase = St.Explore;
