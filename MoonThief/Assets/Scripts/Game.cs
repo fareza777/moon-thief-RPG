@@ -288,6 +288,9 @@ namespace MoonThief
         Transform _houseRoot;
         GameMap _houseMap;
         bool _inHouse;
+        // selftest only: boss walks must not be diverted through a front door - a hero who
+        // ducks inside a house keeps steering for a BossPos that lives on the other map
+        bool _testNoDoors;
         int _houseIndex = -1;
         Vector2 _doorReturn;          // where to stand when the door closes behind you
         float _doorCooldown;
@@ -1309,7 +1312,7 @@ namespace MoonThief
         /// and stepping out again is instant.</summary>
         void EnterHouse(int houseIndex)
         {
-            if (_inHouse || _doorCooldown > 0f) return;
+            if (_inHouse || _doorCooldown > 0f || _testNoDoors) return;
             _houseIndex = houseIndex;
             _doorReturn = World.HeroPos + new Vector2(0f, -1.1f);
             _inHouse = true;
@@ -2474,6 +2477,9 @@ namespace MoonThief
             // one loop per night: walk the map to its gatekeeper, let AUTO win the fight,
             // tap the fall card and ride the chapter dissolve into the next night. The whole
             // spine of the game is exercised every run - not just night one.
+            _testNoDoors = true;   // a house door on the way north would swallow the walk whole
+            if (_inHouse) LeaveHouse();   // step out before steering north
+            yield return new WaitForSeconds(0.3f);
             for (int night = 1; night <= 3 && Phase == St.Explore; night++)
             {
                 guard = 0;
@@ -2600,6 +2606,7 @@ namespace MoonThief
                     yield return null;
                 }
                 TriggerEnding();
+                _testNoDoors = false;
                 yield return new WaitForSeconds(1.0f);
                 Shot("18-ending");
                 Debug.Log("[selftest] ending shown");
