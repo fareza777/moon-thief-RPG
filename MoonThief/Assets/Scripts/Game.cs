@@ -1080,7 +1080,10 @@ namespace MoonThief
             // so a notice that arrives while the card is up waits for it - exactly like the one
             // that arrives during a conversation. The runtime audit caught the pair printing over
             // each other on the first village frame, which no editor frame ever showed.
-            bool holdNotice = _dlgOpen || (World != null && World.BannerUp);
+            // the held toast is a world notice: away from the street (a fight, the dawn,
+            // the title) the world's own flag falls but the notice must keep waiting, or it
+            // flushes onto a screen it does not belong to
+            bool holdNotice = _dlgOpen || (World != null && World.BannerUp) || Phase != St.Explore;
             if (holdNotice != Menus.HoldToasts)
             {
                 Menus.HoldToasts = holdNotice;
