@@ -1692,7 +1692,10 @@ namespace MoonThief
             }
             target.Hp = Mathf.Max(0, target.Hp - dmg);
             if (_flow != 0) { _flow = 0; View.SetRound(_round); }   // momentum breaks on a hit taken
-            var stagger = Bank.Frames(BattleData.ClipPath(target.ColorDir, "hit"));
+            // hero bodies carry a hit clip; befriended monsters don't - they flash instead
+            var stagger = target.ColorDir != null
+                ? Bank.Frames(BattleData.ClipPath(target.ColorDir, "hit"))
+                : new Sprite[0];
             if (stagger.Length > 0) tRig.Anim.Play(stagger, 14f, false);
             else StartCoroutine(Fx.FlashTint(tRig.Anim, new Color(1f, 0.45f, 0.45f), 2, 0.08f, 0.08f));
             StartCoroutine(Fx.Shake(tRig.Root, slam ? 0.22f : 0.14f, 0.25f));
