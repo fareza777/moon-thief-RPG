@@ -275,6 +275,7 @@ namespace MoonThief
         NpcDef _dlgNpc;
         float _encounterCooldown = 3f;
         bool _bossDown;
+        bool _bossFocus;          // the gatekeeper talk pulls the camera toward it
         bool _ending;
 
         // ---- houses: a second WorldView for the room, kept alive while the street waits ----
@@ -754,6 +755,14 @@ namespace MoonThief
             if (World?.Map == null) return;
             float tx = Mathf.Clamp(World.HeroPos.x, 9f, GameMap.W - 9f);
             float ty = Mathf.Clamp(World.HeroPos.y, HalfH - 2f, GameMap.H - HalfH + 2f);
+            if (_bossFocus && World.Map != null)
+            {
+                // while the gatekeeper speaks, the frame drifts to hold both of you -
+                // the slow push-in does the work a cutscene border would
+                var b = World.Map.BossPos;
+                tx = Mathf.Clamp((World.HeroPos.x + b.x) * 0.5f, 9f, GameMap.W - 9f);
+                ty = Mathf.Clamp((World.HeroPos.y + b.y) * 0.5f, HalfH - 2f, GameMap.H - HalfH + 2f);
+            }
             // The camera trails the hero instead of being welded to her. A hard follow turns every
             // step into a screen-wide snap (the whole village jumps one pixel with her), and the
             // ease is what makes a walk read as walking. SetCam still snaps the result to the
@@ -1276,6 +1285,7 @@ namespace MoonThief
                     NameKey = BattleData.BossNameKey(State.Chapter),
                     Lines = BattleData.BossTaunts(State.Chapter), Monster = true,
                 };
+                _bossFocus = true;
                 OpenDialog(boss, boss.Lines);
                 _dlgThen = () => StartBattle(BattleData.BossFight(State.Chapter));
                 return;
@@ -1519,6 +1529,7 @@ namespace MoonThief
         void CloseDialog()
         {
             _dlgOpen = false;
+            _bossFocus = false;   // hand the frame back to the hero
             // The notice lane is released by the frame's own pass in Update(): it holds while a
             // dialog box is open or while the zone card is up, and a notice that waited is shown
             // the moment neither is on screen.
