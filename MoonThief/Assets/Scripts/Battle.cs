@@ -1686,6 +1686,10 @@ namespace MoonThief
 
             var eRig = View.RigOf(e);
             var tRig = View.RigOf(target);
+            // the target's own bloodline answers too: a befriended ghost keeps the
+            // sideways step it had when it was wild
+            var tFam = target.Species != null && BattleData.Species(target.Species).HasValue
+                ? BattleData.FamilyOf(BattleData.Species(target.Species).Value) : "";
             // a blink of warning before the blow: the chosen one flushes cold for a beat
             if (tRig?.Anim != null)
                 StartCoroutine(Fx.FlashTint(tRig.Anim, new Color(0.55f, 0.7f, 1f), 1, 0.14f, 0.14f));
@@ -1694,11 +1698,11 @@ namespace MoonThief
 
             int dmg = Mathf.RoundToInt(UnityEngine.Random.Range(e.AtkMin, e.AtkMax + 1)
                 * (slam ? 1.6f : 1f) * (_enraged ? 1.25f : 1f) * (Prefs.Story ? 0.65f : 1f));
-            if (UnityEngine.Random.value < 0.06f)
+            if (UnityEngine.Random.value < (tFam == "ghost" ? 0.2f : 0.06f))
             {
                 // the hero slips aside: the lunge lands on empty air
                 View.FloatNumber(tRig.Home + new Vector3(0f, 1.4f, 0f),
-                    Strings.Get("bt.miss"), new Color(0.8f, 0.85f, 0.95f));
+                    Strings.Get(tFam == "ghost" ? "bt.phased" : "bt.miss"), new Color(0.8f, 0.85f, 0.95f));
                 Sfx.Play("whoosh");
                 yield return Fx.Wait(0.35f);
                 yield return Lunge(eRig, eRig.Home, 0.3f);
@@ -1747,10 +1751,15 @@ namespace MoonThief
 
             if (!target.Alive)
             {
-                yield return FadeOut(tRig, true);
-                Sfx.Play("faint");
-                View.SetMessage(Strings.Get("bt.herodown", target.Name));
-                yield return Fx.Wait(0.8f);
+                // a befriended skeleton remembers its own road too: down once, up once
+                if (IsUnrisenSkeleton(target)) { yield return FriendRise(target, tRig); }
+                else
+                {
+                    yield return FadeOut(tRig, true);
+                    Sfx.Play("faint");
+                    View.SetMessage(Strings.Get("bt.herodown", target.Name));
+                    yield return Fx.Wait(0.8f);
+                }
             }
             else PlayIdle(tRig);
             EndTurn();
@@ -2067,13 +2076,38 @@ namespace MoonThief
                     yield return Fx.Wait(0.5f);
                     if (!actor.Alive)
                     {
-                        yield return FadeOut(aRig, true);
-                        View.SetMessage(Strings.Get("bt.herodown", actor.Name));
-                        yield return Fx.Wait(0.6f);
+                        if (IsUnrisenSkeleton(actor)) { yield return FriendRise(actor, aRig); }
+                        else
+                        {
+                            yield return FadeOut(aRig, true);
+                            View.SetMessage(Strings.Get("bt.herodown", actor.Name));
+                            yield return Fx.Wait(0.6f);
+                        }
                     }
                 }
                 EndTurn();
             }
+        }
+
+        /// <summary>True for a befriended skeleton that has not yet spent its one rise.
+        /// Heroes and enemies stay out: enemies run their own version inside HitFoe.</summary>
+        static bool IsUnrisenSkeleton(Fighter f) =>
+            f.Species != null && BattleData.Species(f.Species).HasValue
+            && BattleData.FamilyOf(BattleData.Species(f.Species).Value) == "skeleton"
+            && !f.Boss && !f.Risen;
+
+        /// <summary>The party-side rise: the bones click back together where they fell.</summary>
+        IEnumerator FriendRise(Fighter f, BattleView.Rig rig)
+        {
+            f.Risen = true;
+            f.Hp = Mathf.Max(1, Mathf.RoundToInt(f.MaxHp * 0.4f));
+            if (rig != null)
+                View.FloatNumber(rig.Home + new Vector3(0f, 1.9f, 0f),
+                    Strings.Get("bt.rises"), new Color(0.9f, 0.9f, 1f));
+            Sfx.Play("enemy");
+            View.Refresh();
+            yield return Fx.Wait(0.7f);
+            PlayIdle(rig);
         }
 
         int _hitStop;
