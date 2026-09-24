@@ -1556,6 +1556,10 @@ namespace MoonThief
                 r.Panel.transform.localPosition = new Vector3(0f, y - RowH * 0.5f, 0f);
                 if (hasIcon)
                 {
+                    // big sprites (the 48px bestiary portraits) shrink to fit the row;
+                    // the 9px pictograms keep their fixed size
+                    r.Icon.transform.localScale = spr.bounds.size.y > 1.2f
+                        ? Vector3.one * (1.5f / spr.bounds.size.y) : Vector3.one * 1.4f;
                     r.Icon.transform.localPosition = new Vector3(labelX - iconW + 0.6f, y - RowH * 0.5f, 0f);
                     r.Icon.enabled = true;
                 }

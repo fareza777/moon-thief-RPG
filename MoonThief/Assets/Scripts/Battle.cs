@@ -33,6 +33,7 @@ namespace MoonThief
             public SpriteRenderer Panel, Chevron, Icon;
             public PixelLabel Text;
             public Rect Hit;
+            public bool Off;      // greyed-out affordance: a command that cannot fire right now
         }
 
         // ---- layout
@@ -274,6 +275,9 @@ namespace MoonThief
                 rig.Anim.Play(friend
                     ? new[] { Bank.One(Party[i].BattlerPath) }
                     : Bank.Frames(BattleData.ClipPath(specs[i].ColorDir, "breath_idle")), 6f, true);
+                // the turn chevron floats BodyHeight above the feet - enemy rigs set it from
+                // their sprite bounds, party rigs forgot to and the arrow sank into the sprite
+                rig.BodyHeight = rig.Sr.sprite != null ? rig.Sr.sprite.bounds.size.y * Party[i].Scale : 2f;
                 PartyRigs[i] = rig;
             }
         }
@@ -560,6 +564,17 @@ namespace MoonThief
             if (on) SetSelected(_selCell);
         }
 
+        /// <summary>Marks a command usable or not: text + icon fade, and every later repaint
+        /// keeps the grey - the dim survives cursor moves instead of being overwritten.</summary>
+        public void SetCellEnabled(int i, bool on)
+        {
+            if (i < 0 || i >= Menu.Count) return;
+            Menu[i].Off = !on;
+            if (Menu[i].Icon != null)
+                Menu[i].Icon.color = on ? Color.white : new Color(1f, 1f, 1f, 0.35f);
+            SetSelected(_selCell);
+        }
+
         public void SetSelected(int cell)
         {
             _selCell = Mathf.Clamp(cell, 0, Menu.Count - 1);
@@ -567,7 +582,8 @@ namespace MoonThief
             {
                 bool sel = i == _selCell && _menuOn;
                 Menu[i].Chevron.enabled = sel;
-                Menu[i].Text.SetColor(sel ? new Color(1f, 0.95f, 0.7f) : new Color(0.85f, 0.86f, 0.96f));
+                Menu[i].Text.SetColor(Menu[i].Off ? new Color(1f, 1f, 1f, 0.35f)
+                    : sel ? new Color(1f, 0.95f, 0.7f) : new Color(0.85f, 0.86f, 0.96f));
                 Menu[i].Panel.color = sel ? new Color(1f, 1f, 0.92f, 1f) : new Color(1f, 1f, 1f, 0.62f);
             }
         }
@@ -1174,16 +1190,10 @@ namespace MoonThief
             int style = f.Style;
             View.Menu[0].Text.Set(Strings.Get(style == 1 ? "menu.sweep" : style == 2 ? "menu.mend" : "menu.strike"));
             View.Menu[0].Icon.sprite = TexArt.MenuIcon(style == 1 ? 13 : style == 2 ? 29 : 0);
-            // morsel goes grey when it can't fire: the bag holds no food, or the
-            // party already shared this battle's portion
-            bool morselOk = !_morselUsed && Game.State.BestFood() != null;
-            var morselCol = morselOk ? Color.white : new Color(1f, 1f, 1f, 0.35f);
-            View.Menu[2].Text.SetColor(morselCol);
-            if (View.Menu[2].Icon != null) View.Menu[2].Icon.color = morselCol;
-            // befriend dims the same way once the two-heart stable is full
-            var heartCol = Game.State.Friends.Count < 2 ? Color.white : new Color(1f, 1f, 1f, 0.35f);
-            View.Menu[1].Text.SetColor(heartCol);
-            if (View.Menu[1].Icon != null) View.Menu[1].Icon.color = heartCol;
+            // commands that cannot fire go grey: morsel needs bag food and a fresh
+            // portion, befriend needs room in the two-heart stable
+            View.SetCellEnabled(2, !_morselUsed && Game.State.BestFood() != null);
+            View.SetCellEnabled(1, Game.State.Friends.Count < 2);
             View.SetMessage(Strings.Get("bt.yourturn", f.Name));
             // auto-battle acts after a short beat, so the player sees whose turn it was
             if (Auto && Application.isPlaying)
