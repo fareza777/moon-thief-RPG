@@ -1429,6 +1429,36 @@ namespace MoonThief
                     yield break;
                 }
             }
+            // the lantern wisp is the Guard's lantern: it wreathes its keeper in light
+            // that swallows the next blow whole - break the wisp to break the ward
+            if (e.Species == "mon.wisp")
+            {
+                Fighter guard = null;
+                foreach (var f in View.Enemies)
+                    if (f.Alive && f.Species == "mon.minotaur") guard = f;
+                if (guard != null && !guard.Ward && UnityEngine.Random.value < 0.55f)
+                {
+                    var wRig0 = View.RigOf(e);
+                    var gRig = View.RigOf(guard);
+                    View.SetMessage(Strings.Get("bt.ward", e.Name));
+                    yield return Fx.Wait(0.4f);
+                    if (wRig0 != null && gRig != null)
+                        yield return Lunge(wRig0, gRig.Home, 0.3f);
+                    guard.Ward = true;
+                    if (gRig != null)
+                    {
+                        View.FloatNumber(gRig.Home + new Vector3(0f, 1.9f, 0f),
+                            Strings.Get("bt.warded"), new Color(1f, 0.9f, 0.5f));
+                        View.Sparkle(gRig.Home + new Vector3(0f, 1.1f, 0f), new Color(1f, 0.9f, 0.45f), 10);
+                    }
+                    Sfx.Play("heal");
+                    View.Refresh();
+                    yield return Fx.Wait(0.5f);
+                    if (wRig0 != null) yield return Lunge(wRig0, wRig0.Home, 0.3f);
+                    EndTurn();
+                    yield break;
+                }
+            }
             bool slam = e.Boss && UnityEngine.Random.value < (_enraged ? 0.45f : 0.35f);
             View.SetMessage(Strings.Get(slam ? "bt.slam" : "bt.enemyturn", e.Name));
             yield return Fx.Wait(slam ? 0.85f : 0.5f);
@@ -1792,11 +1822,23 @@ namespace MoonThief
         {
             var tRig = View.RigOf(target);
             if (tRig == null) return;
-            // a clean dodge: no streak, no number, no damage
-            if (UnityEngine.Random.value < 0.07f)
+            var fam = target.Species != null && BattleData.Species(target.Species).HasValue
+                ? BattleData.FamilyOf(BattleData.Species(target.Species).Value) : "";
+            // a ward drinks the whole blow first - the light winks out, the skin is safe
+            if (target.Ward)
+            {
+                target.Ward = false;
+                View.FloatNumber(tRig.Home + new Vector3(0f, 1.2f, 0f),
+                    Strings.Get("bt.warded"), new Color(1f, 0.9f, 0.5f));
+                Sfx.Play("whoosh");
+                return;
+            }
+            // the dead step sideways out of the world: ghosts phase through blows far
+            // more often than a normal dodge
+            if (UnityEngine.Random.value < (fam == "ghost" ? 0.2f : 0.07f))
             {
                 View.FloatNumber(tRig.Home + new Vector3(0f, 1.2f, 0f),
-                    Strings.Get("bt.miss"), new Color(0.8f, 0.85f, 0.95f));
+                    Strings.Get(fam == "ghost" ? "bt.phased" : "bt.miss"), new Color(0.8f, 0.85f, 0.95f));
                 Sfx.Play("whoosh");
                 return;
             }
@@ -1818,6 +1860,16 @@ namespace MoonThief
                 target.Dazed = true;
                 View.FloatNumber(tRig.Home + new Vector3(0f, 2.35f, 0f),
                     Strings.Get("bt.dazed"), new Color(1f, 0.9f, 0.5f));
+            }
+            // old bones remember the road: once a fight a skeleton pulls itself back
+            // together, joints clicking into place
+            if (!target.Alive && fam == "skeleton" && !target.Boss && !target.Risen)
+            {
+                target.Risen = true;
+                target.Hp = Mathf.Max(1, Mathf.RoundToInt(target.MaxHp * 0.4f));
+                View.FloatNumber(tRig.Home + new Vector3(0f, 1.9f, 0f),
+                    Strings.Get("bt.rises"), new Color(0.85f, 0.9f, 1f));
+                Sfx.Play("enemy");
             }
             Sfx.Play(crit ? "crit" : "hit");
         }
