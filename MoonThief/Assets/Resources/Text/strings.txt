@@ -198,6 +198,7 @@ mon.wasp2|DUSK BEE
 mon.shade|SHADE
 mon.bones|HOLLOW BONES
 mon.hob|STONE HOB
+mon.revenant|GRAVE REVENANT
 mon.wisp|LANTERN WISP
 mon.minotaur|PALE GUARD
 mon.thane|NIGHT THANE
@@ -221,6 +222,7 @@ mon.minotaur.d|It wears the shard like a crown.
 mon.thane.d|The dark's own knight. No oath, just hunger.
 mon.thick.d|The hedge grew teeth last winter.
 mon.palebell.d|It rings. Something answers.
+mon.revenant.d|It died angry. The dark keeps the grievance filed. Down once, up once.
 mon.stalker.d|It ate the dusk patrol. Now it eats the road.
 mon.squire.d|A page that outlived its knight.
 

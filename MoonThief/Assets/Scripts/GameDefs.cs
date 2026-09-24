@@ -951,6 +951,7 @@ namespace MoonThief
             new MonsterSpec{ Name="mon.bones",   Battler="Art/Battlers/SkeletonA", MapSheet="Art/Mon/Monsters_05_0", Tier=3, Chapter=3, Hp=40, AtkMin=6, AtkMax=10, Speed=4.2f },
             new MonsterSpec{ Name="mon.hob",     Battler="Art/Battlers/ScorpionA", MapSheet="Art/Mon/Monsters_03_0", Tier=3, Chapter=3, Hp=46, AtkMin=7, AtkMax=11, Speed=3.6f },
             new MonsterSpec{ Name="mon.wisp",    Battler="Art/Battlers/GeniusA",  MapSheet="Art/Mon/Monsters_05_0", Tier=3, Chapter=3, Hp=38, AtkMin=8, AtkMax=12, Speed=4.8f },
+            new MonsterSpec{ Name="mon.revenant",Battler="Art/Battlers/SkeletonA", MapSheet="Pack/Monsters/Monsters_05_5", Tier=3, Chapter=3, Hp=44, AtkMin=7, AtkMax=10, Speed=3.4f },
             // the deeper-cut species: same family silhouettes in the pack's other palettes,
             // so the fields keep a face the player has not already befriended twice
             new MonsterSpec{ Name="mon.palebell",Battler="Art/Battlers/GhostA",    MapSheet="Pack/Monsters/Monsters_02_5", Tier=3, Chapter=3, Hp=30, AtkMin=5, AtkMax=8, Speed=5.0f },
