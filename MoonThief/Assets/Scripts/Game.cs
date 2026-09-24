@@ -965,8 +965,11 @@ namespace MoonThief
             if (!_metMira) return Strings.Get("quest.1");
             if (_bossDown && State.MoonShards >= ShardsNeeded) return Strings.Get("quest.5");
             if (State.MoonShards >= ShardsNeeded) return Strings.Get("quest.3");
-            if (World != null && World.ChestsLeft > 0 && State.Chapter < 3)
-                return Strings.Get("quest.2", ShardsNeeded - State.MoonShards);
+            // only the first three caches hold shards - the fourth rides the Pale Guard.
+            // Counting ShardsNeeded-MoonShards here promised chests that hold nothing.
+            int shardChests = Mathf.Max(0, 3 - State.ChestsOpened);
+            if (World != null && World.ChestsLeft > 0 && State.Chapter < 3 && shardChests > 0)
+                return Strings.Get("quest.2", shardChests);
             // the corner names the night's real gatekeeper, not the finale's - a walkthrough
             // line that reads "Face the Pale Guard" in night one is steering the hero wrong
             return Strings.Get("quest.4", Strings.Get(BattleData.BossNameKey(State.Chapter)));
@@ -1001,8 +1004,14 @@ namespace MoonThief
             }
             if (State.MoonShards >= ShardsNeeded)
                 return _bossDown ? (Vector2?)World.Map.CristalPos : World.Map.BossPos;
-            int chestAt = World.NearestChest(World.HeroPos, 999f);
-            if (chestAt >= 0) return World.ChestPos(chestAt);
+            // chests only carry three of the four shards - once those are found, the night's
+            // gate is its boss, and pointing the compass at loot would walk the hero backwards
+            int shardChests = Mathf.Max(0, 3 - State.ChestsOpened);
+            if (State.Chapter < 3 && shardChests > 0)
+            {
+                int chestAt = World.NearestChest(World.HeroPos, 999f);
+                if (chestAt >= 0) return World.ChestPos(chestAt);
+            }
             return World.Map.BossPos;
         }
 
