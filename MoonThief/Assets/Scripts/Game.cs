@@ -2640,6 +2640,17 @@ namespace MoonThief
                 Debug.Log("[selftest] defeat ended phase=" + Phase + " hero=" + World.HeroPos);
                 yield return new WaitForSeconds(1.4f);
                 Shot("12c-retreat");
+                // however the staged fight ended, the night must be Explore before the boss
+                // walk - a card still standing taps its way home instead of skipping the spine
+                int sweep = 0;
+                while (Phase == St.Battle && sweep++ < 600)
+                {
+                    if (BattleViewRef.OverlayButtonCount > 0)
+                        // CONTINUE on a win card, FLEE HOME on a loss: both land on Explore
+                        BattleViewRef.CardButtonAt(BattleViewRef.OverlayButtonCount - 1)?.Invoke();
+                    else TickWorldForTest();
+                    yield return null;
+                }
             }
 
             // keep exploring to the boss if we are still alive
