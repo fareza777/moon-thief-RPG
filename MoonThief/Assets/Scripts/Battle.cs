@@ -1290,10 +1290,24 @@ namespace MoonThief
             View.SetMessage(Strings.Get(slam ? "bt.slam" : "bt.enemyturn", e.Name));
             yield return Fx.Wait(slam ? 0.85f : 0.5f);
 
-            // pick the toughest standing hero
+            // families hunt the way their sprites suggest: swarm and sting dive for the
+            // weakest, the dead strike anywhere, and everything else swats the toughest
             Fighter target = null;
-            foreach (var p in View.Party)
-                if (p.Alive && (target == null || p.Hp > target.Hp)) target = p;
+            var fam = e.Species != null && BattleData.Species(e.Species).HasValue
+                ? BattleData.FamilyOf(BattleData.Species(e.Species).Value) : "";
+            if (fam == "ghost" || fam == "skeleton")
+            {
+                var any = new List<Fighter>();
+                foreach (var p in View.Party) if (p.Alive) any.Add(p);
+                if (any.Count > 0) target = any[UnityEngine.Random.Range(0, any.Count)];
+            }
+            else foreach (var p in View.Party)
+            {
+                if (!p.Alive) continue;
+                if (target == null) { target = p; continue; }
+                bool frail = fam == "wasp" || fam == "scorpion";
+                if (frail ? p.Hp < target.Hp : p.Hp > target.Hp) target = p;
+            }
             if (target == null) { Lose(); yield break; }
 
             var eRig = View.RigOf(e);
@@ -1329,7 +1343,14 @@ namespace MoonThief
         {
             // deterministic path for static previews
             Fighter target = null;
-            foreach (var p in View.Party) if (p.Alive && (target == null || p.Hp > target.Hp)) target = p;
+            var fam = e.Species != null && BattleData.Species(e.Species).HasValue
+                ? BattleData.FamilyOf(BattleData.Species(e.Species).Value) : "";
+            bool frail = fam == "wasp" || fam == "scorpion";
+            foreach (var p in View.Party)
+            {
+                if (!p.Alive) continue;
+                if (target == null || (frail ? p.Hp < target.Hp : p.Hp > target.Hp)) target = p;
+            }
             if (target != null)
             {
                 int dmg = UnityEngine.Random.Range(e.AtkMin, e.AtkMax + 1);
