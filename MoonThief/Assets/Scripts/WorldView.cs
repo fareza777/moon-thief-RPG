@@ -303,12 +303,18 @@ namespace MoonThief
             var m = _groundMf.sharedMesh;
             var vs = m.vertices; var us = m.uv; var cs = m.colors32;
             var sb = new System.Text.StringBuilder();
-            foreach (var c in new[] { new Vector2Int(12, 20), new Vector2Int(7, 17), new Vector2Int(4, 12), new Vector2Int(8, 12), new Vector2Int(10, 15) })
+            sb.AppendLine($"counts v={vs.Length} uv={us.Length} c={cs.Length}");
+            int dark = 0;
+            for (int i = 0; i < vs.Length; i += 4)
             {
-                int i = (c.y * GameMap.W + c.x) * 4;
-                if (i + 3 >= vs.Length) { sb.AppendLine($"{c} out"); continue; }
-                sb.AppendLine($"{c} v0={vs[i]} uv0={us[i]} c0={cs[i]} | v2={vs[i + 2]} uv2={us[i + 2]} c2={cs[i + 2]}");
+                if (cs.Length <= i || cs[i].r > 40) continue;
+                var p = vs[i];
+                int x = Mathf.RoundToInt(p.x), y = Mathf.RoundToInt(p.y);
+                var g = Map != null ? Map.At(new Vector2Int(x, y)) : Ground.Block;
+                sb.AppendLine($"({x},{y}) pos={p} uv={us[i]} c={cs[i]} g={g} tile={TileIndex(x, y, g)} shade={ShadeFor(x, y, g)}");
+                if (++dark > 24) { sb.AppendLine("..."); break; }
             }
+            if (dark == 0) sb.AppendLine("no dark verts");
             UnityEngine.Debug.Log("[groundverts]\n" + sb);
         }
 
