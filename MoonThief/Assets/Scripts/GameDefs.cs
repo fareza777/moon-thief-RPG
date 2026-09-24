@@ -874,6 +874,7 @@ namespace MoonThief
         public bool Risen;          // a skeleton stands back up once - this flags it spent
         public bool Ward;           // a wisp's light: the next blow lands on nothing
         public bool WardGiven;      // a befriended wisp's one gift of light, spent
+        public bool Announced;      // a friend's first turn already declared itself
         public int Poison;          // rounds of venom left - scorpion stings leave it
         public string BattlerPath;      // Resources path of the battler sprite
         public string Species;          // monster string key - set on wild foes and befriended allies

@@ -1512,8 +1512,14 @@ namespace MoonThief
             if (ti < 0) { EndTurn(); yield break; }
             var target = View.Enemies[ti];
             var tRig = View.RigOf(target);
-            View.SetMessage(Strings.Get("bt.friendturn", f.Name));
-            yield return Fx.Wait(0.4f);
+            // the first turn each fight introduces the pet; every later one just acts -
+            // the chevron over its head already says whose go it is
+            if (!f.Announced)
+            {
+                f.Announced = true;
+                View.SetMessage(Strings.Get("bt.friendturn", f.Name));
+                yield return Fx.Wait(0.4f);
+            }
             yield return Lunge(aRig, tRig != null ? tRig.Home : aRig.Home, 0.3f);
             bool crit = UnityEngine.Random.value < 0.18f;
             bool weakHit = WeakTo(0, target);
