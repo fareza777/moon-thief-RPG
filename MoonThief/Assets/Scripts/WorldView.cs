@@ -2152,7 +2152,9 @@ namespace MoonThief
                 _objArrow.transform.localScale = Vector3.one * 1.7f;
                 _objArrow.color = new Color(1f, 0.93f, 0.55f, 0.95f);
             }
-            if (!target.HasValue || !_textOn)
+            // the zone card owns the same strip the arrow is pinned to: while a banner is
+            // up the chevron sits over its words, so it steps out until the card is gone
+            if (!target.HasValue || !_textOn || BannerUp)
             {
                 _objArrow.enabled = false;
                 return;
