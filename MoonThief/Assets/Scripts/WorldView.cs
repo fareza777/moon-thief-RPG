@@ -2139,6 +2139,75 @@ namespace MoonThief
             _objArrow.transform.localEulerAngles = new Vector3(0f, 0f, Mathf.Atan2(n.y, n.x) * Mathf.Rad2Deg + 180f);
         }
 
+        // ---------------------------------------------------------------- ambient barks
+
+        // one shared bubble: the villager closest to the hero may mutter a one-liner
+        // overhead (bark.<name> in the strings table), then everyone holds their tongue
+        // a while so the street never babbles
+        PixelLabel _bark;
+        SpriteRenderer _barkChip;
+        Actor _barkActor;
+        float _barkT;
+        float _barkCd;
+
+        void TickBarks(float dt)
+        {
+            if (_barkCd > 0f) _barkCd -= dt;
+            if (_barkT > 0f)
+            {
+                _barkT -= dt;
+                // the speaker strolls on: the bubble rides its head for as long as it shows
+                if (_bark != null && _barkActor?.Root != null)
+                {
+                    var ap = (Vector2)_barkActor.Root.localPosition;
+                    _bark.transform.localPosition = new Vector3(ap.x, ap.y + NameAnchorY + 0.7f, 0f);
+                    _barkChip.transform.localPosition = new Vector3(
+                        ap.x, ap.y + NameAnchorY + 0.7f - _barkChip.transform.localScale.y * 0.32f, 0f);
+                }
+                if (_barkT <= 0f && _bark != null)
+                {
+                    _bark.gameObject.SetActive(false);
+                    _barkChip.enabled = false;
+                }
+                return;
+            }
+            if (_barkCd > 0f) return;
+
+            Actor who = null;
+            float best = 2.6f;
+            for (int i = 0; i < Npcs.Count; i++)
+            {
+                var a = Npcs[i];
+                if (a?.Root == null || a.Npc.NameKey == null) continue;
+                float d = Vector2.Distance((Vector2)a.Root.localPosition, HeroPos);
+                if (d < best) { best = d; who = a; }
+            }
+            if (who == null) { _barkCd = 0.8f; return; }
+
+            string tail = who.Npc.NameKey.StartsWith("npc.") ? who.Npc.NameKey.Substring(4) : who.Npc.NameKey;
+            string key = "bark." + tail;
+            if (!Strings.Has(key)) { _barkCd = 2f; return; }
+
+            if (_bark == null)
+            {
+                _bark = PixelLabelUtil.Make(_root, "bark", 1, new Color(1f, 0.97f, 0.85f), TextAlign.Center, 2102);
+                _barkChip = SpriteRendererUtil.Make(_root, "barkChip", TexArt.Solid(), 2101);
+                _barkChip.color = new Color(0.07f, 0.06f, 0.12f, 0.85f);
+            }
+            string line = Strings.Get(key);
+            _bark.Set(line);
+            float w = _bark.MeasureWidth(line), h = _bark.MeasureHeight(line);
+            _barkChip.transform.localScale = new Vector3(w + 0.55f, h + 0.34f, 1f);
+            _barkActor = who;
+            var pos = (Vector2)who.Root.localPosition;
+            _bark.transform.localPosition = new Vector3(pos.x, pos.y + NameAnchorY + 0.7f, 0f);
+            _barkChip.transform.localPosition = new Vector3(pos.x, pos.y + NameAnchorY + 0.7f - (h + 0.34f) * 0.32f, 0f);
+            _bark.gameObject.SetActive(true);
+            _barkChip.enabled = true;
+            _barkT = 2.6f;
+            _barkCd = 10f + (who.GetHashCode() % 5);
+        }
+
         // ---------------------------------------------------------------- update
 
         void Update()
@@ -2170,6 +2239,8 @@ namespace MoonThief
                 c.a = blink * (p.y > 59f ? 0.22f : 0.55f);
                 sr.color = c;
             }
+
+            TickBarks(dt);
 
             // NPC idle life: locals stroll around their spot and pause
             for (int i = 0; i < Npcs.Count; i++)

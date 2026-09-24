@@ -463,6 +463,24 @@ npc.house.2|MARA
 npc.house.3|SABLE
 npc.house.4|TAVI
 npc.house.5|JUNO
+bark.elder|the moon watches us
+bark.kid|i saw a wisp once
+bark.smith|hammer never sleeps
+bark.hunter|easy, hunter
+bark.bard|hmm hmm...
+bark.grandma|keep your lamp lit
+bark.finn|cold out tonight
+bark.pip|watch the treeline
+bark.prune|no moon, no sleep
+bark.oda|shardlight guide you
+bark.nail|heard the stalker?
+bark.marn|wares, cheap
+bark.house.0|mind the floorboards
+bark.house.1|soup is on
+bark.house.2|sit a while
+bark.house.3|quiet in here
+bark.house.4|the door sticks
+bark.house.5|fresh bread
 house.0|ILSE'S SHRINE
 house.1|BRAM'S ROOM
 house.2|COLD FORGE
