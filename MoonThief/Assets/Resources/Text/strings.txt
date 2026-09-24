@@ -199,6 +199,7 @@ card.healall|The party breathes easier.
 card.befriended|FRIENDS {0}/{1}
 card.joined|They wanted to come.
 card.moon|The moon stays gone.
+card.drop|FOUND {0}!
 
 # ---- buttons
 btn.continue|CONTINUE

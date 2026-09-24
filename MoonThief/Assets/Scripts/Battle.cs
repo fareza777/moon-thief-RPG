@@ -1747,6 +1747,18 @@ namespace MoonThief
                 lines.Add(Strings.Get("card.levelup", Game.State.Level));
                 Sfx.Play("levelup");
             }
+            // spoils: the Guard always leaves gear, the wild things sometimes do
+            var rng = new System.Random();
+            var drops = new List<string>();
+            foreach (var s in _specs)
+            {
+                var key = s.Boss ? Items.BossDrop(rng) : Items.RollDrop(Game.State.Chapter, rng);
+                if (key == null) continue;
+                Game.State.AddBag(key);
+                drops.Add(key);
+            }
+            foreach (var d in drops) lines.Add(Strings.Get("card.drop", Strings.Get(d)));
+
             if (_befriended > 0) lines.Add(Strings.Get("card.befriended", _befriended, _specs.Length));
             lines.Add(_befriended > 0 ? Strings.Get("card.joined") : Strings.Get("card.moon"));
 

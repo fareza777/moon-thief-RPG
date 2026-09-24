@@ -20,6 +20,31 @@ namespace MoonThief
     /// the battle bonuses all read the same numbers.</summary>
     public static class Items
     {
+        /// <summary>What a felled beast might leave behind: usually something to eat,
+        /// sometimes gear a notch under the shop's shelf so finds feel like finds and
+        /// the shop keeps its best stock. Later nights drop richer fare.</summary>
+        public static string RollDrop(int chapter, System.Random rng)
+        {
+            if (rng.Next(100) >= 24) return null;
+            if (rng.Next(100) < 72)
+            {
+                var food = new[] { "item.morsel", "item.berry", "item.honey", "item.soup", "item.tea" };
+                return food[rng.Next(Mathf.Min(food.Length, 2 + chapter))];
+            }
+            var gear = new[] { "item.spoon", "item.cloak", "item.charm.bell",
+                               "item.knife", "item.vest", "item.charm.leaf",
+                               "item.sickle", "item.charm.thread" };
+            return gear[rng.Next(Mathf.Clamp(2 + chapter * 2, 3, gear.Length))];
+        }
+
+        /// <summary>The Guard always drops real gear - the night owes you that much.</summary>
+        public static string BossDrop(System.Random rng)
+        {
+            var gear = new[] { "item.vest", "item.knife", "item.charm.leaf",
+                               "item.sickle", "item.charm.thread" };
+            return gear[rng.Next(gear.Length)];
+        }
+
         public static readonly ItemDef[] All =
         {
             // food - heals the whole party by Power
