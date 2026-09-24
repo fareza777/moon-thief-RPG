@@ -1439,7 +1439,10 @@ namespace MoonThief
             // and the foe is softened, the party tries for the catch - once per fight
             if (!_autoTame && Game.State.Friends.Count < 2)
                 for (int i = 0; i < View.Enemies.Length; i++)
-                    if (View.Enemies[i].Alive && View.Enemies[i].Rare && View.Enemies[i].Hp01 < 0.6f)
+                    if (View.Enemies[i].Alive && View.Enemies[i].Rare && View.Enemies[i].Hp01 < 0.6f
+                        // a species already kept can't be caught twice - don't spend the one try on it
+                        && !Game.State.Friends.Contains(View.Enemies[i].Species)
+                        && !Game.State.Friends.Contains("moon." + View.Enemies[i].Species))
                     {
                         _autoTame = true;
                         View.SetTarget(i);
