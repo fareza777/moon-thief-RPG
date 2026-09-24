@@ -1422,6 +1422,9 @@ namespace MoonThief
             if (!_inHouse) return;
             _inHouse = false;
             _doorCooldown = 1.4f;
+            // stepping out must not be an ambush: a wild thing that followed you to the
+            // doormat would otherwise touch you the first frame back on the street
+            _encounterCooldown = Mathf.Max(_encounterCooldown, 1.5f);
             Sfx.Play("door");
             DoTransition(() =>
             {
