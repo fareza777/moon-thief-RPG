@@ -952,9 +952,11 @@ namespace MoonThief
             // so the fields keep a face the player has not already befriended twice
             new MonsterSpec{ Name="mon.palebell",Battler="Art/Battlers/GhostA",    MapSheet="Pack/Monsters/Monsters_02_5", Tier=3, Chapter=3, Hp=30, AtkMin=5, AtkMax=8, Speed=5.0f },
             new MonsterSpec{ Name="mon.thick",   Battler="Art/Battlers/MushroomB", MapSheet="Pack/Monsters/Monsters_04_3", Tier=2, Chapter=2, Hp=36, AtkMin=6, AtkMax=9, Speed=3.4f },
-            // the Night Thane holds the road out of the second night - it is a gatekeeper,
-            // not a field spawn, so it carries the boss flag and Roll never deals it
+            // the gatekeepers live in the bestiary so the journal can picture them, but they
+            // are not field spawns - every one carries the boss flag and Roll never deals it
+            new MonsterSpec{ Name="mon.stalker", Battler="Art/Battlers/ScorpionA", MapSheet="Art/Mon/Monsters_03_0", Tier=2, Chapter=1, Hp=42, AtkMin=4, AtkMax=7, Speed=4.0f, Boss=true },
             new MonsterSpec{ Name="mon.thane",   Battler="Art/Battlers/MinotaurB", MapSheet="Pack/Monsters/Monsters_04_5", Tier=4, Chapter=2, Hp=62, AtkMin=6, AtkMax=11, Speed=3.8f, Boss=true },
+            new MonsterSpec{ Name="mon.squire", Battler="Art/Battlers/GhostA",    MapSheet="Art/Mon/Monsters_02_0", Tier=2, Chapter=2, Hp=20, AtkMin=5, AtkMax=8, Speed=5.0f, Boss=true },
         };
 
         public static readonly MonsterSpec Boss = new MonsterSpec
@@ -1026,25 +1028,14 @@ namespace MoonThief
         /// by a lantern wisp - the night owes you a real wall before the cristal.</summary>
         public static MonsterSpec[] BossFight(int chapter)
         {
-            if (chapter <= 1)
-            {
-                return new[]
-                {
-                    new MonsterSpec{ Name="mon.stalker", Battler="Art/Battlers/ScorpionA",
-                        MapSheet="Art/Mon/Monsters_03_0", Tier=2, Chapter=1,
-                        Hp=42, AtkMin=4, AtkMax=7, Speed=4.0f, Boss=true }
-                };
-            }
+            if (chapter <= 1) return new[] { Species("mon.stalker").Value };
             if (chapter == 2)
             {
-                var squire = Boss;
-                squire.Name = "mon.squire";
-                squire.Battler = "Art/Battlers/GhostA";
-                squire.MapSheet = "Art/Mon/Monsters_02_0";
-                squire.Hp = 20; squire.AtkMin = 5; squire.AtkMax = 8; squire.Speed = 5.0f;
-                squire.Boss = false; squire.Tier = 2;
-                var thane = Species("mon.thane").Value;
-                return new[] { thane, squire };
+                // the squire screens the thane; it is not itself a boss, so a daze or a kind word
+                // still lands on it. The flag in the bestiary only keeps it out of the wild pool.
+                var squire = Species("mon.squire").Value;
+                squire.Boss = false;
+                return new[] { Species("mon.thane").Value, squire };
             }
             // the Pale Guard never walks alone: a lantern wisp screens it. The fight
             // used to be one big health bar, which made MORSEL and BEFRIEND pointless at the

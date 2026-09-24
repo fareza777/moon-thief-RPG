@@ -1673,7 +1673,7 @@ namespace MoonThief
                 _ciPlate.size = new Vector2(Mathf.Max(6f, tw + 2.2f), th + 1.3f);
                 _ciPlate.transform.localPosition = new Vector3(0f, 2.2f - th * 0.5f, 0f);
             }
-            if (_ciCount != null) _ciCount.Set(_ciIndex + "/" + CinemaSlides);
+            if (_ciCount != null) _ciCount.Set((_ciIndex + 1) + "/" + CinemaSlides);
             // the fade-in is driven from Tick, which never runs in the editor preview:
             // start fully visible there or the still frame comes out blank
             var c = _ciText.Tint; c.a = Application.isPlaying ? 0f : 1f; _ciText.SetColor(c);
