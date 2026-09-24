@@ -276,7 +276,7 @@ namespace MoonThief
                         Speed = ms.Speed,
                         Style = 0,
                         BattlerPath = ms.Battler,
-                        Scale = FitScale(Bank.One(ms.Battler), 3.2f, 2)
+                        Scale = FitScale(Bank.One(ms.Battler), 3.2f, 2.8f, 2)
                     };
                     Party[i].Hp = Party[i].MaxHp;
                 }
@@ -378,11 +378,13 @@ namespace MoonThief
             return rig;
         }
 
-        static int FitScale(Sprite s, float maxW, int pref)
+        static int FitScale(Sprite s, float maxW, float maxH, int pref)
         {
+            // height caps matter as much as width: a wide-and-tall sheet (MushroomB)
+            // hit its width limit and still filled the arena like a boss
             if (s == null) return 1;
             for (int k = pref; k >= 1; k--)
-                if (s.bounds.size.x * k <= maxW) return k;
+                if (s.bounds.size.x * k <= maxW && s.bounds.size.y * k <= maxH) return k;
             return 1;
         }
 
@@ -447,7 +449,9 @@ namespace MoonThief
                     Rare = spec.Rare,
                     Species = spec.Name,
                     BattlerPath = spec.Battler,
-                    Scale = FitScale(battler, spec.Boss ? 8.5f : spec.Rare ? 6.4f : 5.6f, 2)
+                    Scale = FitScale(battler,
+                        spec.Boss ? 8.5f : spec.Rare ? 6.4f : 5.6f,
+                        spec.Boss ? 7.8f : spec.Rare ? 5.0f : 3.6f, 2)
                 };
                 f.Hp = f.MaxHp;
                 Enemies[i] = f;
