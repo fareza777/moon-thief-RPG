@@ -1217,6 +1217,11 @@ namespace MoonThief
                         () => { CycleWorn(ItemKind.Cloth); ShowPage(Page2.Character); });
                     Add(labels, vals, acts, Strings.Get("jr.slot.charm"), WornWord(2),
                         () => { CycleWorn(ItemKind.Charm); ShowPage(Page2.Character); });
+                    icons = new List<int>();
+                    for (int i = 0; i < labels.Count; i++) icons.Add(-1);
+                    icons[labels.Count - 3] = 0;
+                    icons[labels.Count - 2] = 18;
+                    icons[labels.Count - 1] = 25;
                     break;
 
                 case Page2.Items:
@@ -1260,6 +1265,7 @@ namespace MoonThief
                         () => { CycleWorn(ItemKind.Charm); ShowPage(Page2.Equipment); });
                     AddK(labels, vals, acts, "jr.atk", "+" + Game.State.BonusAtk);
                     AddK(labels, vals, acts, "jr.maxhp", "+" + Game.State.BonusHp);
+                    icons = new List<int> { 0, 18, 25, -1, -1 };
                     break;
 
                 case Page2.Bestiary:
@@ -1280,12 +1286,14 @@ namespace MoonThief
                 default:
                     title = "jr.quests";
                     sub = Strings.Get("jr.quests.sub", Quests.ActiveCount, Quests.DoneCount);
+                    icons = new List<int>();
                     foreach (var q in Quests.All)
                     {
                         int step = Quests.Step(q.Id);
                         if (!q.Main && step == 0) continue;   // side quests list only once taken on
                         labels.Add(Strings.Get(q.TitleKey));
                         vals.Add(q.Main && step < 3 ? Strings.Get("jr.main") : Quests.StateWord(step));
+                        icons.Add(step == 3 ? 26 : 20);
                         var quest = q;
                         acts.Add(() => ShowToast(Quests.Line(quest), 4.2f));
                     }
