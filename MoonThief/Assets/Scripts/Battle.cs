@@ -1523,6 +1523,39 @@ namespace MoonThief
                 View.FloatNumber(tRig.Home + new Vector3(0f, 1.75f, 0f),
                     Strings.Get("bt.poisoned"), new Color(0.55f, 1f, 0.5f));
             }
+            // a tame slime still smothers: its goo can take the foe's footing too
+            if (fFam == "slime" && target.Alive && !target.Dazed && UnityEngine.Random.value < 0.2f)
+            {
+                target.Dazed = true;
+                View.FloatNumber(tRig.Home + new Vector3(0f, 1.9f, 0f),
+                    Strings.Get("bt.tripped"), new Color(0.6f, 0.85f, 1f));
+            }
+            // a mushroom friend breathes its spores into the wound instead of waiting
+            // to be struck: lighter venom than a scorpion's, but on your side
+            if (fFam == "mushroom" && target.Alive && target.Poison <= 0 && UnityEngine.Random.value < 0.25f)
+            {
+                target.Poison = 2;
+                View.FloatNumber(tRig.Home + new Vector3(0f, 1.75f, 0f),
+                    Strings.Get("bt.poisoned"), new Color(0.55f, 1f, 0.5f));
+            }
+            // a wisp keeps its lantern habit: its first turn each duel wraps a thin
+            // ward around the frailest friend standing - one light, one drink
+            if (fFam == "wisp" && !f.WardGiven)
+            {
+                f.WardGiven = true;   // one gift of light per fight
+                Fighter frail = null;
+                foreach (var p in View.Party)
+                    if (p.Alive && p != f && !p.Ward && (frail == null || p.Hp01 < frail.Hp01)) frail = p;
+                if (frail != null)
+                {
+                    frail.Ward = true;
+                    var wRig = View.RigOf(frail);
+                    if (wRig != null)
+                        View.FloatNumber(wRig.Home + new Vector3(0f, 1.9f, 0f),
+                            Strings.Get("bt.warded"), new Color(1f, 0.9f, 0.5f));
+                    Sfx.Play("befriend");
+                }
+            }
             yield return Fx.Wait(0.45f);
             yield return Lunge(aRig, aRig.Home, 0.3f);
             PlayIdle(aRig);
