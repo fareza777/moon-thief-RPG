@@ -598,7 +598,22 @@ namespace MoonThief
             _targetChev.enabled = ok;
             if (!ok) return;
             _targetChev.transform.localScale = Vector3.one * (Enemies[i].Boss ? 2.4f : 1.8f);
+            // a cyan aim chevron means the acting friend's style cuts this foe's seam -
+            // the weakness table becomes a thing you can aim with, not just a journal footnote
+            _targetChev.color = WeakFor(AimStyle, Enemies[i])
+                ? new Color(0.65f, 1f, 0.95f) : Color.white;
             PlaceTargetChev(EnemyRigs[i], 0f);
+        }
+
+        /// <summary>The style the acting hero fights with, set when the command menu opens.
+        /// -1 when no weakness hint applies (enemy turns, cards).</summary>
+        public int AimStyle = -1;
+
+        static bool WeakFor(int style, Fighter f)
+        {
+            if (style < 0 || f?.Species == null) return false;
+            var s = BattleData.Species(f.Species);
+            return s.HasValue && BattleData.StyleBeats(style, s.Value);
         }
 
         /// <summary>The aim arrow sits beside the foe's feet, pointing at it. It used to sit 0.7
@@ -1194,6 +1209,8 @@ namespace MoonThief
             // portion, befriend needs room in the two-heart stable
             View.SetCellEnabled(2, !_morselUsed && Game.State.BestFood() != null);
             View.SetCellEnabled(1, Game.State.Friends.Count < 2);
+            View.AimStyle = f.Style;
+            View.SetTarget(View.Target);
             View.SetMessage(Strings.Get("bt.yourturn", f.Name));
             // auto-battle acts after a short beat, so the player sees whose turn it was
             if (Auto && Application.isPlaying)
