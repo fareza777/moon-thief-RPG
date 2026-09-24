@@ -955,7 +955,7 @@ namespace MoonThief
         public static readonly MonsterSpec Boss = new MonsterSpec
         {
             Name = "mon.minotaur", Battler = "Art/Battlers/MinotaurA", MapSheet = "Art/Mon/Monsters_04_0",
-            Tier = 5, Chapter = 3, Hp = 105, AtkMin = 8, AtkMax = 13, Speed = 4.4f, Boss = true
+            Tier = 5, Chapter = 3, Hp = 92, AtkMin = 8, AtkMax = 13, Speed = 4.4f, Boss = true
         };
 
         /// <summary>Look a wild species up by its string key (befriended allies rebuild from it).</summary>
@@ -1023,7 +1023,7 @@ namespace MoonThief
             wisp.Name = "mon.wisp";
             wisp.Battler = "Art/Battlers/GeniusA";
             wisp.MapSheet = "Art/Mon/Monsters_05_0";
-            wisp.Hp = 32; wisp.AtkMin = 6; wisp.AtkMax = 10; wisp.Speed = 5.2f;
+            wisp.Hp = 28; wisp.AtkMin = 6; wisp.AtkMax = 10; wisp.Speed = 5.2f;
             wisp.Boss = false; wisp.Tier = 3;
             return new[] { Boss, wisp };
         }

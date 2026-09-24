@@ -800,11 +800,25 @@ namespace MoonThief
             }
         }
 
+        /// <summary>The NIGHT/ROUND strip is part of the fight too: a result card owns the
+        /// whole stage, and a label or the moon icon left hanging over the card's edge is
+        /// exactly the kind of text-on-plate seam a player reads as a bug.</summary>
+        void SetHudVisible(bool on)
+        {
+            if (_hudPanel != null) _hudPanel.enabled = on;
+            if (_hudNight != null) _hudNight.gameObject.SetActive(on);
+            if (_hudRound != null) _hudRound.gameObject.SetActive(on);
+            if (_moonIcon != null) _moonIcon.enabled = on;
+            if (_autoChip != null) _autoChip.enabled = on;
+            if (_autoLabel != null) _autoLabel.gameObject.SetActive(on);
+        }
+
         public void ShowCard(string title, string[] lines, string[] buttons, Action[] actions, Color titleColor)
         {
             HideCard();
             _overlayRoot.gameObject.SetActive(true);
             SetFooterVisible(false);
+            SetHudVisible(false);
 
             if (_ovDim == null)
             {
@@ -896,6 +910,7 @@ namespace MoonThief
             if (_ovTitle != null) _ovTitle.Set("");
             foreach (var l in _ovLines) l.Set("");
             _overlayRoot.gameObject.SetActive(false);
+            SetHudVisible(true);
             SetFooterVisible(true);
         }
 
@@ -1371,7 +1386,7 @@ namespace MoonThief
                     rig.Anim.SetTint(new Color(Mathf.Min(1f, c.r + 0.25f), c.g * 0.55f, c.b * 0.55f));
                 }
             }
-            bool slam = e.Boss && UnityEngine.Random.value < (_enraged ? 0.6f : 0.35f);
+            bool slam = e.Boss && UnityEngine.Random.value < (_enraged ? 0.45f : 0.35f);
             View.SetMessage(Strings.Get(slam ? "bt.slam" : "bt.enemyturn", e.Name));
             yield return Fx.Wait(slam ? 0.85f : 0.5f);
 

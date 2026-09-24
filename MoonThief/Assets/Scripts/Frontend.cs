@@ -373,7 +373,7 @@ namespace MoonThief
             _mainRoot = Root("main", 0);
             _hint = PixelLabelUtil.Make(_mainRoot, "hint", 1, new Color(0.72f, 0.74f, 0.9f), TextAlign.Center, 6008);
             // seven rows stack to -14.7; the hint parks just under them, off the last row's panel
-            _hint.transform.localPosition = new Vector3(0f, -15.5f, 0f);
+            _hint.transform.localPosition = new Vector3(0f, -15.1f, 0f);
             _hint.Set(Strings.Get("menu.hint"));
             _mainRows = BuildRows(_mainRoot);
         }
@@ -894,7 +894,7 @@ namespace MoonThief
                     : new Color(0.5f, 0.55f, 0.8f, 0.45f);
             bool last = _onbPage >= 2;
             LayRows(_onbRows, new[] { Strings.Get(last ? "onb.start" : "onb.next") },
-                new Action[] { NextOnboard }, new[] { "" }, -4.6f, 1);
+                new Action[] { NextOnboard }, new[] { "" }, -4.2f, 1);
             Select(0);
         }
 

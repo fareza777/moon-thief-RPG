@@ -585,6 +585,7 @@ namespace MoonThief
             _endStats.transform.localPosition = new Vector3(0f, -HalfH + 5.0f, 0f);
 
             _tapHint = PixelLabelUtil.Make(_endRoot, "endTap", 2, new Color(1f, 0.88f, 0.5f), TextAlign.Center, 100);
+            _tapHint.MaxWidthUnits = 16f;   // an unbounded wrap box reads as text at the frame edge
             _tapHint.transform.localPosition = new Vector3(0f, -HalfH + 4.2f, 0f);
             _tapHint.Set(Strings.Get("end.tap"));
             _endRoot.gameObject.SetActive(false);
@@ -650,9 +651,9 @@ namespace MoonThief
             _dlgPanelName.size = new Vector2(_dlgName.MeasureWidth(_dlgName.Text) + 0.4f, 1.35f);
             _dlgPanelName.transform.localPosition = new Vector3(G.Left + 3.7f + _dlgPanelName.size.x * 0.5f, top - 0.5f, 0f);
             _dlgText.transform.localPosition = new Vector3(G.Left + 3.5f, top - 1.15f, 0f);
-            _dlgPortrait.transform.localPosition = new Vector3(G.Left + 1.75f, bottom + 2.1f, 0f);
+            _dlgPortrait.transform.localPosition = new Vector3(G.Left + 1.85f, bottom + 2.1f, 0f);
             _dlgPortPlate.size = new Vector2(3.0f, 3.6f);
-            _dlgPortPlate.transform.localPosition = new Vector3(G.Left + 1.75f, bottom + 2.1f, 0f);
+            _dlgPortPlate.transform.localPosition = new Vector3(G.Left + 1.85f, bottom + 2.1f, 0f);
             _dlgNext.transform.localPosition = new Vector3(G.Right - 0.7f, bottom + 0.35f, 0f);
         }
 
@@ -713,6 +714,7 @@ namespace MoonThief
             _paused = false;
             Time.timeScale = 1f;   // belt and suspenders: title is the universal unwind
             _titleTap.gameObject.SetActive(false);   // the menu rows replace the old tap hint
+            _titleEnd.gameObject.SetActive(false);   // and the footer: the last row shears it
             Sfx.Mus.Play("title");
             Menus.ShowMain();
         }
@@ -2430,13 +2432,22 @@ namespace MoonThief
                 StartBattle(BattleData.BossFight());
                 int t2 = 0;
                 float bossStart = Time.time;
+                // let the real AUTO battle play the finale: it mends, spends a morsel when
+                // the party is hurt and aims for weak seams - the same hand a player has,
+                // and a better solver than raw ATTACK spam that can wipe and re-fight.
+                if (!Director.Auto) Director.ToggleAuto();
                 // the boss plus its wisp add take longer than a wild pair - and enrage
                 // plus daze stretch it further - so give it room
+                int lastRoundLogged = -1;
                 while (Phase == St.Battle && Time.time - bossStart < 170f)
                 {
                     t2++;
-                    if (Director.AwaitingInput) { Director.SelectCell(0); Director.Confirm(); }
-                    else if (BattleViewRef.OverlayButtonCount > 0)
+                    if (Director.DebugRound != lastRoundLogged)
+                    {
+                        lastRoundLogged = Director.DebugRound;
+                        Debug.Log("[selftest] boss round " + lastRoundLogged + " at " + Mathf.RoundToInt(Time.time - bossStart) + "s");
+                    }
+                    if (BattleViewRef.OverlayButtonCount > 0)
                     {
                         Shot("16-bosscard");
                         var cr = BattleViewRef.CardButtonRect(0);

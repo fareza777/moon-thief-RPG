@@ -54,6 +54,10 @@ def family(name):
 
 # labels that are supposed to float over a fighter or a chest: not a layout defect
 FLOATERS = ("dmg", "Float", "pop", "spark")
+# Screen-fixed chrome can never "land on" a character: the HUD strip rides its own plate at
+# the top of the frame and world actors wander under it by design. The OFF/CLIP/EDGE rules
+# still measure these labels - only the actor check stops pretending they are world names.
+CHROME = ("hudroot/", "npcname")
 
 # every glyph of every label is its own sprite, so a sprite walk sees thousands of them. They are
 # the text, not the cast: a name plate landing on a letter of another label is already a CLASH.
@@ -167,6 +171,8 @@ def audit_frame(f, rows):
 
     for t in texts:
         if any(k.lower() in t["name"].lower() for k in FLOATERS):
+            continue
+        if any(k in t["name"].lower() for k in CHROME):
             continue
         for a in actors:
             if GLYPH in a["name"]:

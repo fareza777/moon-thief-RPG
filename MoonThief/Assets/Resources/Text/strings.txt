@@ -127,7 +127,7 @@ menu.sweep|SWEEP
 menu.mend|MEND
 menu.befriend|BEFRIEND
 menu.morsel|MORSEL
-menu.run|SLIP AWAY
+menu.run|FLEE
 
 # ---- battle messages
 bt.one|A wild {0} blocks the way!
