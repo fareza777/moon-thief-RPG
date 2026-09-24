@@ -2161,6 +2161,15 @@ namespace MoonThief
         Actor _barkActor;
         float _barkT;
         float _barkCd;
+        float _barkW;
+
+        // the bubble may not hang off the frame: pull its centre back inside the camera
+        // box (9 units half-width, the same bound FollowHero clamps the camera to)
+        float BarkX(float x)
+        {
+            float pad = _barkW * 0.5f + 0.4f;
+            return Mathf.Clamp(x, ViewCenter.x - 9f + pad, ViewCenter.x + 9f - pad);
+        }
 
         void TickBarks(float dt)
         {
@@ -2172,9 +2181,10 @@ namespace MoonThief
                 if (_bark != null && _barkActor?.Root != null)
                 {
                     var ap = (Vector2)_barkActor.Root.localPosition;
-                    _bark.transform.localPosition = new Vector3(ap.x, ap.y + NameAnchorY + 1.15f, 0f);
+                    float bxf = BarkX(ap.x);
+                    _bark.transform.localPosition = new Vector3(bxf, ap.y + NameAnchorY + 1.15f, 0f);
                     _barkChip.transform.localPosition = new Vector3(
-                        ap.x, ap.y + NameAnchorY + 1.15f - _barkChip.transform.localScale.y * 0.32f, 0f);
+                        bxf, ap.y + NameAnchorY + 1.15f - _barkChip.transform.localScale.y * 0.32f, 0f);
                 }
                 if (_barkT <= 0f && _bark != null)
                 {
@@ -2210,12 +2220,14 @@ namespace MoonThief
             _bark.Set(line);
             float w = _bark.MeasureWidth(line), h = _bark.MeasureHeight(line);
             _barkChip.transform.localScale = new Vector3(w + 0.55f, h + 0.34f, 1f);
+            _barkW = w;
             _barkActor = who;
             var pos = (Vector2)who.Root.localPosition;
             // a full label-height over the name plate: at +0.7 the bubble's hung text
             // still came down onto the sprite's own bounds (and any friend beside it)
-            _bark.transform.localPosition = new Vector3(pos.x, pos.y + NameAnchorY + 1.15f, 0f);
-            _barkChip.transform.localPosition = new Vector3(pos.x, pos.y + NameAnchorY + 1.15f - (h + 0.34f) * 0.32f, 0f);
+            float bx = BarkX(pos.x);
+            _bark.transform.localPosition = new Vector3(bx, pos.y + NameAnchorY + 1.15f, 0f);
+            _barkChip.transform.localPosition = new Vector3(bx, pos.y + NameAnchorY + 1.15f - (h + 0.34f) * 0.32f, 0f);
             _bark.gameObject.SetActive(true);
             _barkChip.enabled = true;
             _barkT = 2.6f;

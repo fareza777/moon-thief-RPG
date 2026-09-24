@@ -1294,6 +1294,7 @@ namespace MoonThief
         int _qi, _round = 1;
         MonsterSpec[] _specs;
         bool _morselUsed;
+        bool _hinted;         // the pick-a-command line earns its keep once per fight
         bool _autoTame;       // auto-battle already spent its one catch try
         int _befriended;
         public bool AwaitingInput { get; private set; }
@@ -1340,6 +1341,7 @@ namespace MoonThief
             _round = 1;
             _qi = 0;
             _morselUsed = false;
+            _hinted = false;
             _autoTame = false;
             _befriended = 0;
             _enraged = false;
@@ -1467,7 +1469,10 @@ namespace MoonThief
             AwaitingInput = true;
             View.SetMenuVisible(true);
             View.SetSelected(0);
-            View.ShowHint(true);
+            // the how-to line rides the first menu of the fight, then yields the top
+            // strip to the flow counter that later rounds light up there
+            View.ShowHint(!_hinted);
+            _hinted = true;
             // the strike button names the move this hero actually does: amber strikes,
             // sea sweeps the whole field, moss mends the hurtest friend. At high flow the
             // moon is already lending its weight (FlowMul) - say so on the button
