@@ -165,12 +165,13 @@ namespace MoonThief
                 }
             }
 
-            public static SaveData Capture(float heroX, float heroY) => new SaveData
+            public static SaveData Capture(float heroX, float heroY, bool bossDown) => new SaveData
             {
                 chapter = Chapter, shards = MoonShards, befriended = Befriended,
                 gold = Gold, xp = Xp, morsels = MorselsUsed, items = HeldItems,
                 chestsOpened = ChestsOpened, heroX = heroX, heroY = heroY,
-                defeats = Defeats, bag = Bag.ToArray(), worn = (string[])Worn.Clone(),
+                defeats = Defeats, bossDown = bossDown,
+                bag = Bag.ToArray(), worn = (string[])Worn.Clone(),
                 friends = Friends.ToArray(),
                 zones = Zones.ToArray(), quests = Quests.Capture(),
                 seen = SeenKeys(), chests = ChestsDone.ToArray(),
@@ -1618,8 +1619,9 @@ namespace MoonThief
             {
                 World.ShowBanner(Strings.Get("zone.chapdone"));
                 int next = State.Chapter + 1;
-                SaveRun();
-                DoTransition(() => StartChapter(next), 2.2f, 0.4f);
+                // the save rides the chapter change, not the fall - a quit inside the
+                // dissolve resumes before the kill instead of half-advanced
+                DoTransition(() => { StartChapter(next); SaveRun(); }, 2.2f, 0.4f);
             }
         }
 
@@ -1802,7 +1804,7 @@ namespace MoonThief
                 // little room's coordinates - those mean somewhere else outdoors
                 if (_inHouse) { hx = _doorReturn.x; hy = _doorReturn.y; }
             }
-            SaveSystem.Write(State.Capture(hx, hy));
+            SaveSystem.Write(State.Capture(hx, hy, _bossDown));
         }
 
         public void ContinueRun()
@@ -1813,12 +1815,18 @@ namespace MoonThief
             _metMira = true;                       // the save is past the first conversation
             _hintTalk = false;
             _hintChest = false;
-            _bossDown = false;
             _ending = false;
             _resumePos = new Vector2(d.heroX, d.heroY);
             Menus.Hide();
             World.gameObject.SetActive(false);
-            DoTransition(() => StartChapter(State.Chapter), 0.25f, 0.45f);
+            bool keepBoss = d.bossDown;
+            DoTransition(() =>
+            {
+                StartChapter(State.Chapter);
+                // the keeper you already felled does not climb back out of the save
+                _bossDown = keepBoss;
+                if (_bossDown && World != null) World.RemoveBoss();
+            }, 0.25f, 0.45f);
         }
 
         public void LeaveToTitle()

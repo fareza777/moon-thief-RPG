@@ -84,6 +84,7 @@ namespace MoonThief
         public int items;
         public int chestsOpened;
         public int defeats;
+        public bool bossDown;
         public float heroX, heroY;
         public string stamp = "";
         // the journal: bag, worn gear, places walked, beasts seen, quests in flight
