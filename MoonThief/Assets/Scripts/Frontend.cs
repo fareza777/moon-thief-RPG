@@ -1011,6 +1011,8 @@ namespace MoonThief
         void RefreshShop()
         {
             _shopSub.Set(Strings.Get("shop.sub", Game.State.Gold));
+            // the foot tells you what a tap does in THIS mode: buy it or let it go
+            _shopFoot.Set(Strings.Get(_shopSell ? "shop.sellhint" : "shop.hint"));
             var labels = new List<string>();
             var vals = new List<string>();
             var acts = new List<Action>();

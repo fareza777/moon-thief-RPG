@@ -2364,7 +2364,7 @@ namespace MoonThief
             // the chapter card only plays inside the night-2/night-3 dissolve - too fast
             // to catch live, so the editor hook stands it up on demand instead
             Menus.ShowChapterCard(2);
-            yield return new WaitForSeconds(0.9f);
+            yield return new WaitForSeconds(1.7f);   // night, then place, then the errand line
             Shot("10d-chcard");
 
             BeginRun();
