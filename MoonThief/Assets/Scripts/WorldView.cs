@@ -2435,8 +2435,10 @@ namespace MoonThief
                 // notice the hero: close in, give up if they slip away. The "!" holds a beat
                 // before the chase so the player gets a dodge window instead of an ambush.
                 float dh = Vector2.Distance(mpos, HeroPos);
-                if (!m.Aggro && dh < 3.2f) { m.Aggro = true; m.AggroT = 0.85f; Sfx.Play("alert"); }
-                if (m.Aggro && dh > 6.5f) m.Aggro = false;
+                // a chase runs at full field speed; the 0.55 gait is only for wandering -
+                // without this every hunter chases at a stroll the hero can simply outwalk
+                if (!m.Aggro && dh < 3.2f) { m.Aggro = true; m.AggroT = 0.85f; m.Speed = m.Spec.Speed; Sfx.Play("alert"); }
+                if (m.Aggro && dh > 6.5f) { m.Aggro = false; m.Speed = m.Spec.Speed * 0.55f; }
 
                 if (m.Aggro)
                 {
