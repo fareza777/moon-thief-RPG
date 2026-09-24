@@ -742,7 +742,7 @@ namespace MoonThief
                 () => DoRate(),
             };
             var vals = new string[] { "", hasSave ? SaveStamp() : Strings.Get("menu.nosave"), "", "", "", "", "" };
-            LayRows(_mainRows, labels, acts, vals, 2.6f, 7);
+            LayRows(_mainRows, labels, acts, vals, 2.6f, 7, new[] { 24, 4, 5, 7, 23, 22, 21 });
             for (int i = 0; i < 7; i++) _mainRows[i].Enabled = i != 1 || hasSave;
             _sel = hasSave ? 1 : 0;
             Select(_sel);
@@ -857,7 +857,7 @@ namespace MoonThief
             var labels = new[] { Strings.Get("menu.rate"), Strings.Get("menu.share"), Strings.Get("menu.back") };
             var acts = new Action[] { () => DoRate(), () => DoShare(), (Action)ShowMain };
             var vals = new[] { "", "", "" };
-            LayRows(_credRows, labels, acts, vals, -5.4f, 3);
+            LayRows(_credRows, labels, acts, vals, -5.4f, 3, new[] { 21, 22, 14 });
             LayoutCredits();
             Select(0);
         }
@@ -1133,7 +1133,7 @@ namespace MoonThief
                 Game.State.Seen.Count + "/" + (BattleData.Bestiary.Length + 1),
                 Quests.ActiveCount + "/" + (Quests.All.Length - 3), "",
             };
-            float bottom = LayRows(_jrRows, labels, acts, vals, rowsTop, 6);
+            float bottom = LayRows(_jrRows, labels, acts, vals, rowsTop, 6, new[] { 16, 17, 18, 19, 20, 14 });
             _jrFoot.transform.localPosition = new Vector3(0f, FootY(bottom), 0f);
             _jrFoot.Set(Strings.Get("jr.hint"));
             Select(0);
