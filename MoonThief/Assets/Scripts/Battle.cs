@@ -1062,6 +1062,9 @@ namespace MoonThief
 
         public Action HitCardButton(Vector2 w)
         {
+            // buttons ride the settling card: their rects are card-local, so the tap is
+            // measured in the card's frame until it has finished dropping in
+            if (_ovCard != null) w -= (Vector2)_ovCard.localPosition;
             foreach (var b in _ovButtons)
                 if (b.rect.Contains(w)) return b.act;
             return null;
