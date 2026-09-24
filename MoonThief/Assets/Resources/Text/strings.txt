@@ -107,7 +107,7 @@ ci.goal.3|the last shard walks on two legs. reach the guard at the crystal.
 # ---- hud
 hud.nightshort|NIGHT {0}
 hud.round|ROUND {0}
-hud.roundf|FLOW x{1}
+hud.roundf|FLOW x{0}
 hud.explore|NIGHT {0}    SHARD {1}/{2}    GOLD {3}
 hud.quest|NEXT: {0}
 
