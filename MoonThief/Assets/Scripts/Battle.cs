@@ -1536,7 +1536,16 @@ namespace MoonThief
             var tRig = View.RigOf(target);
 
             float chance = Mathf.Clamp01(0.12f + (1f - target.Hp01) * 0.55f + (_morselUsed ? 0.2f : 0f));
-            View.SetMessage(Strings.Get("bt.trybefriend", target.Name));
+            View.SetMessage(Game.State.Friends.Count >= 2
+                ? Strings.Get("bt.stablefull")
+                : Strings.Get("bt.trybefriend", target.Name));
+            if (Game.State.Friends.Count >= 2)
+            {
+                Sfx.Play("fail");
+                yield return Fx.Wait(0.7f);
+                EndTurn();
+                yield break;
+            }
             View.Sparkle(tRig.Home + new Vector3(0f, tRig.BodyHeight * 0.5f, 0f), new Color(0.85f, 0.9f, 1f), 8);
             yield return Fx.Wait(0.9f);
 
