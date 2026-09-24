@@ -254,6 +254,9 @@ namespace MoonThief
 
         public void Rebuild()
         {
+            // Unity-null: a coroutine can still touch the label in the frame it was destroyed
+            // (deferred Destroy) - taking its transform then is a hard fault, so it steps off
+            if (this == null) return;
             EnsureRoot();
 
             string text = _shown;

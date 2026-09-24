@@ -1554,6 +1554,9 @@ namespace MoonThief
             float e = 0f;
             while (e < 0.6f)
             {
+                // the view can be torn down mid-fade (rebuilt room, next chapter): the labels
+                // are gone by then, and touching them would fault - just let the banner die
+                if (ZoneBanner == null) yield break;
                 e += Time.deltaTime;
                 float a = 1f - Mathf.Clamp01(e / 0.6f);
                 var c = ZoneBanner.Tint; c.a = a;
@@ -1565,6 +1568,7 @@ namespace MoonThief
                 }
                 yield return null;
             }
+            if (ZoneBanner == null) yield break;
             ZoneBanner.Set("", true);
             ZoneBanner.SetColor(new Color(1f, 0.95f, 0.8f, 1f));
             if (ZoneBannerSub != null) { ZoneBannerSub.Set("", true); ZoneBannerSub.SetColor(new Color(0.82f, 0.85f, 1f, 1f)); }
