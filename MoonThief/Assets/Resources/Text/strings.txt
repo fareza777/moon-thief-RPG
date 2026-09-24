@@ -295,6 +295,9 @@ boss.taunt.2|Take it if you can. Or kneel, little thief, and keep the dark.
 zone.name.village|QUIET HOLLOW
 zone.name.fields|THE LONG FIELDS
 zone.name.wood|THE DARK WOOD
+zone.short.village|HOLLOW
+zone.short.fields|FIELDS
+zone.short.wood|WOOD
 
 # ---- interact / loot
 loot.moonshard|A MOON SHARD hums in your hands
@@ -416,6 +419,13 @@ jr.unknown|?????
 jr.friend|FRIEND
 jr.unseen|Nobody has met this one yet.
 jr.quests.sub|ACTIVE {0}   DONE {1}
+jr.map|WORLD MAP
+jr.map.sub|the night's road, south to north
+jr.map.hollow|folk, stalls, rest
+jr.map.fields|the night's errands
+jr.map.wood|wild things, the way north
+jr.map.gate|the night's gate
+jr.map.here|- HERE
 jr.main|MAIN
 jr.new|NEW
 jr.active|ACTIVE

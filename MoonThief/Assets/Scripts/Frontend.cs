@@ -169,7 +169,7 @@ namespace MoonThief
 
         /// <summary>Everything the pause card can open. One enum keeps the hub, the back stack
         /// and the self-test in agreement about what is on screen.</summary>
-        public enum Page2 { Character, Items, Equipment, Bestiary, Quests }
+        public enum Page2 { Character, Items, Equipment, Bestiary, Quests, Map }
 
         public float HalfH = 16f;
 
@@ -1211,20 +1211,21 @@ namespace MoonThief
             _t = 0f;
             _jrRoot.gameObject.SetActive(true);
             SlideIn(_jrRoot);
-            float rowsTop = LayoutCard(_jrPanel, 16.4f, 6, true);
+            float rowsTop = LayoutCard(_jrPanel, 16.4f, 7, true);
             _jrTitle.transform.localPosition = new Vector3(0f, _cardTop - 1.9f, 0f);
             _jrSub.transform.localPosition = new Vector3(0f, _cardTop - 3.5f, 0f);
             _jrSub.Set(Strings.Get("jr.sub", Game.State.Level, Game.State.Gold));
             var labels = new[]
             {
                 Strings.Get("jr.character"), Strings.Get("jr.items"), Strings.Get("jr.equip"),
-                Strings.Get("jr.bestiary"), Strings.Get("jr.quests"), Strings.Get("menu.back"),
+                Strings.Get("jr.bestiary"), Strings.Get("jr.quests"), Strings.Get("jr.map"),
+                Strings.Get("menu.back"),
             };
             var acts = new Action[]
             {
                 () => ShowPage(Page2.Character), () => ShowPage(Page2.Items),
                 () => ShowPage(Page2.Equipment), () => ShowPage(Page2.Bestiary),
-                () => ShowPage(Page2.Quests), () => ShowPause(),
+                () => ShowPage(Page2.Quests), () => ShowPage(Page2.Map), () => ShowPause(),
             };
             // the value column is a column of counts and short states, matching the shape of the
             // rows: a worn blade's name ("KITCHEN KNIFE") forced both cells down a size and the
@@ -1233,9 +1234,10 @@ namespace MoonThief
             {
                 "L" + Game.State.Level, Game.State.Bag.Count.ToString(), WornCount() + "/3",
                 Game.State.Seen.Count + "/" + (BattleData.Bestiary.Length + 1),
-                Quests.ActiveCount + "/" + (Quests.All.Length - 3), "",
+                Quests.ActiveCount + "/" + (Quests.All.Length - 3),
+                Strings.Get("zone.short." + Game.State.CurZone), "",
             };
-            float bottom = LayRows(_jrRows, labels, acts, vals, rowsTop, 6, new[] { 16, 17, 18, 19, 20, 14 });
+            float bottom = LayRows(_jrRows, labels, acts, vals, rowsTop, 7, new[] { 16, 17, 18, 19, 20, 24, 14 });
             _jrFoot.transform.localPosition = new Vector3(0f, FootY(bottom), 0f);
             _jrFoot.Set(Strings.Get("jr.hint"));
             Select(0);
@@ -1376,6 +1378,23 @@ namespace MoonThief
                         ? TexArt.MapMonster(BattleData.Boss.MapSheet, 1) : null);
                     break;
 
+                case Page2.Map:
+                    title = "jr.map";
+                    sub = Strings.Get("jr.map.sub");
+                    // the road reads south to north, the way the night is walked: the
+                    // hollow where the errands live, the fields where they run, the wood
+                    // and the gate the night is fenced by
+                    string boss = Strings.Get(BattleData.BossNameKey(Game.State.Chapter));
+                    Add(labels, vals, acts, Strings.Get("zone.name.village"), Strings.Get("jr.map.hollow"), null);
+                    Add(labels, vals, acts, Strings.Get("zone.name.fields"), Strings.Get("jr.map.fields"), null);
+                    Add(labels, vals, acts, Strings.Get("zone.name.wood"), Strings.Get("jr.map.wood"), null);
+                    Add(labels, vals, acts, boss, Strings.Get("jr.map.gate"), null);
+                    // the row you stand in says so
+                    int at = Game.State.CurZone == "wood" ? 2 : Game.State.CurZone == "fields" ? 1 : 0;
+                    vals[at] = Strings.Get("jr.map.here");
+                    icons = new List<int> { 16, 17, 19, 0 };
+                    break;
+
                 default:
                     title = "jr.quests";
                     sub = Strings.Get("jr.quests.sub", Quests.ActiveCount, Quests.DoneCount);
@@ -1422,7 +1441,7 @@ namespace MoonThief
         {
             if (page < 0) { HideAll(); ShowJournal(); return; }
             HideAll();
-            ShowPage((Page2)Mathf.Clamp(page, 0, 4));
+            ShowPage((Page2)Mathf.Clamp(page, 0, 5));
         }
 
         void AddBeast(List<string> labels, List<string> vals, List<Action> acts, MonsterSpec spec)

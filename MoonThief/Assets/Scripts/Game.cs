@@ -32,6 +32,7 @@ namespace MoonThief
             public static readonly List<string> Friends = new List<string>();      // befriended species keys (max 2)
             public static readonly string[] Worn = new string[3];                  // blade, cloth, charm
             public static readonly List<string> Zones = new List<string>();        // places walked into
+            public static string CurZone = "village";                              // the zone the hero stands in now
             public static readonly List<string> ChestsDone = new List<string>();   // chests already opened
             public static readonly Dictionary<string, int> Seen = new Dictionary<string, int>();
 
@@ -881,8 +882,10 @@ namespace MoonThief
 
             // the arrive card already names the ground beneath the hero's feet: note that
             // zone quietly so the crossing banner does not repeat it a step later
-            State.NoteZone(World.HeroPos.y > 58f ? "zone.wood"
-                : World.HeroPos.y > 26f ? "zone.fields" : "zone.village");
+            string zk0 = World.HeroPos.y > 58f ? "zone.wood"
+                : World.HeroPos.y > 26f ? "zone.fields" : "zone.village";
+            State.CurZone = zk0.Substring(5);
+            State.NoteZone(zk0);
 
             World.ShowBanner(Strings.Get("zone.arrive." + Mathf.Clamp(chapter, 1, 3)));
             Sfx.Mus.Duck = 1f; Sfx.Mus.Play("explore");
@@ -1075,12 +1078,14 @@ namespace MoonThief
             // where we are, and the one-off things that happen when you get there
             if (_inHouse)
             {
+                State.CurZone = "village";
                 State.NoteZone("zone.house." + World.Map.HouseIndex);
             }
             else
             {
                 string zk = World.HeroPos.y > 58f ? "zone.wood"
                     : World.HeroPos.y > 26f ? "zone.fields" : "zone.village";
+                State.CurZone = zk.Substring(5);
                 // first time crossing a border the place announces itself, once, ever
                 if (State.NoteZone(zk))
                     World.ShowBanner(Strings.Get("zone.name." + zk.Substring(5))
@@ -2381,6 +2386,10 @@ namespace MoonThief
             yield return new WaitForSecondsRealtime(0.5f);
             Shot("28-quests");
             Debug.Log("[selftest] quest rows=" + Menus.ActiveRowCount);
+            Menus.EditorJournal(5);
+            yield return new WaitForSecondsRealtime(0.5f);
+            Shot("28b-map");
+            Debug.Log("[selftest] map rows=" + Menus.ActiveRowCount);
             ClosePause();
 
             // hunt the nearest wild monster so an encounter is guaranteed, not lucky. Steering is
