@@ -177,6 +177,7 @@ bt.befriended|{0} joins you!
 bt.befriended.rare|The MOONLIT {0} joins your night!
 bt.befriendfail|{0} is not ready yet.
 bt.stablefull|Your stable is full.
+bt.notame|The {0} will not be tamed.
 bt.morsel|You lay down a moonlit morsel.
 bt.nomore|The bag is empty.
 bt.hint|PICK A COMMAND, TAP A FOE TO AIM

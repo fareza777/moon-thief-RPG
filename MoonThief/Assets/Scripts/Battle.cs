@@ -2166,6 +2166,20 @@ namespace MoonThief
             var target = View.Enemies[ti];
             var tRig = View.RigOf(target);
 
+            // the Guard is not for taming, and neither is a friend you already keep:
+            // say so plainly instead of rolling a number that can never land
+            bool untameable = target.Boss
+                || (target.Species != null && (Game.State.Friends.Contains(target.Species)
+                    || Game.State.Friends.Contains("moon." + target.Species)));
+            if (untameable)
+            {
+                View.SetMessage(Strings.Get("bt.notame", target.Name));
+                Sfx.Play("fail");
+                yield return Fx.Wait(0.7f);
+                EndTurn();
+                yield break;
+            }
+
             float chance = Mathf.Clamp01(0.12f + (1f - target.Hp01) * 0.55f + (_morselUsed ? 0.2f : 0f));
             // the odds print inside the beat so a whiff feels like a roll you saw coming,
             // and softening a foe visibly raises the number
@@ -2182,10 +2196,7 @@ namespace MoonThief
             View.Sparkle(tRig.Home + new Vector3(0f, tRig.BodyHeight * 0.5f, 0f), new Color(0.85f, 0.9f, 1f), 8);
             yield return Fx.Wait(0.9f);
 
-            if (UnityEngine.Random.value < chance && !target.Boss
-                && target.Species != null && !Game.State.Friends.Contains(target.Species)
-                && !Game.State.Friends.Contains("moon." + target.Species)
-                && Game.State.Friends.Count < 2)
+            if (UnityEngine.Random.value < chance && Game.State.Friends.Count < 2)
             {
                 target.Captured = true;
                 _befriended++;
