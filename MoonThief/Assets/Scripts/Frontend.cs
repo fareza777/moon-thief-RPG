@@ -1217,11 +1217,9 @@ namespace MoonThief
                         () => { CycleWorn(ItemKind.Cloth); ShowPage(Page2.Character); });
                     Add(labels, vals, acts, Strings.Get("jr.slot.charm"), WornWord(2),
                         () => { CycleWorn(ItemKind.Charm); ShowPage(Page2.Character); });
-                    icons = new List<int>();
-                    for (int i = 0; i < labels.Count; i++) icons.Add(-1);
-                    icons[labels.Count - 3] = 0;
-                    icons[labels.Count - 2] = 18;
-                    icons[labels.Count - 1] = 25;
+                    // a little pictogram per stat: level/star, xp/scroll, shards/moon,
+                    // friends/paw, felled/sword, chests/bag, gold/coin, atk/bolt, hp/shield
+                    icons = new List<int> { 21, 20, 24, 19, 0, 17, 28, 13, 18, 0, 18, 25 };
                     break;
 
                 case Page2.Items:
