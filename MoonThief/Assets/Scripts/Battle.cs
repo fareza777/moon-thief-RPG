@@ -1095,6 +1095,11 @@ namespace MoonThief
                 e += Time.deltaTime;
                 float k = 1f - (1f - Mathf.Clamp01(e / 0.9f)) * (1f - Mathf.Clamp01(e / 0.9f));
                 t.localPosition = new Vector3(t.localPosition.x, y0 + 1.5f * k, 0f);
+                // numbers punch in swollen and settle in a blink - reads as impact,
+                // not as a label drifting past
+                float pop = 1f - Mathf.Clamp01(e / 0.16f);
+                float s = 1f + pop * 0.55f;
+                t.localScale = new Vector3(s, s, 1f);
                 var c = color; c.a = 1f - Mathf.Clamp01((e / 0.9f - 0.55f) / 0.45f);
                 label.SetColor(c);
                 yield return null;
