@@ -339,7 +339,7 @@ namespace MoonThief
             UnityEngine.Debug.Log("[roomtiles] tile|shade\n" + sb);
         }
 
-        static byte ShadeFor(int x, int y, Ground g)
+        byte ShadeFor(int x, int y, Ground g)
         {
             if (g == Ground.Water) return 190;
             // vignette: darker toward the map edges, plus a soft band per zone
@@ -361,7 +361,18 @@ namespace MoonThief
             // indoors the light comes from the lamps, not from a sky: no zone band, no edge
             // vignette, just a soft grain on the boards. The grain lerps past 1.0 on purpose -
             // but an unclamped *255 wraps the byte, so the brightest cells came out black.
-            if (g == Ground.Floor) return (byte)(Mathf.Clamp01(Mathf.Lerp(0.90f, 1.04f, Noise(x, y, 3))) * 255f);
+            if (g == Ground.Floor)
+            {
+                float grain = Mathf.Lerp(0.90f, 1.04f, Noise(x, y, 3));
+                // a one-board shade band along the masonry: reads as the walls casting onto
+                // the floor, so the room has depth instead of one flat bright rectangle
+                if (Map != null && (Map.At(new Vector2Int(x - 1, y)) == Ground.Wall ||
+                                    Map.At(new Vector2Int(x + 1, y)) == Ground.Wall ||
+                                    Map.At(new Vector2Int(x, y - 1)) == Ground.Wall ||
+                                    Map.At(new Vector2Int(x, y + 1)) == Ground.Wall))
+                    grain *= 0.74f;
+                return (byte)(Mathf.Clamp01(grain) * 255f);
+            }
             if (g == Ground.Wall || g == Ground.Void) return 255;
 
             // forest floor: the canopy quads above are nudged off the tile grid so the wood
