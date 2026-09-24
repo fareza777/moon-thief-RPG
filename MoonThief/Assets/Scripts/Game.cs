@@ -2366,6 +2366,14 @@ namespace MoonThief
                 EditorInterior(h);
                 yield return new WaitForSeconds(0.7f);
                 Shot("11c" + h + "-interior");
+                if (h == 1)
+                {
+                    // meshes only: if the dark cells are still here with every sprite gone,
+                    // the ground mesh itself is drawing them
+                    _houseView.DebugStripAllSprites();
+                    yield return new WaitForSeconds(0.15f);
+                    Shot("11c1-interior-meshonly");
+                }
             }
 
             // Marn's stall: open the shop card for real, buy one thing, leave

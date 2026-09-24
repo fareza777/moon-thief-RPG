@@ -287,6 +287,14 @@ namespace MoonThief
                 if (sr != null && (sr.name.StartsWith("psh") || sr.name.StartsWith("csh") || sr.name.StartsWith("sh"))) sr.enabled = false;
         }
 
+        /// <summary>Selftest only: kill EVERY sprite under the world root - what is left is
+        /// the ground and deco meshes alone, the last suspects that cannot lie.</summary>
+        public void DebugStripAllSprites()
+        {
+            foreach (var sr in _root.GetComponentsInChildren<SpriteRenderer>(true))
+                if (sr != null) sr.enabled = false;
+        }
+
         /// <summary>Diagnostics: one line per interior cell, tile id + shade - the dump the
         /// prop audit cannot fake, because it replays the mesh's own chooser.</summary>
         public void DumpRoomTiles()
