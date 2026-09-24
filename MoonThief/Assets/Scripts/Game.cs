@@ -2483,8 +2483,10 @@ namespace MoonThief
                     t++;
                     if (Director.AwaitingInput)
                     {
-                        // a hero turn at flow five carries the pale MOONSTRIKE labels
-                        if (battles == 1 && t >= 2 && !_shotMoon)
+                        // a hero turn at flow five carries the pale MOONSTRIKE labels - the
+                        // menu grid itself must be up: AwaitingInput still reads true for a
+                        // frame after a dazed monster's skipped turn hides the cells
+                        if (battles == 1 && t >= 2 && !_shotMoon && BattleViewRef.MenuOn)
                         {
                             _shotMoon = true;
                             Shot("13c-battle-moon");
