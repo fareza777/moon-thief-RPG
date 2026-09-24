@@ -2344,6 +2344,12 @@ namespace MoonThief
             Shot("10c2-menu");    // on a fresh boot shot 10 lands on onboarding, so re-take it here
             Debug.Log("[selftest] after onboard phase=" + Phase);
 
+            // the chapter card only plays inside the night-2/night-3 dissolve - too fast
+            // to catch live, so the editor hook stands it up on demand instead
+            Menus.ShowChapterCard(2);
+            yield return new WaitForSeconds(0.9f);
+            Shot("10d-chcard");
+
             BeginRun();
             yield return new WaitForSeconds(1.2f);
             Shot("11-village");
