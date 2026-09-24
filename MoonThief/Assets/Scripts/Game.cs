@@ -2620,7 +2620,9 @@ namespace MoonThief
             {
                 EditorBattle();
                 Director.StartBattle(BattleData.BossFight(State.Chapter));
-                foreach (var p in BattleViewRef.Party) p.Hp = 1;
+                // venom ticks before its carrier acts, so AUTO can never mend these:
+                // one queue pass and the whole party drops - the loss is certain, not hoped for
+                foreach (var p in BattleViewRef.Party) { p.Hp = 1; p.Poison = 99; }
                 if (!Director.Auto) Director.ToggleAuto();
                 int loseGuard = 0;
                 while (Phase == St.Battle && loseGuard++ < 4000)
