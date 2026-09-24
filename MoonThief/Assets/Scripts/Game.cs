@@ -519,7 +519,7 @@ namespace MoonThief
             Menus.OnOnboardDone = OnboardDone;
             Menus.OnShopClosed = ClosePause;
             Menus.OnStory = ReplayStory;
-            Menus.OnReleaseFriend = key => { World?.ReleaseFriend(key); SaveRun(); };
+            Menus.OnReleaseFriend = key => { if (World != null) World.ReleaseFriend(key); SaveRun(); };
         }
 
         void BuildTitle()
@@ -762,7 +762,9 @@ namespace MoonThief
 
         void FollowHero()
         {
-            if (World?.Map == null) return;
+            // plain == on purpose: WorldView is a UnityEngine.Object, and ?. would ride
+            // straight into members of a Destroy()'ed view instead of seeing it as null
+            if (World == null || World.Map == null) return;
             float tx = Mathf.Clamp(World.HeroPos.x, 9f, GameMap.W - 9f);
             float ty = Mathf.Clamp(World.HeroPos.y, HalfH - 2f, GameMap.H - HalfH + 2f);
             if (_bossFocus && World.Map != null)
@@ -2192,10 +2194,16 @@ namespace MoonThief
             _titleRoot.gameObject.SetActive(false);
             _endRoot.gameObject.SetActive(false);
             BattleViewRef.gameObject.SetActive(false);
-            World.gameObject.SetActive(true);
-            if (World.Ready) World.Teardown();
-            _overworld = World;
-            _overworld.gameObject.SetActive(false);   // EnterHouse hides it too - its canopy mesh reads as black patches inside the room
+            if (World != null)
+            {
+                World.gameObject.SetActive(true);
+                if (World.Ready) World.Teardown();
+            }
+            // only remember the view we came FROM when we actually came from outside - a
+            // chained interior visit would otherwise stash the about-to-be-killed house
+            // view as the "overworld", and LeaveHouse would hand back a dead WorldView
+            if (!_inHouse) _overworld = World;
+            if (_overworld != null) _overworld.gameObject.SetActive(false);   // EnterHouse hides it too - its canopy mesh reads as black patches inside the room
             if (_houseRoot == null)
             {
                 _houseRoot = new GameObject("house").transform;
