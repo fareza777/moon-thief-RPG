@@ -145,6 +145,22 @@ namespace MoonThief
                 }
             }
 
+            /// <summary>Charms quicken the wearer's hands a little — enough to matter at the turn queue.</summary>
+            public static float BonusSpd
+            {
+                get
+                {
+                    int n = 0;
+                    for (int i = 0; i < 3; i++)
+                    {
+                        if (string.IsNullOrEmpty(Worn[i])) continue;
+                        var d = Items.Get(Worn[i]);
+                        if (d.Kind == ItemKind.Charm) n += d.Power;
+                    }
+                    return n * 0.12f;
+                }
+            }
+
             public static SaveData Capture(float heroX, float heroY) => new SaveData
             {
                 chapter = Chapter, shards = MoonShards, befriended = Befriended,

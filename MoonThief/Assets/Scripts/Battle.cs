@@ -234,7 +234,7 @@ namespace MoonThief
                         Hp = hp + Game.State.BonusHp,
                         AtkMin = aMin + Game.State.BonusAtk,
                         AtkMax = aMax + Game.State.BonusAtk,
-                        Speed = spec.Speed,
+                        Speed = spec.Speed + Game.State.BonusSpd,
                         ColorDir = spec.ColorDir,
                         Look = spec.Look,
                         Style = spec.Style,
@@ -418,7 +418,7 @@ namespace MoonThief
                     Rare = spec.Rare,
                     Species = spec.Name,
                     BattlerPath = spec.Battler,
-                    Scale = FitScale(battler, spec.Boss ? 8.5f : 5.6f, 2)
+                    Scale = FitScale(battler, spec.Boss ? 8.5f : spec.Rare ? 6.4f : 5.6f, 2)
                 };
                 f.Hp = f.MaxHp;
                 Enemies[i] = f;
@@ -1181,6 +1181,7 @@ namespace MoonThief
             var first = Strings.Get(hasBoss ? "bt.boss" : anyRare ? "bt.moonlit" : specs.Length > 1 ? "bt.two" : "bt.one",
                 View.Enemies[0].Name);
             View.SetMessage(first);
+            Sfx.Mus.Intensity = 1f;             // whatever the last fight left behind
             Sfx.Mus.Play(hasBoss ? "boss" : "battle");
             Sfx.Play(hasBoss ? "boss" : "enemy");
             if (Application.isPlaying) StartCoroutine(Timer(1.4f, RoundStart));
@@ -1290,8 +1291,12 @@ namespace MoonThief
                 return;
             }
             int ti = -1; float low = float.MaxValue;
+            // cut the foe this hero is built against first; else the most wounded
             for (int i = 0; i < View.Enemies.Length; i++)
-                if (View.Enemies[i].Alive && View.Enemies[i].Hp < low) { low = View.Enemies[i].Hp; ti = i; }
+                if (View.Enemies[i].Alive && WeakTo(actor.Style, View.Enemies[i])) { ti = i; break; }
+            if (ti < 0)
+                for (int i = 0; i < View.Enemies.Length; i++)
+                    if (View.Enemies[i].Alive && View.Enemies[i].Hp < low) { low = View.Enemies[i].Hp; ti = i; }
             if (ti >= 0) View.SetTarget(ti);
             View.SetSelected(0);
             Confirm();
@@ -1349,6 +1354,7 @@ namespace MoonThief
             if (e.Boss && e.Hp01 < 0.35f && !_enraged)
             {
                 _enraged = true;
+                Sfx.Mus.Intensity = 1.14f;      // the track quickens with the guard's temper
                 View.SetMessage(Strings.Get("bt.enraged", e.Name));
                 var rig = View.RigOf(e);
                 if (rig != null)
@@ -1358,6 +1364,12 @@ namespace MoonThief
                 }
                 Sfx.Play("boss");
                 yield return Fx.Wait(1.1f);
+                // the heat does not fade with the flash: the guard stays reddened until it falls
+                if (rig != null && rig.Anim != null)
+                {
+                    var c = rig.Anim.Tint;
+                    rig.Anim.SetTint(new Color(Mathf.Min(1f, c.r + 0.25f), c.g * 0.55f, c.b * 0.55f));
+                }
             }
             bool slam = e.Boss && UnityEngine.Random.value < (_enraged ? 0.6f : 0.35f);
             View.SetMessage(Strings.Get(slam ? "bt.slam" : "bt.enemyturn", e.Name));
@@ -1686,6 +1698,13 @@ namespace MoonThief
                 crit ? 3 : 2);
             if (weak)
                 View.FloatNumber(tRig.Home + new Vector3(0f, 1.9f, 0f), Strings.Get("bt.weak"), new Color(0.65f, 1f, 0.95f));
+            // a ringing crit can knock the sense out of a lesser foe — the Guard shrugs it off
+            if (crit && target.Alive && !target.Boss && UnityEngine.Random.value < 0.2f)
+            {
+                target.Dazed = true;
+                View.FloatNumber(tRig.Home + new Vector3(0f, 2.35f, 0f),
+                    Strings.Get("bt.dazed"), new Color(1f, 0.9f, 0.5f));
+            }
             Sfx.Play(crit ? "crit" : "hit");
         }
 
@@ -1732,7 +1751,15 @@ namespace MoonThief
                 yield break;
             }
             View.SetMessage(Strings.Get("bt.flee"));
+            // the party itself melts back into the dark before the world takes over
+            foreach (var p in View.Party)
+                if (p.Alive)
+                {
+                    var r = View.RigOf(p);
+                    if (r != null && r.Sr != null && r.Sr.enabled) StartCoroutine(FadeOut(r));
+                }
             yield return Fx.Wait(0.6f);
+            Sfx.Mus.Intensity = 1f;
             OnFled?.Invoke();
         }
 
@@ -1865,6 +1892,7 @@ namespace MoonThief
         void Win()
         {
             _ph = Ph.Card;
+            Sfx.Mus.Intensity = 1f;
             AwaitingInput = false;
             View.SetMenuVisible(false);
 
@@ -1936,6 +1964,7 @@ namespace MoonThief
         void Lose()
         {
             _ph = Ph.Card;
+            Sfx.Mus.Intensity = 1f;
             AwaitingInput = false;
             View.SetMenuVisible(false);
             View.ShowCard(Strings.Get("card.losstitle"),

@@ -149,6 +149,15 @@ namespace MoonThief
             static bool _muted;
 
             static float _vol = 1f;
+            static float _pitch = 1f;
+
+            /// <summary>Playback speed/pitch of the live track — a touch of urgency when a
+            /// fight turns, without re-cutting the loop.</summary>
+            public static float Intensity
+            {
+                get => _pitch;
+                set { _pitch = Mathf.Clamp(value, 0.85f, 1.3f); if (_cur != null) _cur.pitch = _pitch; }
+            }
 
             /// <summary>Music loudness, 0..1, folded into the crossfade target volume. Applies to
             /// the playing track immediately, not just on the next Play().</summary>
@@ -203,6 +212,7 @@ namespace MoonThief
                 var clip = Clip(track);
                 next.clip = clip;
                 next.volume = 0f;
+                next.pitch = _pitch;
                 if (clip != null)
                 {
                     next.mute = _muted;

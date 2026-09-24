@@ -1178,7 +1178,7 @@ namespace MoonThief
                 a.HomeCell = new Vector2(x, y);
                 a.WanderCd = (float)rng.NextDouble() * 2f;
                 a.Anim.Play(MonsterClip(spec.MapSheet, Dir.Down), 4f, true);
-                a.Sr.transform.localScale = Vector3.one * 0.75f;   // 36 px tall on the map
+                a.Sr.transform.localScale = Vector3.one * (spec.Rare ? 0.88f : 0.75f);   // rares loom a touch larger
                 if (spec.Rare) a.Sr.color = new Color(0.72f, 0.84f, 1f);
                 Monsters.Add(a);
                 return;
@@ -2152,7 +2152,7 @@ namespace MoonThief
                 a.HomeCell = new Vector2(cell.x, cell.y);
                 a.WanderCd = Random.value * 2f;
                 a.Anim.Play(MonsterClip(r.Spec.MapSheet, Dir.Down), 4f, true);
-                a.Sr.transform.localScale = Vector3.one * 0.75f;
+                a.Sr.transform.localScale = Vector3.one * (r.Spec.Rare ? 0.88f : 0.75f);
                 if (r.Spec.Rare) a.Sr.color = new Color(0.72f, 0.84f, 1f);
                 Monsters.Add(a);
                 _respawns.RemoveAt(i);
