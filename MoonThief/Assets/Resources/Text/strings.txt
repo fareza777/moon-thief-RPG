@@ -380,6 +380,7 @@ pause.journal|JOURNAL
 jr.title|JOURNAL
 jr.hint|PICK A ROW TO OPEN, BACK TO RETURN
 jr.pagehint|PICK A ROW, BACK RETURNS TO THE JOURNAL
+jr.map.tip|SPECKS MARK UNOPENED CHESTS
 jr.sub|LEVEL {0}    {1} GOLD
 jr.character|CHARACTER
 jr.items|BAG

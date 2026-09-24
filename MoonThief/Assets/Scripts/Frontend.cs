@@ -1506,7 +1506,8 @@ namespace MoonThief
             float rowsTop = LayoutCard(_pagePanel, 16.4f, haveMap ? 7 : 6, true);
             _pageTitle.transform.localPosition = new Vector3(0f, _cardTop - 1.9f, 0f);
             _pageSub.transform.localPosition = new Vector3(0f, _cardTop - 3.5f, 0f);
-            _pageFoot.Set(Strings.Get("jr.pagehint"));
+            // the map's own footnote: the row-picker hint makes no sense on a page with no rows
+            _pageFoot.Set(Strings.Get("jr.map.tip"));
 
             if (haveMap)
             {
