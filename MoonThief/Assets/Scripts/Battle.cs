@@ -1649,6 +1649,14 @@ namespace MoonThief
                 View.FloatNumber(tRig.Home + new Vector3(0f, 1.75f, 0f),
                     Strings.Get("bt.poisoned"), new Color(0.55f, 1f, 0.5f));
             }
+            // a slime's goo clings where it lands: the victim's footing goes, and a
+            // tripped fighter loses their next turn to the stars
+            if (fam == "slime" && target.Alive && !target.Dazed && UnityEngine.Random.value < 0.2f)
+            {
+                target.Dazed = true;
+                View.FloatNumber(tRig.Home + new Vector3(0f, 1.9f, 0f),
+                    Strings.Get("bt.tripped"), new Color(0.6f, 0.85f, 1f));
+            }
             View.FloatNumber(tRig.Home + new Vector3(0f, 1.4f, 0f), "-" + dmg,
                 slam ? new Color(1f, 0.45f, 0.3f) : new Color(1f, 0.6f, 0.55f));
             Sfx.Play("hurt");

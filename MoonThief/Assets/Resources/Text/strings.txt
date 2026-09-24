@@ -150,6 +150,7 @@ bt.fam.genius|A {0} floats down, lantern-bright.
 bt.slam|The {0} rears up and SLAMS down!
 bt.enraged|The {0} is cornered - it fights without mercy now!
 bt.dazed|DAZED
+bt.tripped|TRIPPED
 bt.poison|POISON
 bt.poisoned|POISONED
 bt.phased|PHASED THROUGH!
@@ -208,19 +209,19 @@ mon.stalker|DUSK STALKER
 mon.squire|SHADE SQUIRE
 mon.slime.d|It misses the moon too.
 mon.slime2.d|Softer than it looks. Meaner too.
-mon.imp.d|Grew from a kettle nobody emptied.
+mon.imp.d|Grew from a kettle nobody emptied. Dropped, it breathes spores on whoever struck close.
 mon.slimeB.d|The dark squeezes into puddles now.
 mon.gloop.d|Smells like the pond. The bad side.
-mon.impB.d|Older than the hollow. Grumpier.
-mon.wasp.d|Still looking for a lamp to die on.
-mon.wasp2.d|Stings first. Asks never.
+mon.impB.d|Older than the hollow. Grumpier. Its last breath is spores - strike from afar.
+mon.wasp.d|Still looking for a lamp to die on. Nearly dead, it'd rather fly home.
+mon.wasp2.d|Stings first. Asks never. Corners badly - slips away before the end.
 mon.shade.d|A shadow that lost its person. Blows pass through it.
 mon.bones.d|Keeps walking. Out of habit. Knocked down, it gets up once.
 mon.hob.d|Sleeps as a rock. Walks as a grudge. Its sting lingers.
 mon.wisp.d|Lamp smoke that learned to float. Its light shields friends.
 mon.minotaur.d|It wears the shard like a crown.
 mon.thane.d|The dark's own knight. No oath, just hunger.
-mon.thick.d|The hedge grew teeth last winter.
+mon.thick.d|The hedge grew teeth last winter. Felled up close, it puffs spores.
 mon.palebell.d|It rings. Something answers.
 mon.revenant.d|It died angry. The dark keeps the grievance filed. Down once, up once.
 mon.stalker.d|It ate the dusk patrol. Now it eats the road.
