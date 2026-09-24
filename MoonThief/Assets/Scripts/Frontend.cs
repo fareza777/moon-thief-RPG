@@ -1050,7 +1050,19 @@ namespace MoonThief
                 foreach (var key in ShopStock())
                 {
                     var def = Items.Get(key);
-                    labels.Add(Strings.Get(key) + "  " + Items.Effect(def));
+                    var fx = Items.Effect(def);
+                    // gear answers the only question a buyer has: is this better than
+                    // what I wear? say the delta right in the row, e.g. "+11 ATK (+8)"
+                    if (Items.IsEquip(def.Kind))
+                    {
+                        var wornKey = Game.State.Worn[Items.SlotOf(def.Kind)];
+                        if (wornKey != null && wornKey != key)
+                        {
+                            int diff = def.Power - Items.Get(wornKey).Power;
+                            fx += " (" + (diff >= 0 ? "+" : "") + diff + ")";
+                        }
+                    }
+                    labels.Add(Strings.Get(key) + "  " + fx);
                     bool owned = Items.IsEquip(def.Kind)
                         && (Game.State.BagCount(key) > 0 || Array.IndexOf(Game.State.Worn, key) >= 0);
                     vals.Add(owned ? Strings.Get("shop.owned") : def.Price + " G");
