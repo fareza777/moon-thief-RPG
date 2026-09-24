@@ -694,6 +694,7 @@ namespace MoonThief
             DialogRoot.gameObject.SetActive(false);
             _dlgOpen = false;
             _paused = false;
+            Time.timeScale = 1f;   // belt and suspenders: title is the universal unwind
             _titleTap.gameObject.SetActive(false);   // the menu rows replace the old tap hint
             Sfx.Mus.Play("title");
             Menus.ShowMain();
@@ -953,7 +954,7 @@ namespace MoonThief
             // ---- the pause card freezes the world
             if (_paused)
             {
-                Menus.Tick(Time.deltaTime, StagePos(), TapPressed(), KeyStep(), KeyConfirm(), KeyCancel());
+                Menus.Tick(Time.unscaledDeltaTime, StagePos(), TapPressed(), KeyStep(), KeyConfirm(), KeyCancel());
                 Menus.SetAnchor(Cam.transform.localPosition);
                 UpdateJoyVisual(false);
                 return;
@@ -1119,6 +1120,9 @@ namespace MoonThief
             // dialog box, not a name plate, not the banner
             if (_dlgOpen) CloseDialog();
             _paused = true;
+            // a real freeze: coroutines, wander, and the battle clock all stop while the
+            // card is up - the menu still animates on unscaled time
+            Time.timeScale = 0f;
             _joyTouch = false;
             _tapPending = false;
             _tapFinger = -1;
@@ -1133,6 +1137,7 @@ namespace MoonThief
         {
             if (!_paused) return;
             _paused = false;
+            Time.timeScale = 1f;
             Menus.Hide();
             if (World != null && World.Ready) World.SetTextVisible(true);
         }
@@ -1143,6 +1148,7 @@ namespace MoonThief
         {
             if (_dlgOpen) CloseDialog();
             _paused = true;
+            Time.timeScale = 0f;
             _joyTouch = false;
             _tapPending = false;
             _tapFinger = -1;
@@ -1165,6 +1171,10 @@ namespace MoonThief
         void HandleBattleInput()
         {
             if (Director == null || BattleViewRef == null) return;
+
+            // the pause card works mid-fight too - the clock freeze keeps the enemy
+            // from acting while the menu is up
+            if (KeyCancel()) { OpenPause(); return; }
 
             if (TapPressed())
             {
@@ -2227,11 +2237,11 @@ namespace MoonThief
             // Marn's stall: open the shop card for real, buy one thing, leave
             State.Gold = 40;
             OpenShop();
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSecondsRealtime(0.5f);
             Shot("21-shop");
             Debug.Log("[selftest] shop rows=" + Menus.ActiveRowCount);
             Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);   // buy first ware
-            yield return new WaitForSeconds(0.2f);
+            yield return new WaitForSecondsRealtime(0.2f);
             ClosePause();
             yield return new WaitForSeconds(0.3f);
 
@@ -2239,11 +2249,13 @@ namespace MoonThief
             // wired to one shared list, so these two cards drew an empty frame on a device
             // while every singe-player shortcut test still passed -- capture them here.
             OpenPause();
-            yield return new WaitForSeconds(0.6f);
+            // realtime waits: the pause card now actually freezes the clock, so a scaled
+            // WaitForSeconds here would hang forever
+            yield return new WaitForSecondsRealtime(0.6f);
             Shot("19-pause");
             Debug.Log("[selftest] pause rows=" + Menus.ActiveRowCount);
             Menus.ShowSettings(true);
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSecondsRealtime(0.5f);
             Shot("20-settings");
             Debug.Log("[selftest] settings rows=" + Menus.ActiveRowCount);
 
@@ -2251,15 +2263,14 @@ namespace MoonThief
             // the rows are built per page and a shared list made every page after the first draw
             // an empty frame.
             Menus.EditorJournal(-1);
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSecondsRealtime(0.5f);
             Shot("27-journal");
             Debug.Log("[selftest] journal rows=" + Menus.ActiveRowCount);
             Menus.EditorJournal(4);
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSecondsRealtime(0.5f);
             Shot("28-quests");
             Debug.Log("[selftest] quest rows=" + Menus.ActiveRowCount);
-            Menus.Hide();
-            _paused = false;
+            ClosePause();
 
             // hunt the nearest wild monster so an encounter is guaranteed, not lucky. Steering is
             // diagonal: the old axis-only version (straight east/west, then straight north) wedged

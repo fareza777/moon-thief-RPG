@@ -948,13 +948,13 @@ namespace MoonThief
             return r == null ? Vector2.zero : new Vector2(r.Home.x, r.Home.y + r.BodyHeight * 0.6f);
         }
 
-        public void FloatNumber(Vector2 pos, string text, Color color)
+        public void FloatNumber(Vector2 pos, string text, Color color, int scale = 2)
         {
             var go = new GameObject("floatn");
             go.transform.SetParent(Stage, false);
             go.transform.localPosition = new Vector3(pos.x, pos.y, 0f);
             var label = go.AddComponent<PixelLabel>();
-            label.Configure(2, color, TextAlign.Center, 40);
+            label.Configure(scale, color, TextAlign.Center, 40);
             label.SnapToPixelGrid = false;
             // damage numbers drift over whatever art the arena uses; without a shadow they
             // vanish into the light patches
@@ -1570,7 +1570,8 @@ namespace MoonThief
             StartCoroutine(Fx.Shake(tRig.Root, crit || weak ? 0.2f : 0.12f, crit || weak ? 0.3f : 0.22f));
             if (crit) StartCoroutine(Fx.Shake(View.Stage, 0.13f, 0.18f));
             View.FloatNumber(tRig.Home + new Vector3(0f, 1.2f, 0f), "-" + dmg,
-                crit ? new Color(1f, 0.85f, 0.3f) : weak ? new Color(0.65f, 1f, 0.95f) : new Color(1f, 0.95f, 0.75f));
+                crit ? new Color(1f, 0.85f, 0.3f) : weak ? new Color(0.65f, 1f, 0.95f) : new Color(1f, 0.95f, 0.75f),
+                crit ? 3 : 2);
             if (weak)
                 View.FloatNumber(tRig.Home + new Vector3(0f, 1.9f, 0f), Strings.Get("bt.weak"), new Color(0.65f, 1f, 0.95f));
             Sfx.Play(crit ? "crit" : "hit");
