@@ -82,6 +82,10 @@ namespace MoonThief
                 var k = ChestKey(chapter, cell);
                 if (!ChestsDone.Contains(k)) ChestsDone.Add(k);
             }
+            /// <summary>A house cache keys on its room, not the night: "h3:14,21". The shard
+            /// economy stays chapter-scoped; the larder stays where it lives.</summary>
+            public static bool HasChestKey(string key) => ChestsDone.Contains(key);
+            public static void MarkChestKey(string key) { if (!ChestsDone.Contains(key)) ChestsDone.Add(key); }
 
             /// <summary>Records a place the hero has walked into (drives the bard's quest).
             /// True only on the first visit, so a zone banner can fire once, ever.</summary>

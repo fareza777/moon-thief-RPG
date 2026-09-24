@@ -874,7 +874,9 @@ namespace MoonThief
                 var sh = SpriteRendererUtil.Make(_root, "csh" + i, TexArt.Shadow(), 45);
                 sh.transform.localPosition = new Vector3(pos.x, pos.y - 0.46f, 0f);
                 sh.transform.localScale = new Vector3(0.8f, 0.66f, 1f);
-                bool wasOpened = !Map.Interior && Game.State.HasChest(MapChapter, c);
+                bool wasOpened = Map.Interior
+                    ? Game.State.HasChestKey("h" + Map.HouseIndex + ":" + c.x + "," + c.y)
+                    : Game.State.HasChest(MapChapter, c);
                 _chests[i] = new ChestDef
                 {
                     Pos = pos, Cell = c, Sr = sr, Glow = glow, Anim = anim, Variant = variant,
@@ -978,7 +980,11 @@ namespace MoonThief
             _chests[i].Opened = true;
             var chest = _chests[i];
             BurstLoot(chest.Pos);
-            if (!Map.Interior) Game.State.MarkChest(MapChapter, chest.Cell);
+            // every cache remembers it was spent - field chests by night and cell,
+            // house chests by the room they stand in - so no larder refills on a reload
+            if (Map.Interior)
+                Game.State.MarkChestKey("h" + Map.HouseIndex + ":" + chest.Cell.x + "," + chest.Cell.y);
+            else Game.State.MarkChest(MapChapter, chest.Cell);
             bool shard = !Map.Interior && Game.State.ChestsOpened < 3;
             if (!Map.Interior) Game.State.ChestsOpened++;
             if (shard)
