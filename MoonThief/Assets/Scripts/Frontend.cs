@@ -817,6 +817,7 @@ namespace MoonThief
                 Prefs.Auto ? Strings.Get("set.on") : Strings.Get("set.off"),
             };
 
+            var icons = new List<int> { 9, 10, 11, 12, 13 };
             // the wipe lives only on the title-side card: erasing mid-run would be
             // rewritten by the next autosave, which reads as the button doing nothing
             if (!_settingsFromPause)
@@ -831,14 +832,16 @@ namespace MoonThief
                     ShowToast(Strings.Get("set.erased"), 3f);
                 });
                 vals.Add("");
+                icons.Add(15);
             }
             labels.Add(Strings.Get("menu.back"));
             acts.Add(() => { if (_settingsFromPause) ShowPause(); else ShowMain(); });
             vals.Add("");
+            icons.Add(14);
 
             float rowsTop = LayoutCard(_setPanel, 16.4f, labels.Count, true);
             _setTitle.transform.localPosition = new Vector3(0f, _cardTop - 2.15f, 0f);
-            float bottom = LayRows(_setRows, labels.ToArray(), acts.ToArray(), vals.ToArray(), rowsTop, labels.Count);
+            float bottom = LayRows(_setRows, labels.ToArray(), acts.ToArray(), vals.ToArray(), rowsTop, labels.Count, icons.ToArray());
             _setFoot.transform.localPosition = new Vector3(0f, FootY(bottom), 0f);
             Select(_sel);
         }

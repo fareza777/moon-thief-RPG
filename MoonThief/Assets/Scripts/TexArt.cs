@@ -560,7 +560,8 @@ namespace MoonThief
             return _chevron;
         }
 
-        static Sprite _icoAtk, _icoFriend, _icoFood, _icoRun, _icoPlay, _icoBook, _icoSave, _icoGear, _icoDoor;
+        static Sprite _icoAtk, _icoFriend, _icoFood, _icoRun, _icoPlay, _icoBook, _icoSave, _icoGear, _icoDoor,
+            _icoText, _icoNote, _icoSpeaker, _icoShake, _icoAuto, _icoBack, _icoTrash;
 
         /// <summary>Tiny pictogram beside each battle command so the four cells read at a
         /// glance: sword for strike, heart for befriend, apple for morsel, boot for run —
@@ -577,7 +578,14 @@ namespace MoonThief
                 case 5: return _icoBook ??= MaskIcon("icoBook", MaskBook);
                 case 6: return _icoSave ??= MaskIcon("icoSave", MaskSave);
                 case 7: return _icoGear ??= MaskIcon("icoGear", MaskGear);
-                default: return _icoDoor ??= MaskIcon("icoDoor", MaskDoor);
+                case 8: return _icoDoor ??= MaskIcon("icoDoor", MaskDoor);
+                case 9: return _icoText ??= MaskIcon("icoText", MaskText);
+                case 10: return _icoNote ??= MaskIcon("icoNote", MaskNote);
+                case 11: return _icoSpeaker ??= MaskIcon("icoSpeaker", MaskSpeaker);
+                case 12: return _icoShake ??= MaskIcon("icoShake", MaskShake);
+                case 13: return _icoAuto ??= MaskIcon("icoAuto", MaskAuto);
+                case 14: return _icoBack ??= MaskIcon("icoBack", MaskBack);
+                default: return _icoTrash ??= MaskIcon("icoTrash", MaskTrash);
             }
         }
 
@@ -697,6 +705,83 @@ namespace MoonThief
             "..d.gg...",
             "..d...d..",
             "..ddddd..",
+            ".........",
+        };
+        static readonly string[] MaskText = {
+            ".........",
+            "...www...",
+            "..w...w..",
+            "..w...w..",
+            "..wwwww..",
+            "..w...w..",
+            "..w...w..",
+            ".........",
+            ".........",
+        };
+        static readonly string[] MaskNote = {
+            ".........",
+            ".....wwg.",
+            "....w..g.",
+            "....w...g",
+            "....w....",
+            "..www....",
+            ".www.....",
+            ".........",
+            ".........",
+        };
+        static readonly string[] MaskSpeaker = {
+            ".........",
+            "...w.....",
+            "..ww.....",
+            ".wwww..w.",
+            ".wwww.w..",
+            ".wwww..w.",
+            "..ww.....",
+            "...w.....",
+            ".........",
+        };
+        static readonly string[] MaskShake = {
+            ".........",
+            "w..www..w",
+            "...w.w...",
+            "...w.w...",
+            "...www...",
+            "w..www..w",
+            ".........",
+            ".........",
+            ".........",
+        };
+        static readonly string[] MaskAuto = {
+            ".........",
+            "....gg...",
+            "...gg....",
+            "..ggg....",
+            ".ggg.....",
+            "..ggg....",
+            "...gg....",
+            "...gg....",
+            ".........",
+        };
+        static readonly string[] MaskBack = {
+            ".........",
+            "...w.....",
+            "..ww.....",
+            ".wwwwww..",
+            "wwwwww...",
+            ".wwwwww..",
+            "..ww.....",
+            "...w.....",
+            ".........",
+        };
+        static readonly string[] MaskTrash = {
+            ".........",
+            "...ggg...",
+            ".ggggg...",
+            "..d.d....",
+            "..d.d....",
+            "..ddd....",
+            ".........",
+            ".........",
             ".........",
         };
 
