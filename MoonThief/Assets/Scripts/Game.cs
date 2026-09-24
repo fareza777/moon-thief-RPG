@@ -1794,6 +1794,9 @@ namespace MoonThief
             {
                 hx = World.HeroPos.x;
                 hy = World.HeroPos.y;
+                // a night saved indoors resumes on the doorstep, not inside the
+                // little room's coordinates - those mean somewhere else outdoors
+                if (_inHouse) { hx = _doorReturn.x; hy = _doorReturn.y; }
             }
             SaveSystem.Write(State.Capture(hx, hy));
         }
