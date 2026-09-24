@@ -373,10 +373,12 @@ namespace MoonThief
             return 1;
         }
 
-        public void SetBackdrop(string path)
+        public void SetBackdrop(string path, bool boss = false)
         {
             var sp = Bank.One(path);
             _backdrop.sprite = sp;
+            // a gatekeeper casts the whole field into its cold violet
+            _backdrop.color = boss ? new Color(0.62f, 0.55f, 0.8f) : Color.white;
             if (sp != null)
             {
                 // cover the WHOLE portrait frame (was: only the arena) so no flat band
@@ -1262,7 +1264,8 @@ namespace MoonThief
             AwaitingInput = false;
             // each night has its own ground: the hollow's woods, the long fields, the deep
             View.SetBackdrop(Game.State.Chapter >= 3 ? "Art/Backgrounds/DungeonA"
-                : Game.State.Chapter == 2 ? "Art/Backgrounds/PlainA" : "Art/Backgrounds/ForestA");
+                : Game.State.Chapter == 2 ? "Art/Backgrounds/PlainA" : "Art/Backgrounds/ForestA",
+                _hasBoss);
             View.SetNight(Game.State.Chapter);
             View.SetMoonIcon(Game.State.Chapter >= 3);
             View.RebuildParty();
