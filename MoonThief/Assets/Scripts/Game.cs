@@ -2198,6 +2198,18 @@ namespace MoonThief
             _houseView.transform.SetParent(_houseRoot, false);
             _houseMap = GameMap.BuildRoom(house);
             _houseView.Build(_houseMap, _houseRoot, HalfH);
+            {
+                var sb = new System.Text.StringBuilder();
+                for (int yy = 24; yy >= 5; yy--)
+                {
+                    for (int xx = 0; xx < 19; xx++)
+                        sb.Append(_houseMap.At(new Vector2Int(xx, yy)) == Ground.Void ? '#' :
+                                  _houseMap.At(new Vector2Int(xx, yy)) == Ground.Wall ? 'W' :
+                                  _houseMap.At(new Vector2Int(xx, yy)) == Ground.Floor ? '.' : '?');
+                    sb.Append('\n');
+                }
+                Debug.Log("[roomdump]\n" + sb);
+            }
             World = _houseView;
             World.PlaceHero(new Vector2(9.5f, 12.5f));
             _inHouse = true;
@@ -2321,6 +2333,14 @@ namespace MoonThief
             yield return new WaitForSeconds(0.9f);
             Shot("11c-interior");
             Debug.Log("[selftest] interior inHouse=" + _inHouse + " hero=" + World.HeroPos);
+            // every room layout once: the void spots move with the furniture set, which names
+            // what draws them if they only appear under certain pieces
+            for (int h = 1; h < 6; h++)
+            {
+                EditorInterior(h);
+                yield return new WaitForSeconds(0.7f);
+                Shot("11c" + h + "-interior");
+            }
 
             // Marn's stall: open the shop card for real, buy one thing, leave
             State.Gold = 40;
