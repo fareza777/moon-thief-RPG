@@ -18,7 +18,7 @@ namespace MoonThief
             public Transform Root, Body, SpriteT;
             public SpriteRenderer Sr;
             public Anim Anim;
-            public SpriteRenderer Shadow, BarBg, BarFill, NameChip, Hat;
+            public SpriteRenderer Shadow, BarBg, BarFill, NameChip, Hat, Stun;
             public PixelLabel Name;
             public Vector3 Home;
             public float BodyHeight, BobPhase;
@@ -272,6 +272,7 @@ namespace MoonThief
                 rig.Name = Label("pname" + i, 1, new Color(0.92f, 0.94f, 1f), TextAlign.Center, 24);
                 rig.Name.transform.localPosition = new Vector3(home.x, PartyFeet - 0.53f, 0f);
                 rig.Name.Set(Party[i].Name);
+                if (friend && Party[i].Rare) rig.Name.SetColor(new Color(0.72f, 0.9f, 1f));
                 rig.NameChip = SpriteRendererUtil.Make(Stage, "pnameChip" + i, TexArt.Solid(), 23);
                 Plate(rig.NameChip, rig.Name, Party[i].Name, false, Party[i].Species != null);
                 rig.BarBg = SpriteRendererUtil.Make(Stage, "pbg" + i, TexArt.Solid(), 22);
@@ -305,6 +306,7 @@ namespace MoonThief
             if (rig.NameChip != null) UtilDestroy(rig.NameChip.gameObject);
             if (rig.BarBg != null) UtilDestroy(rig.BarBg.gameObject);
             if (rig.BarFill != null) UtilDestroy(rig.BarFill.gameObject);
+            if (rig.Stun != null) UtilDestroy(rig.Stun.gameObject);
         }
 
         Rig MakeRig(Fighter f, Vector3 home, int sorting)
@@ -344,6 +346,10 @@ namespace MoonThief
                 hat.transform.localPosition = new Vector3(0f, 0.46f, 0f);
                 rig.Hat = hat;
             }
+            // the daze star lives off the stage like the name plate: a KO'd fighter's
+            // effects die with the rig, and this one must not linger in the air
+            rig.Stun = SpriteRendererUtil.Make(Stage, "stun", TexArt.MenuIcon(21), 70);
+            rig.Stun.enabled = false;
             return rig;
         }
 
@@ -388,6 +394,7 @@ namespace MoonThief
                 if (EnemyRigs[i].BarFill != null) UtilDestroy(EnemyRigs[i].BarFill.gameObject);
                 if (EnemyRigs[i].Name != null) UtilDestroy(EnemyRigs[i].Name.gameObject);
                 if (EnemyRigs[i].NameChip != null) UtilDestroy(EnemyRigs[i].NameChip.gameObject);
+                if (EnemyRigs[i].Stun != null) UtilDestroy(EnemyRigs[i].Stun.gameObject);
             }
 
             Enemies = new Fighter[specs.Length];
@@ -638,11 +645,13 @@ namespace MoonThief
 
         Rig _turnRig;
 
-        /// <summary>Marks whose move it is - a little gold chevron bobbing over their head.</summary>
-        public void SetTurnRig(Rig rig)
+        /// <summary>Marks whose move it is - a little chevron bobbing over their head,
+        /// gold for ours, red for theirs.</summary>
+        public void SetTurnRig(Rig rig, bool hostile = false)
         {
             _turnRig = rig;
             _turnChev.enabled = rig != null;
+            _turnChev.color = hostile ? new Color(1f, 0.5f, 0.45f) : new Color(1f, 0.85f, 0.4f);
         }
 
         /// <summary>Draws a rig's hp fill at its displayed width, which may lag the real hp.</summary>
@@ -653,6 +662,18 @@ namespace MoonThief
             rig.BarFill.enabled = rig.F.Alive && w > 0.03f;
             if (rig.BarFill.enabled)
                 Box(rig.BarFill, rig.BarLeft + 0.0625f, rig.BarTop, w - 0.0625f, rig.BarH, rig.BarCol);
+        }
+
+        void TickStun(Rig rig)
+        {
+            if (rig?.Stun == null) return;
+            bool on = rig.F != null && rig.F.Alive && rig.F.Dazed;
+            rig.Stun.enabled = on;
+            if (!on) return;
+            rig.Stun.transform.localPosition = new Vector3(rig.Home.x,
+                rig.Home.y + rig.BodyHeight + 0.55f + Mathf.Sin(_time * 6f) * 0.08f, 0f);
+            rig.Stun.transform.localEulerAngles = new Vector3(0f, 0f, _time * 240f);
+            rig.Stun.transform.localScale = Vector3.one * (1.5f + Mathf.Sin(_time * 8f) * 0.15f);
         }
 
         void TickBar(Rig rig)
@@ -684,7 +705,7 @@ namespace MoonThief
             for (int i = Stage.childCount - 1; i >= 0; i--)
             {
                 var n = Stage.GetChild(i).name;
-                if (n == "spark" || n == "cardspark" || n == "floatn") UtilDestroy(Stage.GetChild(i).gameObject);
+                if (n == "spark" || n == "cardspark" || n == "floatn" || n == "slash") UtilDestroy(Stage.GetChild(i).gameObject);
             }
         }
 
@@ -711,6 +732,9 @@ namespace MoonThief
                     tr.Home.y + tr.BodyHeight + 0.5f + Mathf.Sin(_time * 5f) * 0.07f, 0f);
                 _turnChev.transform.localScale = Vector3.one * 1.6f;
             }
+            // the daze star spins over whoever took a slam last turn
+            foreach (var rig in EnemyRigs) TickStun(rig);
+            foreach (var rig in PartyRigs) TickStun(rig);
             // hp bars bleed toward the real value instead of snapping
             foreach (var rig in PartyRigs) TickBar(rig);
             foreach (var rig in EnemyRigs) TickBar(rig);
@@ -1088,6 +1112,7 @@ namespace MoonThief
         public Action OnBattleWon;          // normal encounter cleared
         public Action OnBossWon;            // chapter boss defeated
         public Action OnDefeat;             // party wiped
+        public Action OnFled;               // party slipped out of a wild fight
 
         enum Ph { Idle, Intro, Round, Acting, Card }
         Ph _ph = Ph.Idle;
@@ -1150,6 +1175,7 @@ namespace MoonThief
             View.IntroSlide();
             bool hasBoss = false;
             foreach (var s in specs) if (s.Boss) hasBoss = true;
+            _hasBoss = hasBoss;
             bool anyRare = false;
             foreach (var en in View.Enemies) if (en.Rare) anyRare = true;
             var first = Strings.Get(hasBoss ? "bt.boss" : anyRare ? "bt.moonlit" : specs.Length > 1 ? "bt.two" : "bt.one",
@@ -1236,7 +1262,8 @@ namespace MoonThief
             // commands that cannot fire go grey: morsel needs bag food and a fresh
             // portion, befriend needs room in the two-heart stable
             View.SetCellEnabled(2, !_morselUsed && Game.State.BestFood() != null);
-            View.SetCellEnabled(1, Game.State.Friends.Count < 2);
+            View.SetCellEnabled(1, Game.State.Friends.Count < 2 && !_hasBoss);
+            View.SetCellEnabled(3, !_hasBoss);   // the Guard bars every way out
             View.AimStyle = f.Style;
             View.SetTarget(View.Target);
             View.SetMessage(Strings.Get("bt.yourturn", f.Name));
@@ -1286,6 +1313,7 @@ namespace MoonThief
         {
             _ph = Ph.Acting;
             var aRig = View.RigOf(f);
+            View.SetTurnRig(aRig);
             int ti = -1; float low = float.MaxValue;
             for (int i = 0; i < View.Enemies.Length; i++)
                 if (View.Enemies[i].Alive && View.Enemies[i].Hp < low) { low = View.Enemies[i].Hp; ti = i; }
@@ -1315,6 +1343,7 @@ namespace MoonThief
         IEnumerator EnemyTurn(Fighter e)
         {
             _ph = Ph.Acting;
+            View.SetTurnRig(View.RigOf(e), true);
             // cornered, the guard loses its patience: under a third of its bar it rears
             // up far more often and the blows land heavier
             if (e.Boss && e.Hp01 < 0.35f && !_enraged)
@@ -1360,6 +1389,17 @@ namespace MoonThief
 
             int dmg = Mathf.RoundToInt(UnityEngine.Random.Range(e.AtkMin, e.AtkMax + 1)
                 * (slam ? 1.6f : 1f) * (_enraged ? 1.25f : 1f) * (Prefs.Story ? 0.65f : 1f));
+            if (UnityEngine.Random.value < 0.06f)
+            {
+                // the hero slips aside: the lunge lands on empty air
+                View.FloatNumber(tRig.Home + new Vector3(0f, 1.4f, 0f),
+                    Strings.Get("bt.miss"), new Color(0.8f, 0.85f, 0.95f));
+                Sfx.Play("whoosh");
+                yield return Fx.Wait(0.35f);
+                yield return Lunge(eRig, eRig.Home, 0.3f);
+                EndTurn();
+                yield break;
+            }
             target.Hp = Mathf.Max(0, target.Hp - dmg);
             if (_flow != 0) { _flow = 0; View.SetRound(_round); }   // momentum breaks on a hit taken
             var stagger = Bank.Frames(BattleData.ClipPath(target.ColorDir, "hit"));
@@ -1369,7 +1409,7 @@ namespace MoonThief
             StartCoroutine(Fx.Slash(View.Stage, tRig.Home + new Vector3(0f, 0.85f, 0f),
                 new Color(1f, 0.55f, 0.45f, 0.85f), slam ? 1.4f : 1f));
             if (slam) StartCoroutine(Fx.Shake(View.Stage, 0.15f, 0.2f));
-            if (slam && target.Alive && UnityEngine.Random.value < 0.25f)
+            if (slam && target.Alive && UnityEngine.Random.value < 0.15f)
             {
                 target.Dazed = true;
                 View.FloatNumber(tRig.Home + new Vector3(0f, 1.9f, 0f),
@@ -1473,6 +1513,7 @@ namespace MoonThief
         }
 
         bool _enraged;
+        bool _hasBoss;
 
         public void Confirm()
         {
@@ -1486,7 +1527,7 @@ namespace MoonThief
                 case 0: StartCoroutine(PlayerAttack(actor)); break;
                 case 1: StartCoroutine(PlayerBefriend(actor)); break;
                 case 2: StartCoroutine(PlayerMorsel(actor)); break;
-                default: EndTurn(); break;   // run: skip, village never traps you
+                default: StartCoroutine(PlayerFlee(actor)); break;
             }
         }
 
@@ -1623,9 +1664,17 @@ namespace MoonThief
         /// A weakness hit earns its own banner above the number so the table is learnable.</summary>
         void HitFoe(Fighter target, int dmg, bool crit, bool weak = false)
         {
-            target.Hp = Mathf.Max(0, target.Hp - dmg);
             var tRig = View.RigOf(target);
             if (tRig == null) return;
+            // a clean dodge: no streak, no number, no damage
+            if (UnityEngine.Random.value < 0.07f)
+            {
+                View.FloatNumber(tRig.Home + new Vector3(0f, 1.2f, 0f),
+                    Strings.Get("bt.miss"), new Color(0.8f, 0.85f, 0.95f));
+                Sfx.Play("whoosh");
+                return;
+            }
+            target.Hp = Mathf.Max(0, target.Hp - dmg);
             StartCoroutine(Fx.FlashTint(tRig.Anim, new Color(1f, 0.5f, 0.4f), 2, 0.07f, 0.07f));
             StartCoroutine(Fx.Shake(tRig.Root, crit || weak ? 0.2f : 0.12f, crit || weak ? 0.3f : 0.22f));
             StartCoroutine(Fx.Slash(View.Stage, tRig.Home + new Vector3(0f, 0.85f, 0f),
@@ -1659,12 +1708,32 @@ namespace MoonThief
             if (rig.Name != null) rig.Name.gameObject.SetActive(false);   // enabled=false only
             if (rig.NameChip != null) rig.NameChip.enabled = false;       // stops the component:
             if (rig.Hat != null) rig.Hat.enabled = false;                 // the glyph pool stays lit
+            if (rig.Stun != null) rig.Stun.enabled = false;               // and its marker is stage chrome too
             if (!keepRoot)                                                // and the hat is its own
             {                                                             // renderer off the sprite
                 if (rig.BarBg != null) rig.BarBg.enabled = false;         // transform, not the body
                 if (rig.BarFill != null) rig.BarFill.enabled = false;
                 rig.Root.gameObject.SetActive(false);
             }
+        }
+
+        /// <summary>Slipping out of a wild fight: a beat, then the world takes you back
+        /// where you stood. Bosses bar the way - a blocked try still spends the turn,
+        /// same as reaching for a friend with a full stable.</summary>
+        IEnumerator PlayerFlee(Fighter actor)
+        {
+            _ph = Ph.Acting;
+            if (_hasBoss)
+            {
+                Sfx.Play("fail");
+                View.SetMessage(Strings.Get("bt.noflee"));
+                yield return Fx.Wait(0.9f);
+                EndTurn();
+                yield break;
+            }
+            View.SetMessage(Strings.Get("bt.flee"));
+            yield return Fx.Wait(0.6f);
+            OnFled?.Invoke();
         }
 
         IEnumerator PlayerBefriend(Fighter actor)
@@ -1702,7 +1771,7 @@ namespace MoonThief
                 Game.State.Friends.Add(target.Rare ? "moon." + target.Species : target.Species);
                 View.Sparkle(tRig.Home + new Vector3(0f, tRig.BodyHeight * 0.5f, 0f), new Color(1f, 0.95f, 0.6f), 14);
                 Sfx.Play("befriend");
-                View.SetMessage(Strings.Get("bt.befriended", target.Name));
+                View.SetMessage(Strings.Get(target.Rare ? "bt.befriended.rare" : "bt.befriended", target.Name));
                 yield return FadeOut(tRig);
                 yield return Fx.Wait(0.5f);
             }

@@ -467,6 +467,7 @@ namespace MoonThief
             Director.OnBattleWon = OnEncounterWon;
             Director.OnBossWon = OnBossDefeated;
             Director.OnDefeat = OnRunLost;
+            Director.OnFled = OnEncounterWon;   // same way back: the wild things settle again
 
             Sfx.Init(transform);
             Sfx.Mus.Init(transform);

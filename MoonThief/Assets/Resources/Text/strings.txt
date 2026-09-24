@@ -127,16 +127,19 @@ menu.sweep|SWEEP
 menu.mend|MEND
 menu.befriend|BEFRIEND
 menu.morsel|MORSEL
-menu.run|LET GO
+menu.run|SLIP AWAY
 
 # ---- battle messages
 bt.one|A wild {0} blocks the way!
 bt.two|{0} and a friend appear!
 bt.moonlit|A MOONLIT {0} shimmers into view!
+bt.flee|The party melts back into the dark.
+bt.noflee|The Guard bars every way out!
 bt.boss|The {0} bars your way!
 bt.slam|The {0} rears up and SLAMS down!
 bt.enraged|The {0} is cornered - it fights without mercy now!
 bt.dazed|DAZED
+bt.miss|MISS
 bt.yourturn|{0} - your move.
 bt.friendturn|{0} fights for you!
 bt.enemyturn|{0} strikes!
@@ -144,6 +147,7 @@ bt.herodown|{0} falls...
 bt.fainted|{0} fades into mist.
 bt.trybefriend|{0} looks at you... ({1}%)
 bt.befriended|{0} joins you!
+bt.befriended.rare|The MOONLIT {0} joins your night!
 bt.befriendfail|{0} is not ready yet.
 bt.stablefull|Your stable is full.
 bt.morsel|You lay down a moonlit morsel.
