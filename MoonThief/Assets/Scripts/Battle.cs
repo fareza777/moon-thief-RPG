@@ -1485,6 +1485,23 @@ namespace MoonThief
             }
             _ph = Ph.Acting;
             View.SetTurnRig(View.RigOf(e), true);
+            // a wasp on its last legs would rather live elsewhere: under a quarter of
+            // its bar it may quit the field entirely - dive-bomber, not a martyr
+            var fam0 = e.Species != null && BattleData.Species(e.Species).HasValue
+                ? BattleData.FamilyOf(BattleData.Species(e.Species).Value) : "";
+            if (fam0 == "wasp" && !e.Boss && e.Hp01 < 0.25f && UnityEngine.Random.value < 0.35f)
+            {
+                var wRig = View.RigOf(e);
+                View.SetMessage(Strings.Get("bt.slipped", e.Name));
+                yield return Fx.Wait(0.35f);
+                e.Captured = true;   // gone like a catch, minus the pet: it left on its own
+                e.Hp = 0;
+                if (wRig != null) yield return FadeOut(wRig);
+                View.Refresh();
+                yield return Fx.Wait(0.5f);
+                EndTurn();
+                yield break;
+            }
             // cornered, the guard loses its patience: under a third of its bar it rears
             // up far more often and the blows land heavier
             if (e.Boss && e.Hp01 < 0.35f && !_enraged)
