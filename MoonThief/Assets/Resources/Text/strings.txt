@@ -98,6 +98,7 @@ ci.ch.3|NIGHT THREE\nthe dark wood
 # ---- hud
 hud.nightshort|NIGHT {0}
 hud.round|ROUND {0}
+hud.roundf|ROUND {0} - FLOW x{1}
 hud.explore|NIGHT {0}    SHARD {1}/{2}    GOLD {3}
 hud.quest|NEXT: {0}
 
@@ -132,6 +133,7 @@ bt.moonlit|A MOONLIT {0} shimmers into view!
 bt.boss|The {0} bars your way!
 bt.slam|The {0} rears up and SLAMS down!
 bt.enraged|The {0} is cornered - it fights without mercy now!
+bt.dazed|DAZED
 bt.yourturn|{0} - your move.
 bt.friendturn|{0} fights for you!
 bt.enemyturn|{0} strikes!

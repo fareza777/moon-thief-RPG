@@ -867,7 +867,7 @@ namespace MoonThief
         public Side Side;
         public int MaxHp, Hp, AtkMin, AtkMax;
         public float Speed;
-        public bool Boss, Captured, Dead, Rare;
+        public bool Boss, Captured, Dead, Rare, Dazed;
         public string BattlerPath;      // Resources path of the battler sprite
         public string Species;          // monster string key - set on wild foes and befriended allies
         public string ColorDir;         // party only: "color_1"

@@ -522,7 +522,9 @@ namespace MoonThief
             _hudNight.Set(Strings.Get("hud.nightshort", chapter));
         }
 
-        public void SetRound(int round) => _hudRound.Set(Strings.Get("hud.round", round));
+        public void SetRound(int round, int flow = 0) => _hudRound.Set(flow >= 2
+            ? Strings.Get("hud.roundf", round, flow)
+            : Strings.Get("hud.round", round));
 
         public void SetMessage(string text)
         {
@@ -1125,6 +1127,7 @@ namespace MoonThief
             _morselUsed = false;
             _befriended = 0;
             _enraged = false;
+            _flow = 0;
             _levelAtStart = Game.State.Level;
             AwaitingInput = false;
             // each night has its own ground: the hollow's woods, the long fields, the deep
@@ -1168,7 +1171,7 @@ namespace MoonThief
             all.Sort((a, b) => b.Speed.CompareTo(a.Speed));
             _queue.AddRange(all);
             _qi = 0;
-            View.SetRound(_round);
+            View.SetRound(_round, _flow);
             NextTurn();
         }
 
@@ -1187,7 +1190,18 @@ namespace MoonThief
                     return;
                 }
                 var f = _queue[_qi];
-                if (f.Alive) break;
+                if (f.Alive)
+                {
+                    if (!f.Dazed) break;
+                    // a dazed fighter loses its turn once - the stars show why
+                    f.Dazed = false;
+                    var dRig = View.RigOf(f);
+                    if (dRig != null)
+                        View.FloatNumber(dRig.Home + new Vector3(0f, 1.6f, 0f),
+                            Strings.Get("bt.dazed"), new Color(1f, 0.9f, 0.5f));
+                    _qi++;
+                    continue;
+                }
                 _qi++;
             }
             var cur = _queue[_qi];
@@ -1275,7 +1289,7 @@ namespace MoonThief
             yield return Lunge(aRig, tRig != null ? tRig.Home : aRig.Home, 0.3f);
             bool crit = UnityEngine.Random.value < 0.18f;
             bool weakHit = WeakTo(0, target);
-            int dmg = Mathf.RoundToInt(UnityEngine.Random.Range(f.AtkMin, f.AtkMax + 1) * (crit ? 1.6f : 1f) * (weakHit ? 1.5f : 1f));
+            int dmg = Mathf.RoundToInt(UnityEngine.Random.Range(f.AtkMin, f.AtkMax + 1) * (crit ? 1.6f : 1f) * (weakHit ? 1.5f : 1f) * FlowMul());
             HitFoe(target, dmg, crit, weakHit);
             View.Refresh();
             yield return Fx.Wait(0.45f);
@@ -1338,11 +1352,18 @@ namespace MoonThief
 
             int dmg = Mathf.RoundToInt(UnityEngine.Random.Range(e.AtkMin, e.AtkMax + 1) * (slam ? 1.6f : 1f) * (_enraged ? 1.25f : 1f));
             target.Hp = Mathf.Max(0, target.Hp - dmg);
+            if (_flow != 0) { _flow = 0; View.SetRound(_round); }   // momentum breaks on a hit taken
             var stagger = Bank.Frames(BattleData.ClipPath(target.ColorDir, "hit"));
             if (stagger.Length > 0) tRig.Anim.Play(stagger, 14f, false);
             else StartCoroutine(Fx.FlashTint(tRig.Anim, new Color(1f, 0.45f, 0.45f), 2, 0.08f, 0.08f));
             StartCoroutine(Fx.Shake(tRig.Root, slam ? 0.22f : 0.14f, 0.25f));
             if (slam) StartCoroutine(Fx.Shake(View.Stage, 0.15f, 0.2f));
+            if (slam && target.Alive && UnityEngine.Random.value < 0.25f)
+            {
+                target.Dazed = true;
+                View.FloatNumber(tRig.Home + new Vector3(0f, 1.9f, 0f),
+                    Strings.Get("bt.dazed"), new Color(1f, 0.9f, 0.5f));
+            }
             View.FloatNumber(tRig.Home + new Vector3(0f, 1.4f, 0f), "-" + dmg,
                 slam ? new Color(1f, 0.45f, 0.3f) : new Color(1f, 0.6f, 0.55f));
             Sfx.Play("hurt");
@@ -1377,6 +1398,7 @@ namespace MoonThief
             {
                 int dmg = UnityEngine.Random.Range(e.AtkMin, e.AtkMax + 1);
                 target.Hp = Mathf.Max(0, target.Hp - dmg);
+                _flow = 0;
             }
             EndTurn();
         }
@@ -1512,7 +1534,7 @@ namespace MoonThief
                 View.SetMessage(Strings.Get("bt.attack.2b", actor.Name, target.Name));
                 yield return Lunge(aRig, tRig.Home, 0.3f);
                 bool weakHit = WeakTo(2, target);
-                int pebble = Mathf.Max(1, Mathf.RoundToInt(UnityEngine.Random.Range(actor.AtkMin, actor.AtkMax + 1) * (weakHit ? 0.75f : 0.5f)));
+                int pebble = Mathf.Max(1, Mathf.RoundToInt(UnityEngine.Random.Range(actor.AtkMin, actor.AtkMax + 1) * (weakHit ? 0.75f : 0.5f) * FlowMul()));
                 HitFoe(target, pebble, false, weakHit);
                 yield return Fx.Wait(0.4f);
                 yield return Lunge(aRig, aRig.Home, 0.3f);
@@ -1538,7 +1560,7 @@ namespace MoonThief
                 {
                     if (!View.Enemies[i].Alive) continue;
                     bool weakHit = WeakTo(1, View.Enemies[i]);
-                    HitFoe(View.Enemies[i], Mathf.Max(1, Mathf.RoundToInt(roll * (weakHit ? 0.975f : 0.65f))), false, weakHit);
+                    HitFoe(View.Enemies[i], Mathf.Max(1, Mathf.RoundToInt(roll * (weakHit ? 0.975f : 0.65f) * FlowMul())), false, weakHit);
                 }
                 View.Refresh();
                 yield return Fx.Wait(0.5f);
@@ -1568,7 +1590,7 @@ namespace MoonThief
                 yield return Lunge(aRig, tRig.Home, 0.35f);
                 bool crit = UnityEngine.Random.value < 0.25f;
                 bool weakHit = WeakTo(0, target);
-                int dmg = Mathf.RoundToInt(UnityEngine.Random.Range(actor.AtkMin, actor.AtkMax + 1) * (crit ? 1.7f : 1f) * (weakHit ? 1.5f : 1f));
+                int dmg = Mathf.RoundToInt(UnityEngine.Random.Range(actor.AtkMin, actor.AtkMax + 1) * (crit ? 1.7f : 1f) * (weakHit ? 1.5f : 1f) * FlowMul());
                 View.SetMessage(crit ? Strings.Get("bt.attack.crit", actor.Name, dmg) : Strings.Get("bt.attack.0", actor.Name));
                 HitFoe(target, dmg, crit, weakHit);
                 View.Refresh();
@@ -1723,10 +1745,20 @@ namespace MoonThief
             EndTurn();
         }
 
+        /// <summary>Party momentum: each clean party turn adds +6% edge, up to nine stacks;
+        /// any hit a hero takes drops the streak back to nothing.</summary>
+        float FlowMul() => 1f + 0.06f * _flow;
+        int _flow;
+
         void EndTurn()
         {
             _ph = Ph.Round;
             View.SetTurnRig(null);
+            if (_qi < _queue.Count && _queue[_qi].Side == Side.Party && _flow < 9)
+            {
+                _flow++;
+                View.SetRound(_round, _flow);
+            }
             if (AllEnemiesGone()) { Win(); return; }
             if (PartyWiped()) { Lose(); return; }
             _qi++;
