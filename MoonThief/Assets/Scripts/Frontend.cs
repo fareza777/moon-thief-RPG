@@ -1097,7 +1097,9 @@ namespace MoonThief
             Sfx.Play("coin");
             ShowToast(Strings.Get("shop.soldout", got), 2.6f);
             RefreshShop();
-            Select(0);
+            // keep the cursor where the finger left it - a list that jumps to the top
+            // makes selling a stack a chore of re-scrolling
+            Select(_sel);
         }
 
         void Buy(string key)
