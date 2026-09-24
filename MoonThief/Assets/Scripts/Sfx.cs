@@ -150,6 +150,7 @@ namespace MoonThief
 
             static float _vol = 1f;
             static float _pitch = 1f;
+            static float _duck = 1f;        // context dip - cards breathe over a quieted band
 
             /// <summary>Playback speed/pitch of the live track — a touch of urgency when a
             /// fight turns, without re-cutting the loop.</summary>
@@ -167,7 +168,19 @@ namespace MoonThief
                 set
                 {
                     _vol = Mathf.Clamp01(value);
-                    if (_cur != null && _fade <= 0f) _cur.volume = 0.55f * _vol;
+                    if (_cur != null && _fade <= 0f) _cur.volume = 0.55f * _vol * _duck;
+                }
+            }
+
+            /// <summary>A temporary hush over the mix - a result card reads better with the
+            /// band half out of the way. Folds with Volume, restores with Play/duck 1.</summary>
+            public static float Duck
+            {
+                get => _duck;
+                set
+                {
+                    _duck = Mathf.Clamp01(value);
+                    if (_cur != null && _fade <= 0f) _cur.volume = 0.55f * _vol * _duck;
                 }
             }
 
@@ -228,7 +241,7 @@ namespace MoonThief
                 if (_a == null || _fade <= 0f) return;
                 _fade -= Time.deltaTime;
                 float k = 1f - Mathf.Clamp01(_fade / 0.45f);
-                if (_cur != null) _cur.volume = Mathf.Lerp(_cur.volume, 0.55f * Volume, k * 0.35f);
+                if (_cur != null) _cur.volume = Mathf.Lerp(_cur.volume, 0.55f * Volume * _duck, k * 0.35f);
                 var other = _cur == _a ? _b : _a;
                 other.volume = Mathf.Max(0f, other.volume - Time.deltaTime * 1.6f);
                 if (other.volume <= 0.001f) other.Stop();

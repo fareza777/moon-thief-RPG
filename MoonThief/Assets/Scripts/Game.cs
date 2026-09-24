@@ -855,7 +855,7 @@ namespace MoonThief
                 : World.HeroPos.y > 26f ? "zone.fields" : "zone.village");
 
             World.ShowBanner(Strings.Get("zone.arrive." + Mathf.Clamp(chapter, 1, 3)));
-            Sfx.Mus.Play("explore");
+            Sfx.Mus.Duck = 1f; Sfx.Mus.Play("explore");
             MakeHud();
             RefreshHud();
 
@@ -1539,7 +1539,7 @@ namespace MoonThief
 
         void OnEncounterWon()
         {
-            Sfx.Mus.Play("explore");
+            Sfx.Mus.Duck = 1f; Sfx.Mus.Play("explore");
             DoTransition(() =>
             {
                 BattleViewRef.gameObject.SetActive(false);
@@ -1560,7 +1560,7 @@ namespace MoonThief
 
         void OnBossDefeated()
         {
-            Sfx.Mus.Play("explore");
+            Sfx.Mus.Duck = 1f; Sfx.Mus.Play("explore");
             _bossDown = true;
             if (World != null) World.RemoveBoss();
             BattleViewRef.gameObject.SetActive(false);
@@ -1591,7 +1591,7 @@ namespace MoonThief
 
         void OnRunLost()
         {
-            Sfx.Mus.Play("explore");
+            Sfx.Mus.Duck = 1f; Sfx.Mus.Play("explore");
             DoTransition(() =>
             {
                 BattleViewRef.HideCard();
@@ -1624,7 +1624,7 @@ namespace MoonThief
                 BattleViewRef.gameObject.SetActive(false);
                 if (_hudZone != null) _hudZone.enabled = false;
                 _endRoot.gameObject.SetActive(true);
-                Sfx.Mus.Play("end");
+                Sfx.Mus.Duck = 1f; Sfx.Mus.Play("end");
                 _endLines.RevealSpeed = 0f;
                 _endLines.Set(Strings.Get("end.text", State.Befriended));
                 _endStats.Set(Strings.Get("end.stats", State.Level, State.Befriended,

@@ -1292,6 +1292,7 @@ namespace MoonThief
             var first = Strings.Get(introKey, View.Enemies[0].Name);
             View.SetMessage(first);
             Sfx.Mus.Intensity = 1f;             // whatever the last fight left behind
+            Sfx.Mus.Duck = 1f;                  // and the band comes back up for the fight
             Sfx.Mus.Play(hasBoss ? "boss" : "battle");
             Sfx.Play(hasBoss ? "boss" : "enemy");
             if (Application.isPlaying) StartCoroutine(Timer(1.4f, RoundStart));
@@ -2342,6 +2343,7 @@ namespace MoonThief
         {
             _ph = Ph.Card;
             Sfx.Mus.Intensity = 1f;
+            Sfx.Mus.Duck = 0.5f;            // the band steps back while the card has the floor
             AwaitingInput = false;
             View.SetMenuVisible(false);
 
@@ -2426,6 +2428,7 @@ namespace MoonThief
         {
             _ph = Ph.Card;
             Sfx.Mus.Intensity = 1f;
+            Sfx.Mus.Duck = 0.5f;
             AwaitingInput = false;
             View.SetMenuVisible(false);
             // slinking home costs a handful of gold: standing back up for another
