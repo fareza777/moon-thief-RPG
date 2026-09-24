@@ -549,6 +549,11 @@ namespace MoonThief
         public void SetNight(int chapter)
         {
             _hudNight.Set(Strings.Get("hud.nightshort", chapter));
+            // the ground answers the night too: violet dark in the wood, steel cold on
+            // the plain, a drowned pale under the keep
+            _floorTint.color = chapter >= 3 ? new Color32(14, 26, 30, 255)
+                : chapter == 2 ? new Color32(15, 19, 36, 255)
+                : new Color32(17, 14, 30, 255);
         }
 
         public void SetRound(int round, int flow = 0) => _hudRound.Set(flow >= 2
@@ -2022,6 +2027,9 @@ namespace MoonThief
 
         IEnumerator FadeOut(BattleView.Rig rig, bool keepRoot = false)
         {
+            // what leaves a body should be seen leaving: a small pale burst rises
+            // where the fighter stood as it goes
+            View.Sparkle(rig.Home + new Vector3(0f, 0.9f, 0f), new Color(0.85f, 0.9f, 1f, 0.9f), 8);
             yield return Fx.Fade(rig.Anim, new Color(1f, 1f, 1f, 0f), 0.45f);
             rig.Sr.enabled = false;
             rig.Anim.SetTint(Color.white);
