@@ -478,6 +478,9 @@ namespace MoonThief
             {
                 rig.F.Hp = rig.F.MaxHp;
                 rig.F.Dead = false;
+                // a new duel is a clean slate: last fight's venom and stars stay there
+                rig.F.Poison = 0;
+                rig.F.Dazed = false;
                 rig.Root.gameObject.SetActive(true);
                 rig.Root.localPosition = rig.Home;
                 rig.Body.localPosition = Vector3.zero;
