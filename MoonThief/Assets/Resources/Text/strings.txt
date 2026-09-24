@@ -162,6 +162,8 @@ bt.attack.0|{0} lunges!
 bt.attack.1|{0} sweeps the whole field!
 bt.attack.2|{0} mends {1}!
 bt.attack.2c|{0} weaves a warm mending over {1}!
+bt.attack.2x|{0} mends {1} and draws the venom out!
+bt.cleanse|{0} draws the venom out of {1}.
 bt.attack.2b|{0} throws a pebble at {1}!
 bt.attack.crit|{0} finds the weak seam! {1} damage!
 bt.weak|WEAK!

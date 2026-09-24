@@ -759,6 +759,7 @@ namespace MoonThief
                 DrawFill(rig);
                 rig.Name.SetColor(!alive ? new Color(0.5f, 0.46f, 0.56f)
                     : rig.F.Hp01 <= 0.22f ? new Color(1f, 0.62f, 0.55f)   // hurt enough to worry: the name warms
+                    : rig.F.Poison > 0 ? new Color(0.62f, 1f, 0.6f)       // venom green while it runs
                     : new Color(0.92f, 0.94f, 1f));
                 if (rig.NameChip != null) Plate(rig.NameChip, rig.Name, rig.F.Name, rig.F.Boss, rig.F.Species != null);
             }
@@ -1670,7 +1671,9 @@ namespace MoonThief
                     int heal = Mathf.Max(4, (actor.AtkMin + actor.AtkMax) / 2 + Game.State.Level);
                     if (mendCrit) heal = Mathf.RoundToInt(heal * 1.6f);
                     weak.Hp = Mathf.Min(weak.MaxHp, weak.Hp + heal);
-                    View.SetMessage(Strings.Get(mendCrit ? "bt.attack.2c" : "bt.attack.2", actor.Name, weak.Name));
+                    bool cured = weak.Poison > 0;
+                    weak.Poison = 0;    // a mender's touch draws the venom out with the wound
+                    View.SetMessage(Strings.Get(mendCrit ? "bt.attack.2c" : cured ? "bt.attack.2x" : "bt.attack.2", actor.Name, weak.Name));
                     if (wRig != null)
                     {
                         View.Sparkle(wRig.Home + new Vector3(0f, 1.1f, 0f), new Color(0.6f, 1f, 0.75f), mendCrit ? 14 : 8);
@@ -1679,6 +1682,26 @@ namespace MoonThief
                     Sfx.Play("heal");
                     View.Refresh();
                     yield return Fx.Wait(0.6f);
+                    yield return Lunge(aRig, aRig.Home, 0.3f);
+                    PlayIdle(aRig);
+                    EndTurn();
+                    yield break;
+                }
+                // nobody bleeding: a stung friend still needs moss before the venom ticks again
+                Fighter ill = null;
+                foreach (var p in View.Party)
+                    if (p.Alive && p.Poison > 0) { ill = p; break; }
+                if (ill != null)
+                {
+                    var iRig = View.RigOf(ill);
+                    yield return Lunge(aRig, iRig != null ? iRig.Home : aRig.Home, 0.3f);
+                    ill.Poison = 0;
+                    View.SetMessage(Strings.Get("bt.cleanse", actor.Name, ill.Name));
+                    if (iRig != null)
+                        View.Sparkle(iRig.Home + new Vector3(0f, 1.1f, 0f), new Color(0.6f, 1f, 0.75f), 8);
+                    Sfx.Play("heal");
+                    View.Refresh();
+                    yield return Fx.Wait(0.55f);
                     yield return Lunge(aRig, aRig.Home, 0.3f);
                     PlayIdle(aRig);
                     EndTurn();
