@@ -1328,12 +1328,14 @@ namespace MoonThief
             {
                 var n = Npcs[i];
                 if (n.Root == null) continue;
+                bool ready = false;
                 bool wants = n.Npc.NameKey == "npc.elder" && Quests.Step("mq.1") == 0;
+                if (wants) ready = true;   // the story's giver gets the warm mark
                 if (!wants)
                 {
                     // a giver mid-errand wears no mark - the bubble means "needs you now":
                     // a new offer, or a finished errand ready to hand in
-                    var q = Quests.ForGiver(n.Npc.NameKey, out bool ready);
+                    var q = Quests.ForGiver(n.Npc.NameKey, out ready);
                     wants = q != null && (Quests.Step(q.Id) == 0 || ready);
                 }
                 if (n.Alert == null)
@@ -1347,6 +1349,10 @@ namespace MoonThief
                     n.Alert.sortingOrder = 2100;
                 }
                 n.Alert.enabled = wants && _textOn;
+                // warm gold means "come collect": a finished errand or the story giver;
+                // cool silver means "new work here"
+                if (wants) n.Alert.color = ready
+                    ? new Color(1f, 0.85f, 0.4f) : new Color(0.75f, 0.85f, 1f);
                 if (wants)
                     n.Alert.transform.localPosition = new Vector3(0f, 2.95f + Mathf.Sin(_time * 5f + i) * 0.12f, 0f);
             }
