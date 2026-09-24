@@ -298,7 +298,7 @@ dl.marn.1|Wares for the dark. Gold keeps the lantern lit.
 dl.marn.2|You look like trouble. My favourite kind of customer.
 
 # ---- battle messages, part two
-bt.morsel2|{0} is shared out. The party gains {1} HP.
+bt.morsel2|{0} is shared out. +{1} HP. Wild things sniff closer.
 bt.nofood|The bag has nothing left to eat.
 
 # ---- interact, part two
@@ -348,6 +348,7 @@ jr.quests.sub|ACTIVE {0}   DONE {1}
 jr.main|MAIN
 jr.new|NEW
 jr.active|ACTIVE
+jr.prog|{0}/{1}
 jr.ready|READY
 jr.done|DONE
 jr.page|NEXT PAGE {0}/{1}
