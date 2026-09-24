@@ -846,7 +846,9 @@ namespace MoonThief
         string SaveStamp()
         {
             var d = SaveSystem.Read();
-            return d == null || string.IsNullOrEmpty(d.stamp) ? "" : Strings.Get("hud.nightshort", d.chapter);
+            // stamp reads "NIGHT 2  L7": the run's depth and strength at a glance
+            return d == null || string.IsNullOrEmpty(d.stamp) ? ""
+                : Strings.Get("hud.nightshort", d.chapter) + "  L" + (1 + d.xp / 40);
         }
 
         public void ShowSettings(bool fromPause)
