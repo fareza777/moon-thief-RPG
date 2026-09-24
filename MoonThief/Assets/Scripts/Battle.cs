@@ -749,8 +749,9 @@ namespace MoonThief
             bool on = rig.F != null && rig.F.Alive && rig.F.Dazed;
             rig.Stun.enabled = on;
             if (!on) return;
+            // same altitude as the ward/poison omens: above the name plate, clear of it
             rig.Stun.transform.localPosition = new Vector3(rig.Home.x,
-                rig.Home.y + rig.BodyHeight + 0.55f + Mathf.Sin(_time * 6f) * 0.08f, 0f);
+                rig.Home.y + rig.BodyHeight + 1.9f + Mathf.Sin(_time * 6f) * 0.08f, 0f);
             rig.Stun.transform.localEulerAngles = new Vector3(0f, 0f, _time * 240f);
             rig.Stun.transform.localScale = Vector3.one * (1.5f + Mathf.Sin(_time * 8f) * 0.15f);
         }
@@ -761,9 +762,10 @@ namespace MoonThief
             bool on = rig.F != null && rig.F.Alive && rig.F.Poison > 0;
             rig.PoisonMark.enabled = on;
             if (!on) return;
-            // it drips off the right shoulder - the ward shield owns the left
+            // the omens ride above the name plate (+1.05 is the label's anchor, its text
+            // hangs below it): at +0.5 the marks chewed through the plate and the chevrons
             rig.PoisonMark.transform.localPosition = new Vector3(rig.Home.x + 0.85f,
-                rig.Home.y + rig.BodyHeight + 0.5f + Mathf.Sin(_time * 7f) * 0.11f, 0f);
+                rig.Home.y + rig.BodyHeight + 1.9f + Mathf.Sin(_time * 7f) * 0.11f, 0f);
             rig.PoisonMark.transform.localScale = Vector3.one * (1.2f + Mathf.Sin(_time * 9f) * 0.14f);
         }
 
@@ -774,9 +776,10 @@ namespace MoonThief
             rig.WardMark.enabled = on;
             if (!on) return;
             // it hovers off the shoulder, breathing - opposite the daze star so a fighter
-            // could in principle carry both omens at once
+            // could in principle carry both omens at once. Above the name plate (+1.9):
+            // the PALE GUARD's shield used to sit inside its own label
             rig.WardMark.transform.localPosition = new Vector3(rig.Home.x - 0.85f,
-                rig.Home.y + rig.BodyHeight + 0.55f + Mathf.Sin(_time * 5f) * 0.09f, 0f);
+                rig.Home.y + rig.BodyHeight + 1.9f + Mathf.Sin(_time * 5f) * 0.09f, 0f);
             rig.WardMark.transform.localScale = Vector3.one * (1.35f + Mathf.Sin(_time * 7f) * 0.12f);
         }
 
@@ -1152,7 +1155,8 @@ namespace MoonThief
             go.transform.SetParent(Stage, false);
             go.transform.localPosition = new Vector3(pos.x, pos.y, 0f);
             var label = go.AddComponent<PixelLabel>();
-            label.Configure(scale, color, TextAlign.Center, 40);
+            // above the burst sparks (42): "WARDED" used to render behind its own shower
+            label.Configure(scale, color, TextAlign.Center, 48);
             label.SnapToPixelGrid = false;
             // damage numbers drift over whatever art the arena uses; without a shadow they
             // vanish into the light patches

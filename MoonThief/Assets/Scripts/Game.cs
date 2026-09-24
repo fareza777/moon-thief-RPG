@@ -243,6 +243,8 @@ namespace MoonThief
         bool _metMira;
         readonly HashSet<string> _metNpcs = new HashSet<string>();
         bool _hintTalk = true, _hintChest = true;
+        float _hintT;                                            // countdown for the deferred chapter toast
+        string _hintKey;
         PixelLabel _hudQuest;
         SpriteRenderer _hudQuestChip;
         Vector2? _resumePos;
@@ -905,8 +907,10 @@ namespace MoonThief
             _encounterCooldown = 3.5f;
             SaveRun();
 
-            if (chapter == 1) Menus.ShowToast(Strings.Get("onb.move"), 4.5f);
-            else if (chapter == 3) Menus.ShowToast(Strings.Get("quest.4"), 4.0f);
+            // the banner owns the top band for its first couple of seconds - a toast
+            // landing on the same beat was one text printed through another
+            if (chapter == 1) { _hintT = 2.6f; _hintKey = "onb.move"; }
+            else if (chapter == 3) { _hintT = 2.6f; _hintKey = "quest.4"; }
         }
 
         void RefreshHud()
@@ -1125,6 +1129,17 @@ namespace MoonThief
             FollowHero();
             World.SetObjective(ObjectivePos());
 
+            // the deferred chapter toast fires once the banner has had its beat
+            if (_hintT > 0f)
+            {
+                _hintT -= Time.deltaTime;
+                if (_hintT <= 0f && _hintKey != null)
+                {
+                    Menus.ShowToast(Strings.Get(_hintKey), 4.2f);
+                    _hintKey = null;
+                }
+            }
+
             // encounters
             _encounterCooldown -= Time.deltaTime;
             var touched = World.TouchedMonster();
@@ -1143,13 +1158,14 @@ namespace MoonThief
                 return;
             }
 
-            // first chest in reach: one nudge, then never again
-            if (_hintChest && World.ChestsLeft > 0 && World.NearestChest(World.HeroPos, 3f) >= 0)
+            // first chest in reach: one nudge, then never again. The hint waits out the
+            // zone banner - "Walk up to a villager" over "NIGHT ONE" was one text on another
+            if (_hintChest && World.ChestsLeft > 0 && !World.BannerUp && World.NearestChest(World.HeroPos, 3f) >= 0)
             {
                 _hintChest = false;
                 Menus.ShowToast(Strings.Get("onb.chest"), 3.6f);
             }
-            if (_hintTalk && !_metMira && World.Npcs.Count > 0)
+            if (_hintTalk && !_metMira && !World.BannerUp && World.Npcs.Count > 0)
             {
                 var npc = World.NearestNpc(World.HeroPos, 4f);
                 if (npc.NameKey != null)

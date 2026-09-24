@@ -2170,9 +2170,9 @@ namespace MoonThief
                 if (_bark != null && _barkActor?.Root != null)
                 {
                     var ap = (Vector2)_barkActor.Root.localPosition;
-                    _bark.transform.localPosition = new Vector3(ap.x, ap.y + NameAnchorY + 0.7f, 0f);
+                    _bark.transform.localPosition = new Vector3(ap.x, ap.y + NameAnchorY + 1.15f, 0f);
                     _barkChip.transform.localPosition = new Vector3(
-                        ap.x, ap.y + NameAnchorY + 0.7f - _barkChip.transform.localScale.y * 0.32f, 0f);
+                        ap.x, ap.y + NameAnchorY + 1.15f - _barkChip.transform.localScale.y * 0.32f, 0f);
                 }
                 if (_barkT <= 0f && _bark != null)
                 {
@@ -2210,8 +2210,10 @@ namespace MoonThief
             _barkChip.transform.localScale = new Vector3(w + 0.55f, h + 0.34f, 1f);
             _barkActor = who;
             var pos = (Vector2)who.Root.localPosition;
-            _bark.transform.localPosition = new Vector3(pos.x, pos.y + NameAnchorY + 0.7f, 0f);
-            _barkChip.transform.localPosition = new Vector3(pos.x, pos.y + NameAnchorY + 0.7f - (h + 0.34f) * 0.32f, 0f);
+            // a full label-height over the name plate: at +0.7 the bubble's hung text
+            // still came down onto the sprite's own bounds (and any friend beside it)
+            _bark.transform.localPosition = new Vector3(pos.x, pos.y + NameAnchorY + 1.15f, 0f);
+            _barkChip.transform.localPosition = new Vector3(pos.x, pos.y + NameAnchorY + 1.15f - (h + 0.34f) * 0.32f, 0f);
             _bark.gameObject.SetActive(true);
             _barkChip.enabled = true;
             _barkT = 2.6f;
