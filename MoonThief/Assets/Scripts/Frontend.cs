@@ -1404,11 +1404,12 @@ namespace MoonThief
             bool known = Game.State.Seen.ContainsKey(spec.Name);
             // a species that walks with the party carries its mark on the page
             bool tamed = Game.State.Friends.Contains(spec.Name) || Game.State.Friends.Contains("moon." + spec.Name);
-            labels.Add(known
-                ? Strings.Get(spec.Name) + (tamed ? " <" + Strings.Get("jr.friend") + ">" : "")
-                : Strings.Get("jr.unknown"));
+            labels.Add(known ? Strings.Get(spec.Name) : Strings.Get("jr.unknown"));
+            // a kept friend's mark owns the value column: the stats line is long enough
+            // that it crowds the name down to three letters, and the tag never printed
             vals.Add(known
-                ? Strings.Get("jr.beast", spec.Hp, spec.AtkMin, spec.AtkMax, WeaknessOf(spec))
+                ? tamed ? Strings.Get("jr.friend")
+                    : Strings.Get("jr.beast", spec.Hp, spec.AtkMin, spec.AtkMax, WeaknessOf(spec))
                 : "?");
             var s2 = spec;
             if (tamed)

@@ -1159,7 +1159,9 @@ namespace MoonThief
         {
             var pool = new List<MonsterSpec>();
             foreach (var s in BattleData.Bestiary)
-                if (s.Chapter <= chapter && (yMax > 59 ? s.Chapter >= 2 : true))
+                // gatekeepers are not field spawns: a wandering thane that dies as a wild
+                // thing still ran the boss-defeat path and opened the ending early
+                if (!s.Boss && s.Chapter <= chapter && (yMax > 59 ? s.Chapter >= 2 : true))
                     pool.Add(s);
             if (pool.Count == 0) return;
             var spec = pool[rng.Next(pool.Count)];
