@@ -221,6 +221,7 @@ namespace MoonThief
         readonly HashSet<string> _metNpcs = new HashSet<string>();
         bool _hintTalk = true, _hintChest = true;
         PixelLabel _hudQuest;
+        SpriteRenderer _hudQuestChip;
         Vector2? _resumePos;
         System.Action _afterScreen;
 
@@ -853,6 +854,16 @@ namespace MoonThief
             if (text == _questText) return;
             _questText = text;
             _hudQuest.Set(text);
+            if (_hudQuestChip != null)
+            {
+                // the chip hugs the measured note: a one-line goal gets a one-line slab,
+                // a wrapped one gets both lines covered
+                float w = _hudQuest.MeasureWidth(text), h = _hudQuest.MeasureHeight(text);
+                _hudQuestChip.size = new Vector2(w + 0.4f, h + 0.3f);
+                _hudQuestChip.transform.localPosition = new Vector3(
+                    _hudQuest.transform.localPosition.x + w * 0.5f,
+                    _hudQuest.transform.localPosition.y - h * 0.5f - 0.06f, 0f);
+            }
         }
 
         string QuestText()
@@ -1467,7 +1478,7 @@ namespace MoonThief
             _joyTouch = false;
             World.gameObject.SetActive(false);
             if (_hudZone != null) _hudZone.enabled = false;
-            if (_hudQuest != null) _hudQuest.enabled = false;
+            SetHudQuestVisible(false);
             BattleViewRef.gameObject.SetActive(true);
             Director.StartBattle(specs);
             bool boss = false;
@@ -1483,7 +1494,7 @@ namespace MoonThief
             Phase = St.Explore;
             World.gameObject.SetActive(true);
             if (_hudZone != null) _hudZone.enabled = true;
-            if (_hudQuest != null) _hudQuest.enabled = true;
+            SetHudQuestVisible(true);
             _paused = false;
             FollowHero();
             World.ResetForChapter();
@@ -1503,7 +1514,7 @@ namespace MoonThief
             Phase = St.Explore;
             World.gameObject.SetActive(true);
             if (_hudZone != null) _hudZone.enabled = true;
-            if (_hudQuest != null) _hudQuest.enabled = true;
+            SetHudQuestVisible(true);
             FollowHero();
             World.SetTextVisible(true);
 
@@ -1534,7 +1545,7 @@ namespace MoonThief
                 Phase = St.Explore;
                 World.gameObject.SetActive(true);
                 if (_hudZone != null) _hudZone.enabled = true;
-                if (_hudQuest != null) _hudQuest.enabled = true;
+                SetHudQuestVisible(true);
                 _paused = false;
                 World.ResetForChapter();
                 World.PlaceHero(World.Map.VillageCenter);
@@ -1926,8 +1937,22 @@ namespace MoonThief
                 // over the village. 11.4 units keeps it a two-line note in the corner.
                 _hudQuest.MaxWidthUnits = 11.4f;
             }
+            if (_hudQuestChip == null)
+            {
+                // a faint chip under the goal line: light pixel text over sunlit grass was
+                // unreadable, and the zone banner already carries the same dark backing
+                _hudQuestChip = SpriteRendererUtil.Make(World.HudRoot, "hudQuestChip", TexArt.Solid(), 5000);
+                _hudQuestChip.drawMode = SpriteDrawMode.Sliced;
+                _hudQuestChip.color = new Color32(10, 8, 20, 150);
+            }
             _hudQuest.transform.localPosition = new Vector3(G.Left + 0.55f, HalfH - 1.7f, 0f);
-            _hudQuest.enabled = true;
+            SetHudQuestVisible(true);
+        }
+
+        void SetHudQuestVisible(bool v)
+        {
+            _hudQuest.enabled = v;
+            if (_hudQuestChip != null) _hudQuestChip.enabled = v && _hudQuest.gameObject.activeSelf;
         }
 
         public void EditorDialog()
@@ -1983,7 +2008,7 @@ namespace MoonThief
             Menus.Hide();
             World.gameObject.SetActive(false);
             if (_hudZone != null) _hudZone.enabled = false;
-            if (_hudQuest != null) _hudQuest.enabled = false;
+            SetHudQuestVisible(false);
             SetCamY(0f);
             BattleViewRef.gameObject.SetActive(true);
             Director.StartBattle(BattleData.Roll(State.Chapter, new System.Random(7)));

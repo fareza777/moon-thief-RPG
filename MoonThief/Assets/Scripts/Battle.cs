@@ -199,6 +199,7 @@ namespace MoonThief
                 var s = BattleData.Species(key);
                 if (s.HasValue) friends.Add(s.Value);
             }
+
             Party = new Fighter[specs.Length + friends.Count];
             PartyRigs = new Rig[Party.Length];
             float[] xs = PartyXs(Party.Length);
@@ -258,7 +259,7 @@ namespace MoonThief
                 rig.Name.transform.localPosition = new Vector3(home.x, PartyFeet - 0.53f, 0f);
                 rig.Name.Set(Party[i].Name);
                 rig.NameChip = SpriteRendererUtil.Make(Stage, "pnameChip" + i, TexArt.Solid(), 23);
-                Plate(rig.NameChip, rig.Name, Party[i].Name);
+                Plate(rig.NameChip, rig.Name, Party[i].Name, false, Party[i].Species != null);
                 rig.BarBg = SpriteRendererUtil.Make(Stage, "pbg" + i, TexArt.Solid(), 22);
                 rig.BarFill = SpriteRendererUtil.Make(Stage, "pfill" + i, TexArt.Solid(), 23);
                 rig.Anim.Play(friend
@@ -638,7 +639,7 @@ namespace MoonThief
                 rig.BarFill.enabled = alive && w > 0.03f;
                 if (rig.BarFill.enabled) Box(rig.BarFill, left + 0.0625f, PartyFeet - 0.415f, w - 0.0625f, 0.17f, c);
                 rig.Name.SetColor(alive ? new Color(0.92f, 0.94f, 1f) : new Color(0.5f, 0.46f, 0.56f));
-                if (rig.NameChip != null) Plate(rig.NameChip, rig.Name, rig.F.Name);
+                if (rig.NameChip != null) Plate(rig.NameChip, rig.Name, rig.F.Name, rig.F.Boss, rig.F.Species != null);
             }
             for (int i = 0; i < EnemyRigs.Length; i++)
             {
@@ -944,13 +945,16 @@ namespace MoonThief
 
         /// <summary>Fits a dark plate to the measured name above it, so a short name and a
         /// long one both get a plate that matches.</summary>
-        void Plate(SpriteRenderer chip, PixelLabel label, string text, bool boss = false)
+        void Plate(SpriteRenderer chip, PixelLabel label, string text, bool boss = false, bool friend = false)
         {
             var at = label.transform.localPosition;
             float w = Mathf.Max(1.0f, label.MeasureWidth(text) + 0.46f);
             float h = PixelFont.GlyphHUnits(1) + 0.16f;
+            // a befriended beast wears a warm plate, a boss a red one, everything else night-dark
             Box(chip, at.x - w * 0.5f, at.y - h + 0.05f, w, h,
-                boss ? new Color32(48, 10, 18, 215) : new Color32(10, 8, 20, 205));
+                boss ? new Color32(48, 10, 18, 215)
+                     : friend ? new Color32(58, 42, 14, 220)
+                     : new Color32(10, 8, 20, 205));
         }
 
         static void Box(SpriteRenderer sr, float left, float bottom, float wUnits, float hUnits, Color color)

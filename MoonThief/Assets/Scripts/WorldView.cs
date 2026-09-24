@@ -1008,6 +1008,24 @@ namespace MoonThief
 
         // ---------------------------------------------------------------- actors
 
+        /// <summary>A character's floating name with a fitted chip behind it. A label hangs
+        /// DOWN from its anchor, and the pack's chara cell is 16x20 (the actor stands 1.25
+        /// units on its own origin), so the anchor clears the head with a 2-pixel breath.
+        /// The chip is measured from the text it carries, so a short name gets a short tag.</summary>
+        void MakeNamePlate(Actor a, string label, Color32 chipColor)
+        {
+            a.Name = PixelLabelUtil.Make(_root, a.Root.name + "Name", 1, new Color(0.95f, 0.9f, 0.75f), TextAlign.Center, 2100);
+            var at = (Vector2)a.Root.localPosition;
+            a.Name.transform.localPosition = new Vector3(at.x, at.y + NameAnchorY, 0f);
+            a.Name.Set(label);
+            float textW = a.Name.MeasureWidth(label), textH = a.Name.MeasureHeight(label);
+            var chip = SpriteRendererUtil.Make(a.Root, a.Root.name + "Chip", TexArt.Solid(), 2099);
+            chip.transform.localPosition = new Vector3(0f, NameAnchorY - textH * 0.5f - 0.02f, 0f);
+            chip.transform.localScale = new Vector3(Mathf.Max(0.9f, textW + 0.34f), textH + 0.24f, 1f);
+            chip.color = chipColor;
+            a.NameChip = chip;
+        }
+
         void SpawnNpcs(NpcDef[] defs)
         {
             for (int i = 0; i < defs.Length; i++)
@@ -1021,22 +1039,8 @@ namespace MoonThief
                 a.Npc = defs[i];
                 a.IsNpc = true;
                 a.Anim.Play(CharaClip(Folks.Sheet(defs[i]), Dir.Down), 3f, true);
-                a.Name = PixelLabelUtil.Make(_root, "npcName" + i, 1, new Color(0.95f, 0.9f, 0.75f), TextAlign.Center, 2100);
-                // A label hangs DOWN from its anchor, and the pack's chara cell is 16x20 (the
-                // villager stands 1.25 units on her own origin), so the anchor clears the head
-                // with a 2-pixel breath: at +1.1 the name sat on the villager's chest, and the
-                // fixed 0.56-unit slab under it floated like a loose sticker either way.
-                a.Name.transform.localPosition = new Vector3(spot.x, spot.y + NameAnchorY, 0f);
                 string label = Strings.Get(defs[i].NameKey);
-                a.Name.Set(label);
-                // dark chip behind the name so it stays readable on bright grass - measured from
-                // the text it carries, so a two-letter name gets a two-letter tag
-                float textW = a.Name.MeasureWidth(label), textH = a.Name.MeasureHeight(label);
-                var chip = SpriteRendererUtil.Make(a.Root, "npcChip" + i, TexArt.Solid(), 2099);
-                chip.transform.localPosition = new Vector3(0f, NameAnchorY - textH * 0.5f - 0.02f, 0f);
-                chip.transform.localScale = new Vector3(Mathf.Max(0.9f, textW + 0.34f), textH + 0.24f, 1f);
-                chip.color = new Color32(10, 8, 20, 205);
-                a.NameChip = chip;
+                MakeNamePlate(a, label, new Color32(10, 8, 20, 205));
                 Npcs.Add(a);
             }
         }
@@ -1296,6 +1300,17 @@ namespace MoonThief
                 bool near = (i == near0 || i == near1) && d >= 1.6f && d <= 5.5f;
                 _plateOk.Add(near);
             }
+            // befriended beasts wear their warm tag whenever it can sit cleanly - it is how a
+            // tamed slime reads different from the wild one drifting two tiles over
+            for (int i = 0; i < _friends.Count; i++)
+            {
+                var fr = _friends[i];
+                if (fr.Name == null || fr.Root == null) continue;
+                float d = Hero != null ? Vector2.Distance(fr.Root.localPosition, HeroPos) : 99f;
+                _plates.Add(fr.Name);
+                _plateOwner.Add(fr);
+                _plateOk.Add(d >= 0.9f && d <= 5.5f);
+            }
 
             // quest bubbles: a villager with something to offer (or to hand in) wears a "!"
             // over the name plate, so the errands announce themselves from across the square.
@@ -1336,6 +1351,8 @@ namespace MoonThief
                 if (Monsters[i].Sr != null && Monsters[i].Sr.sprite != null) _bodies.Add(BodyBox(Monsters[i]));
             for (int i = 0; i < Npcs.Count; i++)
                 if (Npcs[i].Sr != null && Npcs[i].Sr.sprite != null) _bodies.Add(BodyBox(Npcs[i]));
+            for (int i = 0; i < _friends.Count; i++)
+                if (_friends[i].Sr != null && _friends[i].Sr.sprite != null) _bodies.Add(BodyBox(_friends[i]));
 
             _plateRects.Clear();
             for (int i = 0; i < _plates.Count; i++)
@@ -1622,6 +1639,8 @@ namespace MoonThief
             "Art/Hero/hero/color_3/walk/hero_walk_DOWN",
         };
 
+        static readonly Color32 FriendChip = new Color32(58, 42, 14, 215);
+
         /// <summary>Beasts raised in battle walk the line too: a befriended monster joins the
         /// trail behind sea and moss on the first frame back in the world. Built here (and
         /// called again when a battle lets one go) so a saved game keeps its company.</summary>
@@ -1638,9 +1657,10 @@ namespace MoonThief
                 if (!s.HasValue) continue;
                 var f = MakeActor(Vector2.zero, WorldOrder(0f), isNpc: false);
                 f.Root.name = "friend" + _friends.Count;
-                f.Name = null;
                 f.Speed = 4.6f;
                 f.Spec = s.Value;
+                // a warm tag tells it apart from the wild look-alikes roaming the same fields
+                MakeNamePlate(f, Strings.Get(s.Value.Name), FriendChip);
                 var spr = TexArt.MapMonster(s.Value.MapSheet, 1);
                 if (spr != null) f.Anim.Play(new[] { spr }, 1f, true);
                 if (Hero?.Root != null)
@@ -1839,18 +1859,21 @@ namespace MoonThief
                     // crumb instead of walking a kilometre of wall
                     f.Root.localPosition = target;
                     if (f.Body != null) f.Body.localPosition = Vector3.zero;
-                    continue;
                 }
-                if (d <= 0.05f)
+                else if (d <= 0.05f)
                 {
                     if (f.Body != null) f.Body.localPosition = Vector3.zero;
-                    continue;
                 }
-                float step = Mathf.Min(d, 5.4f * dt);
-                pos = Vector2.MoveTowards(pos, target, step);
-                f.Root.localPosition = new Vector3(pos.x, pos.y, 0f);
-                if (f.Body != null)
-                    f.Body.localPosition = new Vector3(0f, StepBob(_time, 8f, i * 1.7f), 0f);
+                else
+                {
+                    float step = Mathf.Min(d, 5.4f * dt);
+                    pos = Vector2.MoveTowards(pos, target, step);
+                    f.Root.localPosition = new Vector3(pos.x, pos.y, 0f);
+                    if (f.Body != null)
+                        f.Body.localPosition = new Vector3(0f, StepBob(_time, 8f, i * 1.7f), 0f);
+                }
+                if (f.Name != null)
+                    f.Name.transform.localPosition = new Vector3(f.Root.localPosition.x, f.Root.localPosition.y + NameAnchorY, 0f);
             }
         }
 
