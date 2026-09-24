@@ -427,7 +427,9 @@ namespace MoonThief
                 };
                 f.Hp = f.MaxHp;
                 Enemies[i] = f;
-                float x = specs.Length == 1 ? 0f : (i == 0 ? -4.4f : 4.4f);
+                float x = specs.Length == 1 ? 0f
+                    : specs.Length == 2 ? (i == 0 ? -4.4f : 4.4f)
+                    : (i - 1) * 5.2f;   // three abreast: left, centre, right
                 float y = HudBottom - (spec.Boss ? 8.6f : 6.2f);
                 var home = new Vector3(x, y, 0f);
                 var rig = MakeRig(f, home, 10 + i);
@@ -1213,8 +1215,18 @@ namespace MoonThief
             _hasBoss = hasBoss;
             bool anyRare = false;
             foreach (var en in View.Enemies) if (en.Rare) anyRare = true;
-            var first = Strings.Get(hasBoss ? "bt.boss" : anyRare ? "bt.moonlit" : specs.Length > 1 ? "bt.two" : "bt.one",
-                View.Enemies[0].Name);
+            string introKey;
+            if (hasBoss) introKey = "bt.boss";
+            else if (anyRare) introKey = "bt.moonlit";
+            else if (specs.Length > 2) introKey = "bt.three";
+            else if (specs.Length > 1) introKey = "bt.two";
+            else
+            {
+                // one wild thing introduces itself the way its kind would
+                var fam0 = BattleData.FamilyOf(specs[0]);
+                introKey = Strings.Has("bt.fam." + fam0) ? "bt.fam." + fam0 : "bt.one";
+            }
+            var first = Strings.Get(introKey, View.Enemies[0].Name);
             View.SetMessage(first);
             Sfx.Mus.Intensity = 1f;             // whatever the last fight left behind
             Sfx.Mus.Play(hasBoss ? "boss" : "battle");

@@ -1019,6 +1019,11 @@ namespace MoonThief
             if (chapter >= 2 && rng.Next(100) < 35)
             {
                 var b = pool[rng.Next(pool.Count)];
+                if (rng.Next(100) < 10) b.Rare = true;   // moonlit pairs happen too
+                // the last night's dark hunts in packs: now and then the field answers
+                // with three at once
+                if (chapter >= 3 && rng.Next(100) < 22)
+                    return new[] { a, b, pool[rng.Next(pool.Count)] };
                 return new[] { a, b };
             }
             return new[] { a };

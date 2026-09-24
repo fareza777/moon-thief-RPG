@@ -132,10 +132,18 @@ menu.run|FLEE
 # ---- battle messages
 bt.one|A wild {0} blocks the way!
 bt.two|{0} and a friend appear!
+bt.three|{0} answers the dark with its pack!
 bt.moonlit|A MOONLIT {0} shimmers into view!
 bt.flee|The party melts back into the dark.
 bt.noflee|The Guard bars every way out!
 bt.boss|The {0} bars your way!
+bt.fam.slime|Something wet glistens on the road. It is a {0}.
+bt.fam.mushroom|A {0} pops out of the loam!
+bt.fam.wasp|A {0} dives out of the dark!
+bt.fam.ghost|A {0} drifts out of the treeline.
+bt.fam.skeleton|A {0} drags itself upright.
+bt.fam.scorpion|A {0} skitters out, tail high!
+bt.fam.genius|A {0} floats down, lantern-bright.
 bt.slam|The {0} rears up and SLAMS down!
 bt.enraged|The {0} is cornered - it fights without mercy now!
 bt.dazed|DAZED
