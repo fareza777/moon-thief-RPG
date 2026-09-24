@@ -1612,9 +1612,11 @@ namespace MoonThief
             var tRig = View.RigOf(target);
 
             float chance = Mathf.Clamp01(0.12f + (1f - target.Hp01) * 0.55f + (_morselUsed ? 0.2f : 0f));
+            // the odds print inside the beat so a whiff feels like a roll you saw coming,
+            // and softening a foe visibly raises the number
             View.SetMessage(Game.State.Friends.Count >= 2
                 ? Strings.Get("bt.stablefull")
-                : Strings.Get("bt.trybefriend", target.Name));
+                : Strings.Get("bt.trybefriend", target.Name, Mathf.RoundToInt(chance * 100f)));
             if (Game.State.Friends.Count >= 2)
             {
                 Sfx.Play("fail");
