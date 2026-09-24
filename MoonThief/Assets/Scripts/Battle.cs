@@ -2124,11 +2124,19 @@ namespace MoonThief
                     Strings.Get("bt.poisoned"), new Color(0.55f, 1f, 0.5f));
         }
 
+        /// <summary>What a fighter is worth at the moment it falls: gatekeepers pay four
+        /// shares, moonlit two - the same table the win card totals.</summary>
+        static int XpOf(Fighter e) => 45 * Mathf.Max(1, e.Boss ? 4 : 1) * (e.Rare ? 2 : 1);
+
         IEnumerator FadeOut(BattleView.Rig rig, bool keepRoot = false)
         {
             // what leaves a body should be seen leaving: a small pale burst rises
             // where the fighter stood as it goes
             View.Sparkle(rig.Home + new Vector3(0f, 0.9f, 0f), new Color(0.85f, 0.9f, 1f, 0.9f), 8);
+            // every kill pays its due where it falls, not just in the card at the end
+            if (rig.F != null && rig.F.Side == Side.Enemy && rig.F.MaxHp > 0)
+                View.FloatNumber(rig.Home + new Vector3(0f, 1.6f, 0f),
+                    "+" + XpOf(rig.F) + " XP", new Color(0.95f, 0.85f, 0.5f), 1);
             yield return Fx.Fade(rig.Anim, new Color(1f, 1f, 1f, 0f), 0.45f);
             rig.Sr.enabled = false;
             rig.Anim.SetTint(Color.white);
@@ -2358,7 +2366,7 @@ namespace MoonThief
             int xp = 0, gold = 0;
             foreach (var e in View.Enemies)
             {
-                xp += 45 * Mathf.Max(1, e.Boss ? 4 : 1) * (e.Rare ? 2 : 1);
+                xp += XpOf(e);
                 gold += UnityEngine.Random.Range(18, 40) * (e.Boss ? 3 : 1);
                 Game.State.Defeats++;   // one step for the nightwatch
             }
