@@ -388,33 +388,39 @@ namespace MoonThief
         {
             _setRoot = Root("settings", 0);
             FullQuad(_setRoot, "dim", 6000, new Color(6f / 255f, 5f / 255f, 16f / 255f, 0.88f));
-            _setPanel = Panel(_setRoot, "setPanel", 6002, 16.4f, 15.2f, 0.2f);
-            _setTitle = PixelLabelUtil.Make(_setRoot, "setTitle", 3, new Color(1f, 0.95f, 0.78f), TextAlign.Center, 6006);
+            // the sheet drops in while the dim snaps: the card and its furniture ride one
+            // transform so SlideIn moves them together and the dim stays put
+            _setCard = new GameObject("card").transform;
+            _setCard.SetParent(_setRoot, false);
+            _setPanel = Panel(_setCard, "setPanel", 6002, 16.4f, 15.2f, 0.2f);
+            _setTitle = PixelLabelUtil.Make(_setCard, "setTitle", 3, new Color(1f, 0.95f, 0.78f), TextAlign.Center, 6006);
             _setTitle.Set(Strings.Get("set.title"));
-            _setFoot = PixelLabelUtil.Make(_setRoot, "setFoot", 1, new Color(0.6f, 0.64f, 0.86f), TextAlign.Center, 6007);
+            _setFoot = PixelLabelUtil.Make(_setCard, "setFoot", 1, new Color(0.6f, 0.64f, 0.86f), TextAlign.Center, 6007);
             _setFoot.Set(Strings.Get("set.hint"));
-            _setRows = BuildRows(_setRoot);
+            _setRows = BuildRows(_setCard);
         }
 
         void BuildCredits()
         {
             _credRoot = Root("credits", 0);
             FullQuad(_credRoot, "dim", 6000, new Color(6f / 255f, 5f / 255f, 16f / 255f, 0.9f));
-            _credPanel = Panel(_credRoot, "credPanel", 6002, 15.6f, 17.4f, 0f);
+            _credCard = new GameObject("card").transform;
+            _credCard.SetParent(_credRoot, false);
+            _credPanel = Panel(_credCard, "credPanel", 6002, 15.6f, 17.4f, 0f);
 
             // the moon over the card, a hairline under the title block - a page this empty
             // reads as unfinished without a little furniture
-            var moon = SpriteRendererUtil.Make(_credRoot, "credMoon", TexArt.MoonFull(), 6004);
+            var moon = SpriteRendererUtil.Make(_credCard, "credMoon", TexArt.MoonFull(), 6004);
             moon.transform.localPosition = new Vector3(0f, 6.05f, 0f);
             moon.transform.localScale = Vector3.one * 2.6f;
 
             // fitted to the card: at scale 3 the title ran edge to edge of the panel border
-            _credTitle = PixelLabelUtil.Make(_credRoot, "credTitle", FitText(Strings.Get("cred.title"), 13.2f, 3),
+            _credTitle = PixelLabelUtil.Make(_credCard, "credTitle", FitText(Strings.Get("cred.title"), 13.2f, 3),
                 new Color(1f, 0.95f, 0.78f), TextAlign.Center, 6006);
             _credTitle.transform.localPosition = new Vector3(0f, 3.9f, 0f);
             _credTitle.Set(Strings.Get("cred.title"));
 
-            _credSub = PixelLabelUtil.Make(_credRoot, "credSub", FitText(Strings.Get("cred.sub"), 13.2f, 2),
+            _credSub = PixelLabelUtil.Make(_credCard, "credSub", FitText(Strings.Get("cred.sub"), 13.2f, 2),
                 new Color(0.76f, 0.8f, 1f), TextAlign.Center, 6006);
             _credSub.transform.localPosition = new Vector3(0f, 2.0f, 0f);
             _credSub.Set(Strings.Get("cred.sub"));
@@ -423,18 +429,18 @@ namespace MoonThief
 
             // the body is the one block whose height depends on the string table, so it is
             // measured and placed by LayoutCredits() instead of being pinned by hand
-            _credText = PixelLabelUtil.Make(_credRoot, "credText", 1, new Color(0.93f, 0.95f, 1f), TextAlign.Center, 6006);
+            _credText = PixelLabelUtil.Make(_credCard, "credText", 1, new Color(0.93f, 0.95f, 1f), TextAlign.Center, 6006);
             _credText.MaxWidthUnits = 15.2f;
             _credText.Set(Strings.Get("cred.body", Application.version));
 
-            _credThanks = PixelLabelUtil.Make(_credRoot, "credThanks", 2, new Color(0.88f, 0.96f, 0.86f), TextAlign.Center, 6006);
+            _credThanks = PixelLabelUtil.Make(_credCard, "credThanks", 2, new Color(0.88f, 0.96f, 0.86f), TextAlign.Center, 6006);
             _credThanks.Set(Strings.Get("cred.thanks"));
 
             // the lower hairline sits above the thanks line, in the body band's tail space -
             // any lower and it crosses the thanks line's cap row
             Rule("credRule2", -2.95f);
 
-            _credRows = BuildRows(_credRoot);
+            _credRows = BuildRows(_credCard);
         }
 
         /// <summary>The largest text scale whose measured width still fits the given space.
@@ -449,7 +455,7 @@ namespace MoonThief
         /// <summary>A one pixel scene rule across the credits card.</summary>
         void Rule(string name, float y)
         {
-            var sr = SpriteRendererUtil.Make(_credRoot, name, TexArt.Solid(), 6005);
+            var sr = SpriteRendererUtil.Make(_credCard, name, TexArt.Solid(), 6005);
             sr.transform.localPosition = new Vector3(0f, y, 0f);
             sr.transform.localScale = new Vector3(13.6f * 16f, 16f / 4f, 1f);
             sr.color = new Color(0.62f, 0.66f, 1f, 0.42f);
@@ -459,14 +465,16 @@ namespace MoonThief
         {
             _pauseRoot = Root("pause", 0);
             _pauseDim = FullQuad(_pauseRoot, "dim", 6000, new Color(6f / 255f, 5f / 255f, 16f / 255f, 0.72f));
-            _pausePanel = Panel(_pauseRoot, "pausePanel", 6002, 16.4f, 15.6f, 0.2f);
-            _pauseTitle = PixelLabelUtil.Make(_pauseRoot, "pauseTitle", 3, new Color(1f, 0.95f, 0.78f), TextAlign.Center, 6006);
+            _pauseCard = new GameObject("card").transform;
+            _pauseCard.SetParent(_pauseRoot, false);
+            _pausePanel = Panel(_pauseCard, "pausePanel", 6002, 16.4f, 15.6f, 0.2f);
+            _pauseTitle = PixelLabelUtil.Make(_pauseCard, "pauseTitle", 3, new Color(1f, 0.95f, 0.78f), TextAlign.Center, 6006);
             _pauseTitle.transform.localPosition = new Vector3(0f, 5.8f, 0f);
             _pauseTitle.Set(Strings.Get("pause.title"));
-            _pauseSub = PixelLabelUtil.Make(_pauseRoot, "pauseSub", 1, new Color(0.72f, 0.74f, 0.9f), TextAlign.Center, 6006);
+            _pauseSub = PixelLabelUtil.Make(_pauseCard, "pauseSub", 1, new Color(0.72f, 0.74f, 0.9f), TextAlign.Center, 6006);
             _pauseSub.transform.localPosition = new Vector3(0f, -7.2f, 0f);
             _pauseSub.Set("");
-            _pauseRows = BuildRows(_pauseRoot);
+            _pauseRows = BuildRows(_pauseCard);
         }
 
         void BuildCinema()
@@ -592,13 +600,15 @@ namespace MoonThief
         {
             _shopRoot = Root("shop", 0);
             FullQuad(_shopRoot, "dim", 6000, new Color(6f / 255f, 5f / 255f, 16f / 255f, 0.9f));
-            _shopPanel = Panel(_shopRoot, "shopPanel", 6002, 16.4f, 20f, 0.2f);
-            _shopTitle = PixelLabelUtil.Make(_shopRoot, "shopTitle", 3, new Color(1f, 0.95f, 0.78f), TextAlign.Center, 6006);
+            _shopCard = new GameObject("card").transform;
+            _shopCard.SetParent(_shopRoot, false);
+            _shopPanel = Panel(_shopCard, "shopPanel", 6002, 16.4f, 20f, 0.2f);
+            _shopTitle = PixelLabelUtil.Make(_shopCard, "shopTitle", 3, new Color(1f, 0.95f, 0.78f), TextAlign.Center, 6006);
             _shopTitle.Set(Strings.Get("shop.title"));
-            _shopSub = PixelLabelUtil.Make(_shopRoot, "shopSub", 1, new Color(0.9f, 0.9f, 0.6f), TextAlign.Center, 6006);
-            _shopFoot = PixelLabelUtil.Make(_shopRoot, "shopFoot", 1, new Color(0.6f, 0.64f, 0.86f), TextAlign.Center, 6007);
+            _shopSub = PixelLabelUtil.Make(_shopCard, "shopSub", 1, new Color(0.9f, 0.9f, 0.6f), TextAlign.Center, 6006);
+            _shopFoot = PixelLabelUtil.Make(_shopCard, "shopFoot", 1, new Color(0.6f, 0.64f, 0.86f), TextAlign.Center, 6007);
             _shopFoot.Set(Strings.Get("shop.hint"));
-            _shopRows = BuildRows(_shopRoot);
+            _shopRows = BuildRows(_shopCard);
         }
 
         void BuildToast()
@@ -632,6 +642,9 @@ namespace MoonThief
         float _toastRise;              // 0 the frame it appears, 1 once it has settled
         string _toastHeld;             // a notice that arrived while a dialog box was up
         float _toastHeldT;
+        Transform _cardSlide;          // the card currently dropping in; null once settled
+        Transform _setCard, _credCard, _pauseCard, _shopCard;   // card content under the dim
+        float _cardSlideT;             // settle progress 0..1
 
         /// <summary>While this is true a toast is parked instead of drawn. Game sets it while a
         /// dialog box is open: a notification over narration is the one overlap a player reads as
@@ -797,6 +810,7 @@ namespace MoonThief
             _settingsFromPause = fromPause;
             _sel = 0;
             _setRoot.gameObject.SetActive(true);
+            SlideIn(_setCard);
             RefreshSettingsRows();
             Select(_sel);
         }
@@ -871,6 +885,7 @@ namespace MoonThief
             _sc = Sc.Credits;
             _sel = 0;
             _credRoot.gameObject.SetActive(true);
+            SlideIn(_credCard);
             var labels = new[] { Strings.Get("menu.rate"), Strings.Get("menu.share"), Strings.Get("menu.back") };
             var acts = new Action[] { () => DoRate(), () => DoShare(), (Action)ShowMain };
             var vals = new[] { "", "", "" };
@@ -925,6 +940,7 @@ namespace MoonThief
             _sel = 0;
             _shopSell = false;
             _shopRoot.gameObject.SetActive(true);
+            SlideIn(_shopCard);
             RefreshShop();
             Select(0);
         }
@@ -1094,6 +1110,7 @@ namespace MoonThief
             _sel = 1;
             _t = 0f;
             _pauseRoot.gameObject.SetActive(true);
+            SlideIn(_pauseCard);
             _pauseTitle.Set(title ?? Strings.Get("conf.title"));
             _pauseSub.Set(sub ?? Strings.Get("conf.sub"));
             var acts = new Action[] { () => yes?.Invoke(), () => { if (no != null) no(); else ShowMain(); } };
@@ -1113,6 +1130,7 @@ namespace MoonThief
             _sel = 0;
             _t = 0f;
             _pauseRoot.gameObject.SetActive(true);
+            SlideIn(_pauseCard);
             _pauseTitle.Set(Strings.Get("pause.title"));
             // the footnote of the pause card is both its status line ("saved") and, before that,
             // the one hint a player needs at the moment they stop playing
@@ -1188,6 +1206,7 @@ namespace MoonThief
             _sel = 0;
             _t = 0f;
             _jrRoot.gameObject.SetActive(true);
+            SlideIn(_jrRoot);
             float rowsTop = LayoutCard(_jrPanel, 16.4f, 6, true);
             _jrTitle.transform.localPosition = new Vector3(0f, _cardTop - 1.9f, 0f);
             _jrSub.transform.localPosition = new Vector3(0f, _cardTop - 3.5f, 0f);
@@ -1386,6 +1405,7 @@ namespace MoonThief
             _sel = 0;
             _t = 0f;
             _pageRoot.gameObject.SetActive(true);
+            SlideIn(_pageRoot);
             _pageTitle.Set(Strings.Get(title));
             _pageSub.Set(sub ?? "");
             LayoutPage();
@@ -1546,6 +1566,15 @@ namespace MoonThief
             var t = _toast.Tint; t.a = shown; _toast.SetColor(t);
             _toastT = seconds;
             ApplyToastLift();
+        }
+
+        /// <summary>The card sheet rides a short drop into place; the dim under it snaps. The
+        /// drop is short enough that it reads as weight, not as an animation you wait on.</summary>
+        void SlideIn(Transform card)
+        {
+            _cardSlide = card;
+            _cardSlideT = 0f;
+            if (card != null) card.localPosition = new Vector3(0f, 0.55f, 0f);
         }
 
         void ApplyToastLift()
@@ -1815,6 +1844,17 @@ namespace MoonThief
             }
 
             _t += dt;
+            // cards arrive by dropping the last half unit into place instead of popping -
+            // the dim behind them still snaps, only the sheet the eye follows settles
+            if (_cardSlide != null)
+            {
+                _cardSlideT += dt;
+                float k = Mathf.Clamp01(_cardSlideT / 0.22f);
+                var sp = _cardSlide.localPosition;
+                sp.y = 0.55f * (1f - k) * (1f - k);
+                _cardSlide.localPosition = sp;
+                if (k >= 1f) _cardSlide = null;
+            }
             switch (_sc)
             {
                 case Sc.None:
