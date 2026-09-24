@@ -2132,7 +2132,9 @@ namespace MoonThief
             }
             var dir = target.Value - HeroPos;
             float dist = dir.magnitude;
-            if (dist < 3.5f)
+            // the arrow is a compass for what you cannot see: once the gate itself is in
+            // frame its own "!" cue marks it, and a second pointer at the edge is noise
+            if (dist < 3.5f || (Mathf.Abs(dir.x) < 8.2f && Mathf.Abs(dir.y) < HalfH - 2.5f))
             {
                 _objArrow.enabled = false;
                 return;
