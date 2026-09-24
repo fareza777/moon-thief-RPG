@@ -1621,6 +1621,10 @@ namespace MoonThief
 
             var eRig = View.RigOf(e);
             var tRig = View.RigOf(target);
+            // a blink of warning before the blow: the chosen one flushes cold for a beat
+            if (tRig?.Anim != null)
+                StartCoroutine(Fx.FlashTint(tRig.Anim, new Color(0.55f, 0.7f, 1f), 1, 0.14f, 0.14f));
+            yield return Fx.Wait(0.18f);
             yield return Lunge(eRig, tRig.Home, 0.3f);
 
             int dmg = Mathf.RoundToInt(UnityEngine.Random.Range(e.AtkMin, e.AtkMax + 1)
