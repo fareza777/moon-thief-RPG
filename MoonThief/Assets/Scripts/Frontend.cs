@@ -137,7 +137,12 @@ namespace MoonThief
             {
                 d.version = 1;
                 d.stamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
-                File.WriteAllText(Path, JsonUtility.ToJson(d, true));
+                // a crash mid-write must not eat the last good night: fill a temp file
+                // first, then move it whole over the old save
+                var tmp = Path + ".tmp";
+                File.WriteAllText(tmp, JsonUtility.ToJson(d, true));
+                if (File.Exists(Path)) File.Delete(Path);
+                File.Move(tmp, Path);
                 Debug.Log("[save] written to " + Path);
             }
             catch (Exception e)
