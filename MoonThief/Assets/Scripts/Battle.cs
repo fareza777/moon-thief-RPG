@@ -1180,6 +1180,10 @@ namespace MoonThief
             var morselCol = morselOk ? Color.white : new Color(1f, 1f, 1f, 0.35f);
             View.Menu[2].Text.SetColor(morselCol);
             if (View.Menu[2].Icon != null) View.Menu[2].Icon.color = morselCol;
+            // befriend dims the same way once the two-heart stable is full
+            var heartCol = Game.State.Friends.Count < 2 ? Color.white : new Color(1f, 1f, 1f, 0.35f);
+            View.Menu[1].Text.SetColor(heartCol);
+            if (View.Menu[1].Icon != null) View.Menu[1].Icon.color = heartCol;
             View.SetMessage(Strings.Get("bt.yourturn", f.Name));
             // auto-battle acts after a short beat, so the player sees whose turn it was
             if (Auto && Application.isPlaying)
