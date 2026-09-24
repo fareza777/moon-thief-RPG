@@ -56,6 +56,7 @@ namespace MoonThief
         PixelLabel _hudNight, _hudRound, _msg, _hint, _autoLabel;
         Transform _overlayRoot;
         SpriteRenderer _ovDim, _ovPanel;
+        Transform _ovCard;             // panel + title + lines + buttons ride this; the dim snaps
         PixelLabel _ovTitle;
         List<PixelLabel> _ovLines = new List<PixelLabel>();
         List<(SpriteRenderer panel, PixelLabel text, Rect rect, Action act)> _ovButtons = new List<(SpriteRenderer, PixelLabel, Rect, Action)>();
@@ -918,11 +919,16 @@ namespace MoonThief
                 _ovDim.transform.localScale = new Vector3(18f * 16f, (Top - Bottom) * 16f, 1f);
                 _ovDim.color = new Color32(8, 6, 18, 215);
             }
-            if (_ovPanel == null) _ovPanel = SlicedUnder(_overlayRoot, "ovPanel", TexArt.Panel(), 81);
+            if (_ovCard == null)
+            {
+                _ovCard = new GameObject("ovCard").transform;
+                _ovCard.SetParent(_overlayRoot, false);
+            }
+            if (_ovPanel == null) _ovPanel = SlicedUnder(_ovCard, "ovPanel", TexArt.Panel(), 81);
 
             float innerW = 15.0f;
 
-            if (_ovTitle == null) _ovTitle = LabelUnder(_overlayRoot, "ovTitle", 3, Color.white, TextAlign.Center, 82);
+            if (_ovTitle == null) _ovTitle = LabelUnder(_ovCard, "ovTitle", 3, Color.white, TextAlign.Center, 82);
             int scale = 3; float titleH;
             while (true)
             {
@@ -946,7 +952,7 @@ namespace MoonThief
             float linesH = 0f, total = 0f;
             int bodyScale = 2;
             while (_ovLines.Count < lines.Length)
-                _ovLines.Add(LabelUnder(_overlayRoot, "ovLine" + _ovLines.Count, 2, new Color(0.92f, 0.94f, 1f), TextAlign.Center, 82));
+                _ovLines.Add(LabelUnder(_ovCard, "ovLine" + _ovLines.Count, 2, new Color(0.92f, 0.94f, 1f), TextAlign.Center, 82));
             while (true)
             {
                 linesH = 0f;
@@ -984,15 +990,21 @@ namespace MoonThief
             if (btnN > 0) y -= 1.0f;
             for (int i = 0; i < btnN; i++)
             {
-                var panel = SlicedUnder(_overlayRoot, "ovBtn" + i, TexArt.Panel(), 83);
+                var panel = SlicedUnder(_ovCard, "ovBtn" + i, TexArt.Panel(), 83);
                 Box(panel, -BtnW * 0.5f, y - BtnH, BtnW, BtnH, new Color(1f, 1f, 0.95f, 0.95f));
-                var text = LabelUnder(_overlayRoot, "ovBtnT" + i, 2, new Color(1f, 0.96f, 0.8f), TextAlign.Center, 84);
+                var text = LabelUnder(_ovCard, "ovBtnT" + i, 2, new Color(1f, 0.96f, 0.8f), TextAlign.Center, 84);
                 text.transform.localPosition = new Vector3(0f, y - (BtnH - PixelFont.GlyphHUnits(2)) * 0.5f, 0f);
                 text.Set(buttons[i]);
                 _ovButtons.Add((panel, text, new Rect(-BtnW * 0.5f, y - BtnH, BtnW, BtnH), actions[i]));
                 y -= BtnH + BtnGap;
             }
 
+            // the verdict lands the way a card should: the dim snaps, the sheet settles
+            if (Application.isPlaying && _ovCard != null)
+            {
+                _ovCard.localPosition = new Vector3(0f, 0.6f, 0f);
+                StartCoroutine(Fx.MoveLocal(_ovCard, Vector3.zero, 0.22f));
+            }
         }
 
         public void HideCard()
