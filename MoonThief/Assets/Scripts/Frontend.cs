@@ -1263,7 +1263,7 @@ namespace MoonThief
                         () => { CycleWorn(ItemKind.Charm); ShowPage(Page2.Equipment); });
                     AddK(labels, vals, acts, "jr.atk", "+" + Game.State.BonusAtk);
                     AddK(labels, vals, acts, "jr.maxhp", "+" + Game.State.BonusHp);
-                    icons = new List<int> { 0, 18, 25, -1, -1 };
+                    icons = new List<int> { 0, 18, 25, 13, 18 };
                     break;
 
                 case Page2.Bestiary:
