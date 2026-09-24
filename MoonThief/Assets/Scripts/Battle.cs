@@ -52,6 +52,7 @@ namespace MoonThief
         public readonly List<MenuCell> Menu = new List<MenuCell>();
 
         SpriteRenderer _backdrop, _floorTint, _hudPanel, _menuPanel, _msgPanel, _moonIcon, _targetChev, _turnChev, _nextChev;
+        SpriteRenderer _bvig;
         SpriteRenderer _autoChip;
         PixelLabel _hudNight, _hudRound, _hudFlow, _msg, _hint, _autoLabel;
         Transform _overlayRoot;
@@ -97,10 +98,10 @@ namespace MoonThief
 
             // the same soft frame the night world wears, sized to the arena: it pulls
             // the eye off the edges without touching the HUD above it
-            var vig = SpriteRendererUtil.Make(Stage, "bvig", TexArt.Vignette(), 35);
-            vig.transform.localPosition = new Vector3(0f, (ArenaTop + MenuTop) * 0.5f, 0f);
-            vig.transform.localScale = new Vector3(18f, ArenaTop - MenuTop, 1f);
-            vig.color = new Color(1f, 1f, 1f, 0.7f);
+            _bvig = SpriteRendererUtil.Make(Stage, "bvig", TexArt.Vignette(), 35);
+            _bvig.transform.localPosition = new Vector3(0f, (ArenaTop + MenuTop) * 0.5f, 0f);
+            _bvig.transform.localScale = new Vector3(18f, ArenaTop - MenuTop, 1f);
+            _bvig.color = new Color(1f, 1f, 1f, 0.7f);
 
             _hudPanel = Sliced("hud", TexArt.Panel(), 46);
             Box(_hudPanel, Left, HudBottom, 18f, HudH, Color.white);
@@ -594,6 +595,18 @@ namespace MoonThief
         {
             _hudRound.Set(Strings.Get("hud.round", round));
             _hudFlow.Set(flow >= 2 ? Strings.Get("hud.roundf", flow) : "");
+        }
+
+        /// <summary>The arena's edge bleeds red for a beat: a hit that lands on the
+        /// party reads on the whole frame, not just the sprite that took it.</summary>
+        public void HurtPulse()
+        {
+            if (_bvig == null || !Application.isPlaying) return;
+            StartCoroutine(Fx.Tween(0.3f, k =>
+            {
+                if (_bvig != null)
+                    _bvig.color = Color.Lerp(new Color(1f, 0.3f, 0.26f, 0.92f), new Color(1f, 1f, 1f, 0.7f), k);
+            }));
         }
 
         public void SetMessage(string text)
@@ -1797,6 +1810,7 @@ namespace MoonThief
             StartCoroutine(Fx.Slash(View.Stage, tRig.Home + new Vector3(0f, 0.85f, 0f),
                 new Color(1f, 0.55f, 0.45f, 0.85f), slam ? 1.4f : 1f));
             if (slam) StartCoroutine(Fx.Shake(View.Stage, 0.15f, 0.2f));
+            if (target.ColorDir != null) View.HurtPulse();   // heroes bleed the frame edge
             if (slam && target.Alive && UnityEngine.Random.value < 0.15f)
             {
                 target.Dazed = true;
