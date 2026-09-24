@@ -1723,13 +1723,16 @@ namespace MoonThief
         {
             if (_ending || Phase == St.End) return;
             Sfx.Mus.Duck = 1f; Sfx.Mus.Play("explore");
+            // flip synchronously like the win path does: a new fight that begins inside the
+            // fade re-marks the phase in its own body, so the middle can tell a stale teardown
+            // (phase flipped back to Battle) from the defeat it belongs to
+            Phase = St.Explore;
             DoTransition(() =>
             {
                 // same window as a victory: a new fight inside the fade owns the stage
                 if (Phase == St.Battle) return;
                 BattleViewRef.HideCard();
                 BattleViewRef.gameObject.SetActive(false);
-                Phase = St.Explore;
                 World.gameObject.SetActive(true);
                 if (_hudZone != null) _hudZone.enabled = true;
                 SetHudQuestVisible(true);
