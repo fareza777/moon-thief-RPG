@@ -275,6 +275,18 @@ namespace MoonThief
             };
         }
 
+        /// <summary>Selftest only: kill every layer that could dim the room - the dimmer
+        /// gradient, prop halos, contact shadows, touch cue - so a dark frame can be
+        /// blamed on what is left standing (props, actors, the ground mesh itself).</summary>
+        public void DebugStripLayers()
+        {
+            if (_dimmer != null) _dimmer.enabled = false;
+            foreach (var g in _glows) if (g != null) g.enabled = false;
+            if (_touchCue != null) _touchCue.enabled = false;
+            foreach (var sr in _root.GetComponentsInChildren<SpriteRenderer>(true))
+                if (sr != null && (sr.name.StartsWith("psh") || sr.name.StartsWith("csh") || sr.name.StartsWith("sh"))) sr.enabled = false;
+        }
+
         /// <summary>Diagnostics: one line per interior cell, tile id + shade - the dump the
         /// prop audit cannot fake, because it replays the mesh's own chooser.</summary>
         public void DumpRoomTiles()

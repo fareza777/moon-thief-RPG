@@ -2354,6 +2354,11 @@ namespace MoonThief
             yield return new WaitForSeconds(0.9f);
             Shot("11c-interior");
             Debug.Log("[selftest] interior inHouse=" + _inHouse + " hero=" + World.HeroPos);
+            // bisect the dark patches: same frame with every dimming layer stripped - if the
+            // room is still dark, the culprit is one of the sprites or the mesh itself
+            _houseView.DebugStripLayers();
+            yield return new WaitForSeconds(0.15f);
+            Shot("11c0-interior-nofx");
             // every room layout once: the void spots move with the furniture set, which names
             // what draws them if they only appear under certain pieces
             for (int h = 1; h < 6; h++)
