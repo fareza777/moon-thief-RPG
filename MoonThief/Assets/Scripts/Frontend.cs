@@ -169,6 +169,7 @@ namespace MoonThief
 
         // wired by Game
         public Action OnStartNew, OnLoadSave, OnResume, OnSaveGame, OnLeaveToTitle, OnIntroDone, OnSplashDone, OnOnboardDone, OnShopClosed, OnStory;
+        public Action<string> OnReleaseFriend;   // a tamed species wished back to the wild
 
         /// <summary>The store page SHARE and RATE point at. Application.identifier is the same
         /// value the builder sets, so the link can never drift from the shipped package.</summary>
@@ -1074,20 +1075,25 @@ namespace MoonThief
         /// <summary>A yes/no card over the pause furniture, for choices that should not be
         /// one tap away from a save (START OVER rewrites the night). The yes action is left
         /// as a delegate so the same card can ask other questions later.</summary>
-        public void ShowConfirm(Action yes)
+        public void ShowConfirm(Action yes) => ShowConfirm(yes, null, null, null, null);
+
+        /// <summary>The one-tap-away card: wording and the no-path vary with what is being
+        /// asked - a save overwrite, a friend set free - but the safe answer always
+        /// selects first.</summary>
+        public void ShowConfirm(Action yes, string title, string sub, string yesLabel, Action no)
         {
             HideAll();
             _sc = Sc.Confirm;
             _sel = 1;
             _t = 0f;
             _pauseRoot.gameObject.SetActive(true);
-            _pauseTitle.Set(Strings.Get("conf.title"));
-            _pauseSub.Set(Strings.Get("conf.sub"));
-            var acts = new Action[] { () => yes?.Invoke(), () => ShowMain() };
+            _pauseTitle.Set(title ?? Strings.Get("conf.title"));
+            _pauseSub.Set(sub ?? Strings.Get("conf.sub"));
+            var acts = new Action[] { () => yes?.Invoke(), () => { if (no != null) no(); else ShowMain(); } };
             float rowsTop = LayoutCard(_pausePanel, 16.4f, 2, true);
             _pauseTitle.transform.localPosition = new Vector3(0f, _cardTop - 2.15f, 0f);
             float bottom = LayRows(_pauseRows,
-                new[] { Strings.Get("conf.yes"), Strings.Get("conf.no") },
+                new[] { yesLabel ?? Strings.Get("conf.yes"), Strings.Get("conf.no") },
                 acts, new[] { "", "" }, rowsTop, 2, new[] { 26, 27 });
             _pauseSub.transform.localPosition = new Vector3(0f, FootY(bottom), 0f);
             Select(1);   // the safe answer is selected first
@@ -1400,7 +1406,15 @@ namespace MoonThief
                 ? Strings.Get("jr.beast", spec.Hp, spec.AtkMin, spec.AtkMax, WeaknessOf(spec))
                 : "?");
             var s2 = spec;
-            acts.Add(() => ShowToast(known ? Strings.Get(s2.Name + ".d") : Strings.Get("jr.unseen"), 2.6f));
+            if (tamed)
+                // a kept friend can be wished back to the night: the mark clears, the
+                // stable opens, and the page redraws without its tag
+                acts.Add(() => ShowConfirm(
+                    () => { OnReleaseFriend?.Invoke(s2.Name); ShowPage(Page2.Bestiary); },
+                    Strings.Get("conf.reltitle"), Strings.Get("conf.relsub", Strings.Get(s2.Name)),
+                    Strings.Get("conf.rel"), () => ShowPage(Page2.Bestiary)));
+            else
+                acts.Add(() => ShowToast(known ? Strings.Get(s2.Name + ".d") : Strings.Get("jr.unseen"), 2.6f));
         }
 
         /// <summary>Which friend this species is soft against, named on the card so the

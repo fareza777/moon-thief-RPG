@@ -1693,6 +1693,23 @@ namespace MoonThief
             }
         }
 
+        /// <summary>Wish a friend back to the night: the journal asks, the wild gets one
+        /// of its own back. The species clears from the stable list (both its normal and
+        /// moonlit keys), its walker leaves the trail, and its name tag comes down.</summary>
+        public void ReleaseFriend(string species)
+        {
+            Game.State.Friends.Remove(species);
+            Game.State.Friends.Remove("moon." + species);
+            for (int i = _friends.Count - 1; i >= 0; i--)
+            {
+                var f = _friends[i];
+                if (f.Spec.Name != species) continue;      // sea & moss carry no Spec
+                if (f.Root != null) f.Root.gameObject.SetActive(false);
+                if (f.Name != null) f.Name.gameObject.SetActive(false);
+                _friends.RemoveAt(i);          // out of the list so the trail leaves no gap
+            }
+        }
+
         bool _heroWalking;
         float _stepT;
         float _stepSfxT;

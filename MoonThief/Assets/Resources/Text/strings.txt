@@ -268,6 +268,9 @@ conf.title|START OVER?
 conf.sub|Your saved night will be replaced.
 conf.yes|START OVER
 conf.no|KEEP MY SAVE
+conf.reltitle|SET FREE?
+conf.relsub|The {0} returns to the night.
+conf.rel|SET FREE
 
 # ---- world zones. Two lines: the night in the big face, the place in the small one.
 zone.arrive.1|NIGHT ONE\nquiet hollow

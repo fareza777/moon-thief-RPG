@@ -506,6 +506,7 @@ namespace MoonThief
             Menus.OnOnboardDone = OnboardDone;
             Menus.OnShopClosed = ClosePause;
             Menus.OnStory = ReplayStory;
+            Menus.OnReleaseFriend = key => { World?.ReleaseFriend(key); SaveRun(); };
         }
 
         void BuildTitle()
