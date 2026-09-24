@@ -1619,6 +1619,9 @@ namespace MoonThief
                 Phase = St.End;
                 SetCamY(0f);
                 World.gameObject.SetActive(false);
+                // the battle stage is its own root: if the ending fires while a fight is still
+                // up (a wild touch on the way to the cristal), its rigs outlive the tale
+                BattleViewRef.gameObject.SetActive(false);
                 if (_hudZone != null) _hudZone.enabled = false;
                 _endRoot.gameObject.SetActive(true);
                 Sfx.Mus.Play("end");
@@ -2006,8 +2009,12 @@ namespace MoonThief
 
         void SetHudQuestVisible(bool v)
         {
-            _hudQuest.enabled = v;
-            if (_hudQuestChip != null) _hudQuestChip.enabled = v && _hudQuest.gameObject.activeSelf;
+            // _hudQuest outlives the world it was parented under: a new chapter rebuilds the
+            // WorldView and the old label is Unity-dead but the field still holds it. Guard or
+            // the first battle of night two throws before MakeHud re-seats the references.
+            if (_hudQuest != null) _hudQuest.enabled = v;
+            if (_hudQuestChip != null && _hudQuest != null)
+                _hudQuestChip.enabled = v && _hudQuest.gameObject.activeSelf;
         }
 
         public void EditorDialog()
@@ -2382,92 +2389,104 @@ namespace MoonThief
             Debug.Log("[selftest] after battles phase=" + Phase);
 
             // keep exploring to the boss if we are still alive
-            guard = 0;
-            var lastPos = World.HeroPos;
-            int stuck = 0;
-            float walkStart = Time.time;
-            while ((Phase == St.Explore || Phase == St.Battle) && Time.time - walkStart < 75f)
+            // one loop per night: walk the map to its gatekeeper, let AUTO win the fight,
+            // tap the fall card and ride the chapter dissolve into the next night. The whole
+            // spine of the game is exercised every run - not just night one.
+            for (int night = 1; night <= 3 && Phase == St.Explore; night++)
             {
-                guard++;
-                if (Phase == St.Battle)
+                guard = 0;
+                var lastPos = World.HeroPos;
+                int stuck = 0;
+                float walkStart = Time.time;
+                while ((Phase == St.Explore || Phase == St.Battle) && Time.time - walkStart < 75f)
                 {
-                    if (Director.AwaitingInput) { Director.SelectCell(0); Director.Confirm(); }
-                    else if (BattleViewRef.OverlayButtonCount > 0)
-                        BattleViewRef.CardButtonAt(0)?.Invoke();
-                    else TickWorldForTest();
-                    yield return null;
-                    continue;
-                }
-                if (guard % 600 == 0)
-                    Debug.Log("[selftest] walking north guard=" + guard + " t=" + (Time.time - walkStart).ToString("0.0")
-                        + "s hero=" + World.HeroPos + " phase=" + Phase + " near=" + World.NearBoss);
-                if (World.NearBoss) break;
-                var toB = World.Map.BossPos - World.HeroPos;
-                // diagonal again, so a blocked axis still leaves the other one moving
-                var dirB = toB.sqrMagnitude < 0.01f ? Vector2.up : toB.normalized;
-                // a straight line to the boss can wedge on a tree: sidestep when stuck
-                if (Vector2.Distance(World.HeroPos, lastPos) < 0.01f) stuck++;
-                else stuck = 0;
-                lastPos = World.HeroPos;
-                if (stuck > 25)
-                {
-                    dirB = new Vector2(Random.value < 0.5f ? -1f : 1f, 0.15f);
-                    stuck = 0;
-                }
-                World.DriveHero(dirB, Time.deltaTime);
-                TickWorldForTest();
-                yield return null;
-            }
-            if (!World.NearBoss)
-            {
-                // pathing can stall on trees; step next to the boss so the fight is still tested
-                World.PlaceHero(new Vector2(World.Map.BossPos.x + 0.5f, World.Map.BossPos.y - 1.5f));
-                yield return null;
-            }
-            Shot("15-bosszone");
-            Debug.Log("[selftest] boss zone at y=" + World.HeroPos.y + " nearBoss=" + World.NearBoss);
-
-            // fight the boss
-            if (World.NearBoss && !_bossDown)
-            {
-                StartBattle(BattleData.BossFight(State.Chapter));
-                int t2 = 0;
-                float bossStart = Time.time;
-                // let the real AUTO battle play the finale: it mends, spends a morsel when
-                // the party is hurt and aims for weak seams - the same hand a player has,
-                // and a better solver than raw ATTACK spam that can wipe and re-fight.
-                if (!Director.Auto) Director.ToggleAuto();
-                // the boss plus its wisp add take longer than a wild pair - and enrage
-                // plus daze stretch it further - so give it room
-                int lastRoundLogged = -1;
-                while (Phase == St.Battle && Time.time - bossStart < 170f)
-                {
-                    t2++;
-                    if (Director.DebugRound != lastRoundLogged)
+                    guard++;
+                    if (Phase == St.Battle)
                     {
-                        lastRoundLogged = Director.DebugRound;
-                        Debug.Log("[selftest] boss round " + lastRoundLogged + " at " + Mathf.RoundToInt(Time.time - bossStart) + "s");
+                        // a stray wild fight on the road north: AUTO it, tap its card, keep walking
+                        if (!Director.Auto) Director.ToggleAuto();
+                        if (BattleViewRef.OverlayButtonCount > 0)
+                            BattleViewRef.CardButtonAt(0)?.Invoke();
+                        else TickWorldForTest();
+                        yield return null;
+                        continue;
                     }
-                    if (BattleViewRef.OverlayButtonCount > 0)
+                    if (guard % 600 == 0)
+                        Debug.Log("[selftest] walking north night " + night + " guard=" + guard + " t=" + (Time.time - walkStart).ToString("0.0")
+                            + "s hero=" + World.HeroPos + " phase=" + Phase + " near=" + World.NearBoss);
+                    if (World.NearBoss) break;
+                    var toB = World.Map.BossPos - World.HeroPos;
+                    // diagonal again, so a blocked axis still leaves the other one moving
+                    var dirB = toB.sqrMagnitude < 0.01f ? Vector2.up : toB.normalized;
+                    // a straight line to the boss can wedge on a tree: sidestep when stuck
+                    if (Vector2.Distance(World.HeroPos, lastPos) < 0.01f) stuck++;
+                    else stuck = 0;
+                    lastPos = World.HeroPos;
+                    if (stuck > 25)
                     {
-                        Shot("16-bosscard");
-                        var cr = BattleViewRef.CardButtonRect(0);
-                        if (cr.width > 0f) Director.TapAt(cr.center);
-                        else BattleViewRef.CardButtonAt(0)?.Invoke();
-                        yield return new WaitForSeconds(1.2f);
-                        break;
+                        dirB = new Vector2(Random.value < 0.5f ? -1f : 1f, 0.15f);
+                        stuck = 0;
                     }
-                    else TickWorldForTest();
+                    World.DriveHero(dirB, Time.deltaTime);
+                    TickWorldForTest();
                     yield return null;
                 }
-            }
+                if (!World.NearBoss)
+                {
+                    // pathing can stall on trees; step next to the boss so the fight is still tested
+                    World.PlaceHero(new Vector2(World.Map.BossPos.x + 0.5f, World.Map.BossPos.y - 1.5f));
+                    yield return null;
+                }
+                Shot("15-bosszone-n" + night);
+                Debug.Log("[selftest] boss zone night " + night + " at y=" + World.HeroPos.y + " nearBoss=" + World.NearBoss);
 
-            // the victory card rolls into the next night through a black dissolve; the old
-            // fixed 0.8 s wait landed inside it and the frame came out solid black
-            for (int fw = 0; fw < 600 && FadeAlpha > 0.04f; fw++) yield return null;
-            yield return new WaitForSeconds(0.5f);
-            Shot("17-after-boss");
-            Debug.Log("[selftest] after boss phase=" + Phase + " shards=" + State.MoonShards);
+                if (World.NearBoss && !_bossDown)
+                {
+                    StartBattle(BattleData.BossFight(State.Chapter));
+                    float bossStart = Time.time;
+                    // let the real AUTO battle play the finale: it mends, spends a morsel when
+                    // the party is hurt and aims for weak seams - the same hand a player has,
+                    // and a better solver than raw ATTACK spam that can wipe and re-fight.
+                    if (!Director.Auto) Director.ToggleAuto();
+                    int lastRoundLogged = -1;
+                    while (Phase == St.Battle && Time.time - bossStart < 170f)
+                    {
+                        if (Director.DebugRound != lastRoundLogged)
+                        {
+                            lastRoundLogged = Director.DebugRound;
+                            Debug.Log("[selftest] boss round " + lastRoundLogged + " at " + Mathf.RoundToInt(Time.time - bossStart) + "s night " + night);
+                        }
+                        if (BattleViewRef.OverlayButtonCount > 0)
+                        {
+                            Shot("16-bosscard-n" + night);
+                            var cr = BattleViewRef.CardButtonRect(0);
+                            if (cr.width > 0f) Director.TapAt(cr.center);
+                            else BattleViewRef.CardButtonAt(0)?.Invoke();
+                            yield return new WaitForSeconds(1.2f);
+                            break;
+                        }
+                        else TickWorldForTest();
+                        yield return null;
+                    }
+                }
+
+                // the victory card rolls into the next night through a black dissolve; the old
+                // fixed 0.8 s wait landed inside it and the frame came out solid black
+                for (int fw = 0; fw < 600 && FadeAlpha > 0.04f; fw++) yield return null;
+                yield return new WaitForSeconds(0.5f);
+                Shot("17-after-boss-n" + night);
+                Debug.Log("[selftest] after boss night " + night + " phase=" + Phase
+                    + " chapter=" + State.Chapter + " shards=" + State.MoonShards);
+
+                if (night < 3)
+                {
+                    // the dissolve schedules the next chapter - wait for the world to rebuild
+                    float waitCh = Time.time;
+                    while (State.Chapter != night + 1 && Time.time - waitCh < 8f) yield return null;
+                    // and a beat for the new map's first frames
+                    for (int fw = 0; fw < 30; fw++) yield return null;
+                }
+            }
 
             if (Phase == St.Explore)
             {
@@ -2475,9 +2494,19 @@ namespace MoonThief
                 World.DriveHero(Vector2.down, 0.016f);
                 int g3 = 0;
                 float homeStart = Time.time;
-                while (Phase == St.Explore && Time.time - homeStart < 45f)
+                while ((Phase == St.Explore || Phase == St.Battle) && Time.time - homeStart < 45f)
                 {
                     g3++;
+                    if (Phase == St.Battle)
+                    {
+                        // a wild touch on the way home: AUTO it, tap its card, keep walking
+                        if (!Director.Auto) Director.ToggleAuto();
+                        if (BattleViewRef.OverlayButtonCount > 0)
+                            BattleViewRef.CardButtonAt(0)?.Invoke();
+                        else TickWorldForTest();
+                        yield return null;
+                        continue;
+                    }
                     if (g3 % 600 == 0)
                         Debug.Log("[selftest] walking to cristal g3=" + g3 + " hero=" + World.HeroPos
                             + " shards=" + State.MoonShards);
