@@ -501,8 +501,16 @@ namespace MoonThief
             {
                 var off = new Vector3(i == 0 ? 4f : -4f, 0.8f, 0f);
                 EnemyRigs[i].Root.localPosition = EnemyRigs[i].Home + off;
-                StartCoroutine(Fx.MoveLocal(EnemyRigs[i].Root, EnemyRigs[i].Home, 0.4f));
+                // a pack arrives in order, not as a wall: each wild thing lands a
+                // breath after the last
+                StartCoroutine(SlideLate(EnemyRigs[i].Root, EnemyRigs[i].Home, 0.4f, i * 0.13f));
             }
+        }
+
+        IEnumerator SlideLate(Transform t, Vector3 to, float dur, float delay)
+        {
+            if (delay > 0f) yield return Fx.Wait(delay);
+            yield return Fx.MoveLocal(t, to, dur);
         }
 
         /// <summary>Golden sparkle shower over the result card panel. Sparks start just above
