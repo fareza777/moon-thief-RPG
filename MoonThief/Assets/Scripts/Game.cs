@@ -1660,6 +1660,7 @@ namespace MoonThief
                 BattleViewRef.gameObject.SetActive(false);
                 if (_hudZone != null) _hudZone.enabled = false;
                 _endRoot.gameObject.SetActive(true);
+                Menus.HideToast();   // the last notice of the night does not ride into the dawn
                 Sfx.Mus.Duck = 1f; Sfx.Mus.Play("end");
                 _endLines.RevealSpeed = 0f;
                 // three tellings of the same dawn: alone, one companion, or a company
