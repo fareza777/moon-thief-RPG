@@ -1218,6 +1218,7 @@ namespace MoonThief
         int _qi, _round = 1;
         MonsterSpec[] _specs;
         bool _morselUsed;
+        bool _autoTame;       // auto-battle already spent its one catch try
         int _befriended;
         public bool AwaitingInput { get; private set; }
 
@@ -1253,6 +1254,7 @@ namespace MoonThief
             _round = 1;
             _qi = 0;
             _morselUsed = false;
+            _autoTame = false;
             _befriended = 0;
             _enraged = false;
             _flow = 0;
@@ -1413,6 +1415,18 @@ namespace MoonThief
                 Confirm();
                 return;
             }
+            // a moonlit wild thing is the night's prize: while a stable slot stands open
+            // and the foe is softened, the party tries for the catch - once per fight
+            if (!_autoTame && Game.State.Friends.Count < 2)
+                for (int i = 0; i < View.Enemies.Length; i++)
+                    if (View.Enemies[i].Alive && View.Enemies[i].Rare && View.Enemies[i].Hp01 < 0.6f)
+                    {
+                        _autoTame = true;
+                        View.SetTarget(i);
+                        View.SetSelected(1);
+                        Confirm();
+                        return;
+                    }
             int ti = -1; float low = float.MaxValue;
             // a ward drinks the whole swing: while a free target stands, spend hits there
             bool freeTarget = false;
