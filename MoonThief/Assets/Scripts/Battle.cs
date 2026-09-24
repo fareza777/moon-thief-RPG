@@ -399,19 +399,22 @@ namespace MoonThief
                     Id = "e" + i,
                     Name = Strings.Get(spec.Name),
                     Side = Side.Enemy,
-                    MaxHp = spec.Hp + elv, Hp = spec.Hp + elv,
+                    MaxHp = Mathf.RoundToInt(spec.Hp * (spec.Rare ? 1.45f : 1f)) + elv,
                     AtkMin = spec.AtkMin, AtkMax = spec.AtkMax,
                     Speed = spec.Speed,
                     Boss = spec.Boss,
+                    Rare = spec.Rare,
                     Species = spec.Name,
                     BattlerPath = spec.Battler,
                     Scale = FitScale(battler, spec.Boss ? 8.5f : 5.6f, 2)
                 };
+                f.Hp = f.MaxHp;
                 Enemies[i] = f;
                 float x = specs.Length == 1 ? 0f : (i == 0 ? -4.4f : 4.4f);
                 float y = HudBottom - (spec.Boss ? 8.6f : 6.2f);
                 var home = new Vector3(x, y, 0f);
                 var rig = MakeRig(f, home, 10 + i);
+                if (f.Rare) rig.Sr.color = new Color(0.72f, 0.84f, 1f);
                 rig.Shadow.transform.localScale = new Vector3(Mathf.Max(1f, f.Scale * 0.8f), 1f, 1f);
                 rig.Anim.Play(new[] { battler }, 1f, true);
                 rig.Sr.enabled = battler != null;
@@ -419,7 +422,8 @@ namespace MoonThief
 
                 rig.BarBg = SpriteRendererUtil.Make(Stage, "ebg" + i, TexArt.Solid(), 6);
                 rig.BarFill = SpriteRendererUtil.Make(Stage, "efill" + i, TexArt.Solid(), 7);
-                rig.Name = Label("ename" + i, 1, f.Boss ? new Color(1f, 0.6f, 0.52f) : new Color(1f, 0.86f, 0.86f), TextAlign.Center, 8);
+                rig.Name = Label("ename" + i, 1, f.Boss ? new Color(1f, 0.6f, 0.52f)
+                    : f.Rare ? new Color(0.72f, 0.9f, 1f) : new Color(1f, 0.86f, 0.86f), TextAlign.Center, 8);
                 // a floating/tall foe's name would sit inside the HUD strip -- but lowering it
                 // onto the sprite leaves the body covering the label, so it moves under the foe's
                 // HP bar (the bar sits at home.y-0.55 .. -0.35) instead
@@ -1138,7 +1142,9 @@ namespace MoonThief
             View.IntroSlide();
             bool hasBoss = false;
             foreach (var s in specs) if (s.Boss) hasBoss = true;
-            var first = Strings.Get(hasBoss ? "bt.boss" : specs.Length > 1 ? "bt.two" : "bt.one",
+            bool anyRare = false;
+            foreach (var en in View.Enemies) if (en.Rare) anyRare = true;
+            var first = Strings.Get(hasBoss ? "bt.boss" : anyRare ? "bt.moonlit" : specs.Length > 1 ? "bt.two" : "bt.one",
                 View.Enemies[0].Name);
             View.SetMessage(first);
             Sfx.Mus.Play(hasBoss ? "boss" : "battle");
@@ -1775,7 +1781,7 @@ namespace MoonThief
             var drops = new List<string>();
             foreach (var s in _specs)
             {
-                var key = s.Boss ? Items.BossDrop(rng) : Items.RollDrop(Game.State.Chapter, rng);
+                var key = s.Boss || s.Rare ? Items.BossDrop(rng) : Items.RollDrop(Game.State.Chapter, rng);
                 if (key == null) continue;
                 Game.State.AddBag(key);
                 drops.Add(key);

@@ -1166,6 +1166,7 @@ namespace MoonThief
                 if (Vector2Int.Distance(cell, new Vector2Int(30, 6)) < 10f) continue;   // village safe
 
                 var a = MakeActor(Map.CellCenter(cell), WorldOrder(cell.y), isNpc: false);
+                if (rng.Next(100) < 10) spec.Rare = true;   // moonlit: silver skin, worth hunting
                 a.Spec = spec;
                 a.Name = null;
                 a.Speed = spec.Speed * 0.55f;
@@ -1173,6 +1174,7 @@ namespace MoonThief
                 a.WanderCd = (float)rng.NextDouble() * 2f;
                 a.Anim.Play(MonsterClip(spec.MapSheet, Dir.Down), 4f, true);
                 a.Sr.transform.localScale = Vector3.one * 0.75f;   // 36 px tall on the map
+                if (spec.Rare) a.Sr.color = new Color(0.72f, 0.84f, 1f);
                 Monsters.Add(a);
                 return;
             }
@@ -2143,6 +2145,7 @@ namespace MoonThief
                 a.WanderCd = Random.value * 2f;
                 a.Anim.Play(MonsterClip(r.Spec.MapSheet, Dir.Down), 4f, true);
                 a.Sr.transform.localScale = Vector3.one * 0.75f;
+                if (r.Spec.Rare) a.Sr.color = new Color(0.72f, 0.84f, 1f);
                 Monsters.Add(a);
                 _respawns.RemoveAt(i);
             }

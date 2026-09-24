@@ -867,7 +867,7 @@ namespace MoonThief
         public Side Side;
         public int MaxHp, Hp, AtkMin, AtkMax;
         public float Speed;
-        public bool Boss, Captured, Dead;
+        public bool Boss, Captured, Dead, Rare;
         public string BattlerPath;      // Resources path of the battler sprite
         public string Species;          // monster string key - set on wild foes and befriended allies
         public string ColorDir;         // party only: "color_1"
@@ -889,6 +889,7 @@ namespace MoonThief
         public int Hp, AtkMin, AtkMax;
         public float Speed;
         public bool Boss;
+        public bool Rare;          // moonlit variant: silver, tougher, always drops gear
     }
 
     public static class BattleData
@@ -1004,6 +1005,7 @@ namespace MoonThief
             var pool = new List<MonsterSpec>();
             foreach (var s in Bestiary) if (s.Chapter <= chapter) pool.Add(s);
             var a = pool[rng.Next(pool.Count)];
+            if (rng.Next(100) < 10) a.Rare = true;
             if (chapter >= 2 && rng.Next(100) < 35)
             {
                 var b = pool[rng.Next(pool.Count)];
