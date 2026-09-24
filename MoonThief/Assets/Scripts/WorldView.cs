@@ -359,8 +359,9 @@ namespace MoonThief
             if (g == Ground.Path) shade = Mathf.Clamp01(shade * 1.08f + 0.05f);
 
             // indoors the light comes from the lamps, not from a sky: no zone band, no edge
-            // vignette, just a soft grain on the boards
-            if (g == Ground.Floor) return (byte)(Mathf.Lerp(0.90f, 1.04f, Noise(x, y, 3)) * 255f);
+            // vignette, just a soft grain on the boards. The grain lerps past 1.0 on purpose -
+            // but an unclamped *255 wraps the byte, so the brightest cells came out black.
+            if (g == Ground.Floor) return (byte)(Mathf.Clamp01(Mathf.Lerp(0.90f, 1.04f, Noise(x, y, 3))) * 255f);
             if (g == Ground.Wall || g == Ground.Void) return 255;
 
             // forest floor: the canopy quads above are nudged off the tile grid so the wood
