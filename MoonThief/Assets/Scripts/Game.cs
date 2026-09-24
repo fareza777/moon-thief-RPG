@@ -245,7 +245,6 @@ namespace MoonThief
         bool _hintTalk = true, _hintChest = true;
         float _hintT;                                            // countdown for the deferred chapter toast
         string _hintKey;
-        bool _bannerWas;                                         // rising-edge watch for toast yield
         PixelLabel _hudQuest;
         SpriteRenderer _hudQuestChip;
         Vector2? _resumePos;
@@ -773,6 +772,15 @@ namespace MoonThief
 
         float _camEx, _camEy;
 
+        // a banner and a toast draw in the same top strip. holdNotice is only refreshed in
+        // Update, so a toast fired in the same frame as the banner would see the stale flag
+        // and land under the rising card - raise the hold right here, in the same call.
+        void ShowZoneBanner(string text)
+        {
+            ShowZoneBanner(text);
+            if (Menus != null) Menus.HoldToasts = true;
+        }
+
         void FollowHero()
         {
             // plain == on purpose: WorldView is a UnityEngine.Object, and ?. would ride
@@ -899,7 +907,7 @@ namespace MoonThief
             State.CurZone = zk0.Substring(5);
             State.NoteZone(zk0);
 
-            World.ShowBanner(Strings.Get("zone.arrive." + Mathf.Clamp(chapter, 1, 3)));
+            ShowZoneBanner(Strings.Get("zone.arrive." + Mathf.Clamp(chapter, 1, 3)));
             Sfx.Mus.Duck = 1f; Sfx.Mus.Play("explore");
             MakeHud();
             RefreshHud();
@@ -1069,11 +1077,9 @@ namespace MoonThief
                 Menus.HoldToasts = holdNotice;
                 if (!holdNotice) Menus.FlushToast();
             }
-            // a banner can arrive while a notice is already up (zone-crossing mid-walk):
-            // the banner outranks it, so the toast steps aside rather than printing through
-            bool bannerNow = World != null && World.BannerUp;
-            if (bannerNow && !_bannerWas) Menus.HideToast();
-            _bannerWas = bannerNow;
+            // a banner arriving over a live toast is covered too: raising HoldToasts parks
+            // the toast into the held slot the moment the flag flips, so nothing ever prints
+            // through the card - the notice just plays after it
             if (Phase != St.Explore)
             {
                 Menus.SetAnchor(Cam.transform.localPosition);
@@ -1121,7 +1127,7 @@ namespace MoonThief
                 State.CurZone = zk.Substring(5);
                 // first time crossing a border the place announces itself, once, ever
                 if (State.NoteZone(zk))
-                    World.ShowBanner(Strings.Get("zone.name." + zk.Substring(5))
+                    ShowZoneBanner(Strings.Get("zone.name." + zk.Substring(5))
                         + "\n" + Strings.Get("hud.nightshort", State.Chapter));
                 if (TryWorldEvent()) return;
             }
@@ -1323,7 +1329,7 @@ namespace MoonThief
                 int shardsBefore = State.MoonShards;
                 World.OpenChest(chestAt);
                 Sfx.Play(State.MoonShards > shardsBefore ? "shard" : "chest");
-                World.ShowBanner(World.LastLootText);
+                ShowZoneBanner(World.LastLootText);
                 RefreshHud();
                 SaveRun();
                 return;
@@ -1358,7 +1364,7 @@ namespace MoonThief
             if (Vector2.Distance(World.HeroPos, World.Map.CristalPos) < 2f)
             {
                 if (State.MoonShards >= ShardsNeeded) TriggerEnding();
-                else World.ShowBanner(Strings.Get("end.notyet", ShardsNeeded - State.MoonShards));
+                else ShowZoneBanner(Strings.Get("end.notyet", ShardsNeeded - State.MoonShards));
             }
         }
 
@@ -1393,7 +1399,7 @@ namespace MoonThief
                 MakeHud();
                 State.NoteZone("zone.house." + _houseMap.HouseIndex);
                 RefreshHud();
-                World.ShowBanner(Strings.Get(_houseMap.InteriorNameKey));
+                ShowZoneBanner(Strings.Get(_houseMap.InteriorNameKey));
                 FollowHero();
                 Menus.ShowToast(Strings.Get("onb.door"), 3.2f);
             }, 0.2f, 0.3f);
@@ -1671,13 +1677,13 @@ namespace MoonThief
             {
                 // the guard wore the last shard; the way to the cristal is open
                 State.MoonShards = Mathf.Max(State.MoonShards, ShardsNeeded);
-                World.ShowBanner(Strings.Get("zone.bossdown"));
+                ShowZoneBanner(Strings.Get("zone.bossdown"));
                 RefreshHud();
                 SaveRun();
             }
             else
             {
-                World.ShowBanner(Strings.Get("zone.chapdone"));
+                ShowZoneBanner(Strings.Get("zone.chapdone"));
                 int next = State.Chapter + 1;
                 // the save rides the chapter change, not the fall - a quit inside the
                 // dissolve resumes before the kill instead of half-advanced
@@ -1701,7 +1707,7 @@ namespace MoonThief
                 World.PlaceHero(World.Map.VillageCenter);
                 FollowHero();
                 World.SetTextVisible(true);   // the banner lives under HudRoot: no text, no banner
-                World.ShowBanner(Strings.Get("zone.retreat"));
+                ShowZoneBanner(Strings.Get("zone.retreat"));
                 RefreshHud();
                 SaveRun();   // the retreat is where the night picks up again
             }, 0.3f, 0.4f);
@@ -2166,7 +2172,7 @@ namespace MoonThief
             CloseDialog();
             EditorExplore(1);
             Menus.HideToast();
-            World.ShowBanner(Strings.Get("zone.arrive.2"));
+            ShowZoneBanner(Strings.Get("zone.arrive.2"));
             Menus.SetAnchor(Cam.transform.localPosition);
         }
 
@@ -2269,7 +2275,7 @@ namespace MoonThief
             World.PlaceHero(new Vector2(9.5f, 12.5f));
             _inHouse = true;
             MakeHud();
-            World.ShowBanner(Strings.Get(_houseMap.InteriorNameKey));
+            ShowZoneBanner(Strings.Get(_houseMap.InteriorNameKey));
             FollowHero();
             RefreshHud();
         }
