@@ -1441,8 +1441,9 @@ namespace MoonThief
             }
             if (_dlgNext != null)
             {
-                _dlgNext.enabled = !_dlgText.IsRevealing;
-                float a = 0.55f + 0.45f * Mathf.Sin(Time.time * 6f);
+                // the tick is for "the line is done" - it stays dark while the typewriter
+                // runs (component.enabled can't hide its glyph pool, only alpha can)
+                float a = _dlgText.IsRevealing ? 0f : 0.55f + 0.45f * Mathf.Sin(Time.time * 6f);
                 _dlgNext.SetColor(new Color(1f, 0.85f, 0.5f, a));
             }
             if (_dlgText.IsRevealing)

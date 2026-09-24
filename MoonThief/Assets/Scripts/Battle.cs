@@ -1534,7 +1534,18 @@ namespace MoonThief
             yield return Fx.Fade(rig.Anim, new Color(1f, 1f, 1f, 0f), 0.45f);
             rig.Sr.enabled = false;
             rig.Anim.SetTint(Color.white);
-            if (!keepRoot) rig.Root.gameObject.SetActive(false);
+            // the name plate is stage-level chrome, not part of the rig root: without this a
+            // fainted fighter's name and HP bar hung in the air where the body used to be.
+            // A KO'd hero keeps the bar - the empty slot still reads as part of the party.
+            if (rig.Name != null) rig.Name.gameObject.SetActive(false);   // enabled=false only
+            if (rig.NameChip != null) rig.NameChip.enabled = false;       // stops the component:
+            if (rig.Hat != null) rig.Hat.enabled = false;                 // the glyph pool stays lit
+            if (!keepRoot)                                                // and the hat is its own
+            {                                                             // renderer off the sprite
+                if (rig.BarBg != null) rig.BarBg.enabled = false;         // transform, not the body
+                if (rig.BarFill != null) rig.BarFill.enabled = false;
+                rig.Root.gameObject.SetActive(false);
+            }
         }
 
         IEnumerator PlayerBefriend(Fighter actor)
