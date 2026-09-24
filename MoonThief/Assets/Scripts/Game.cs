@@ -2214,23 +2214,6 @@ namespace MoonThief
             _houseView.transform.SetParent(_houseRoot, false);
             _houseMap = GameMap.BuildRoom(house);
             _houseView.Build(_houseMap, _houseRoot, HalfH);
-            {
-                var sb = new System.Text.StringBuilder();
-                for (int yy = 24; yy >= 5; yy--)
-                {
-                    for (int xx = 0; xx < 19; xx++)
-                        sb.Append(_houseMap.At(new Vector2Int(xx, yy)) == Ground.Void ? '#' :
-                                  _houseMap.At(new Vector2Int(xx, yy)) == Ground.Wall ? 'W' :
-                                  _houseMap.At(new Vector2Int(xx, yy)) == Ground.Floor ? '.' : '?');
-                    sb.Append('\n');
-                }
-                Debug.Log("[roomdump]\n" + sb);
-                // the prop audit only reads sprites - meshes have to be counted by hand or a
-                // rogue quad inside the room never shows up on a dump at all
-                foreach (var mf in _houseView.GetComponentsInChildren<MeshFilter>())
-                    Debug.Log("[roommesh] " + mf.name + " verts=" + (mf.sharedMesh != null ? mf.sharedMesh.vertexCount : -1));
-                _houseView.DumpRoomTiles();
-            }
             World = _houseView;
             World.PlaceHero(new Vector2(9.5f, 12.5f));
             _inHouse = true;
@@ -2354,33 +2337,12 @@ namespace MoonThief
             yield return new WaitForSeconds(0.9f);
             Shot("11c-interior");
             Debug.Log("[selftest] interior inHouse=" + _inHouse + " hero=" + World.HeroPos);
-            // bisect the dark patches: same frame with every dimming layer stripped - if the
-            // room is still dark, the culprit is one of the sprites or the mesh itself
-            _houseView.DebugStripLayers();
-            yield return new WaitForSeconds(0.15f);
-            Shot("11c0-interior-nofx");
-            // every room layout once: the void spots move with the furniture set, which names
-            // what draws them if they only appear under certain pieces
+            // every room layout once, so the audit sees all six furniture sets
             for (int h = 1; h < 6; h++)
             {
                 EditorInterior(h);
                 yield return new WaitForSeconds(0.7f);
                 Shot("11c" + h + "-interior");
-                if (h == 1)
-                {
-                    // meshes only: if the dark cells are still here with every sprite gone,
-                    // the ground mesh itself is drawing them
-                    _houseView.DebugStripAllSprites();
-                    yield return new WaitForSeconds(0.15f);
-                    Shot("11c1-interior-meshonly");
-                    // and count every MeshRenderer in the SCENE - the house view only lists
-                    // its own, so a quad living under a sibling root stays invisible
-                    foreach (var mf in FindObjectsOfType<MeshFilter>())
-                        if (mf.GetComponent<MeshRenderer>() != null && mf.GetComponent<MeshRenderer>().enabled)
-                            Debug.Log("[scenemesh] " + mf.transform.name + " parent=" + (mf.transform.parent != null ? mf.transform.parent.name : "-") +
-                                " verts=" + (mf.sharedMesh != null ? mf.sharedMesh.vertexCount : -1));
-                    _houseView.DumpGroundVerts();
-                }
             }
 
             // Marn's stall: open the shop card for real, buy one thing, leave
