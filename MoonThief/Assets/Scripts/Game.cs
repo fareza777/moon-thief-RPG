@@ -2505,8 +2505,16 @@ namespace MoonThief
                         // frame after a dazed monster's skipped turn hides the cells
                         if (battles == 1 && t >= 2 && !_shotMoon && BattleViewRef.MenuOn)
                         {
-                            _shotMoon = true;
-                            Shot("13c-battle-moon");
+                            // MenuOn still flickers true for a frame when a dazed beast's
+                            // skipped turn interrupts the open menu - hold a beat so the
+                            // cells either settle in or the flag falls away
+                            yield return new WaitForSeconds(0.3f);
+                            if (BattleViewRef != null && BattleViewRef.MenuOn
+                                && !BattleViewRef.MessageRevealing)
+                            {
+                                _shotMoon = true;
+                                Shot("13c-battle-moon");
+                            }
                         }
                         // one turn in three goes through the real tap path, so the hit test
                         // that a finger uses is exercised instead of only the shortcut. The

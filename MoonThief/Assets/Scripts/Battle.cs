@@ -66,6 +66,9 @@ namespace MoonThief
         int _selCell;
 
         public bool MenuOn => _menuOn;
+        // true while the battle line is still typing itself out - the menu can read "on"
+        // underneath a message plate, so a flag alone never tells you what the eye sees
+        public bool MessageRevealing => _msg != null && _msg.IsRevealing;
         public int SelectedCell => _selCell;
         public int OverlayButtonCount => _ovButtons.Count;
 
