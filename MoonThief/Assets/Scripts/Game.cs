@@ -1487,17 +1487,21 @@ namespace MoonThief
             Phase = St.Battle;
             // breathing room after a fight before the next wild touch can trigger
             _encounterCooldown = 6f;
-            SetCamY(0f);
             Menus.Hide();
             _paused = false;
             _tapPending = false;
             _tapFinger = -1;
             _joyTouch = false;
-            World.gameObject.SetActive(false);
-            if (_hudZone != null) _hudZone.enabled = false;
-            SetHudQuestVisible(false);
-            BattleViewRef.gameObject.SetActive(true);
-            Director.StartBattle(specs);
+            // the arena blinks in rather than snapping: a fast dark beat covers the swap
+            DoTransition(() =>
+            {
+                SetCamY(0f);
+                World.gameObject.SetActive(false);
+                if (_hudZone != null) _hudZone.enabled = false;
+                SetHudQuestVisible(false);
+                BattleViewRef.gameObject.SetActive(true);
+                Director.StartBattle(specs);
+            }, 0.16f, 0.3f);
             bool boss = false;
             foreach (var s in specs) if (s.Boss) boss = true;
             Sfx.Play(boss ? "boss" : "blip");
@@ -1506,14 +1510,17 @@ namespace MoonThief
         void OnEncounterWon()
         {
             Sfx.Mus.Play("explore");
-            BattleViewRef.gameObject.SetActive(false);
-            BattleViewRef.HideCard();
+            DoTransition(() =>
+            {
+                BattleViewRef.gameObject.SetActive(false);
+                BattleViewRef.HideCard();
+                World.gameObject.SetActive(true);
+                FollowHero();
+            }, 0.22f, 0.3f);
             Phase = St.Explore;
-            World.gameObject.SetActive(true);
             if (_hudZone != null) _hudZone.enabled = true;
             SetHudQuestVisible(true);
             _paused = false;
-            FollowHero();
             World.ResetForChapter();
             World.SyncFriends();
             World.SetTextVisible(true);
