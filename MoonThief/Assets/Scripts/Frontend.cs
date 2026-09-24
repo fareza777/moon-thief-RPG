@@ -239,6 +239,7 @@ namespace MoonThief
         PixelLabel _jrTitle, _jrSub, _jrFoot, _pageTitle, _pageSub, _pageFoot, _setFoot;
         SpriteRenderer _jrPanel, _pagePanel;
         string[] _pageLabels = new string[0], _pageVals = new string[0];
+        int[] _pageIcons;
         Action[] _pageActs = new Action[0];
         float _cardTop;                 // the card laid out last: cards are centred on the origin
         string _pageTitleKey;
@@ -932,6 +933,7 @@ namespace MoonThief
             var labels = new List<string>();
             var vals = new List<string>();
             var acts = new List<Action>();
+            var icons = new List<int>();
             foreach (var key in ShopStock())
             {
                 var def = Items.Get(key);
@@ -941,11 +943,15 @@ namespace MoonThief
                 vals.Add(owned ? Strings.Get("shop.owned") : def.Price + " G");
                 var k = key;
                 acts.Add(() => Buy(k));
+                icons.Add(def.Kind == ItemKind.Food ? 2
+                    : def.Kind == ItemKind.Blade ? 0
+                    : def.Kind == ItemKind.Cloth ? 18 : 25);
             }
             labels.Add(Strings.Get("menu.back"));
             vals.Add("");
             acts.Add(() => OnShopClosed?.Invoke());
-            float bottom = LayRows(_shopRows, labels.ToArray(), acts.ToArray(), vals.ToArray(), rowsTop, labels.Count);
+            icons.Add(14);
+            float bottom = LayRows(_shopRows, labels.ToArray(), acts.ToArray(), vals.ToArray(), rowsTop, labels.Count, icons.ToArray());
             _shopFoot.transform.localPosition = new Vector3(0f, FootY(bottom), 0f);
         }
 
@@ -1185,6 +1191,7 @@ namespace MoonThief
             var labels = new List<string>();
             var vals = new List<string>();
             var acts = new List<Action>();
+            List<int> icons = null;
             string title;
             string sub = "";
 
@@ -1214,9 +1221,10 @@ namespace MoonThief
                     title = "jr.items";
                     sub = Strings.Get("jr.items.sub", Game.State.Bag.Count);
                     {
+                        icons = new List<int>();
                         var keys = new List<string>();
                         foreach (var b in Game.State.Bag) if (!keys.Contains(b)) keys.Add(b);
-                        if (keys.Count == 0) AddK(labels, vals, acts, "jr.empty", "");
+                        if (keys.Count == 0) { AddK(labels, vals, acts, "jr.empty", ""); icons.Add(-1); }
                         foreach (var key in keys)
                         {
                             var def = Items.Get(key);
@@ -1224,6 +1232,9 @@ namespace MoonThief
                             bool worn = IsWorn(key);
                             labels.Add(Strings.Get(key) + (n > 1 ? " x" + n : ""));
                             vals.Add(worn ? Strings.Get("jr.worn") : Items.Effect(def));
+                            icons.Add(def.Kind == ItemKind.Food ? 2
+                                : def.Kind == ItemKind.Blade ? 0
+                                : def.Kind == ItemKind.Cloth ? 18 : 25);
                             string k = key;
                             var d = def;
                             acts.Add(() =>
@@ -1274,6 +1285,7 @@ namespace MoonThief
             _pageLabels = labels.ToArray();
             _pageVals = vals.ToArray();
             _pageActs = acts.ToArray();
+            _pageIcons = icons?.ToArray();
 
             HideAll();
             _sc = Sc.Page;
@@ -1337,26 +1349,30 @@ namespace MoonThief
             var labels = new List<string>();
             var vals = new List<string>();
             var acts = new List<Action>();
+            var icons = _pageIcons == null ? null : new List<int>();
             for (int i = 0; i < count; i++)
             {
                 labels.Add(_pageLabels[start + i]);
                 vals.Add(_pageVals[start + i]);
                 acts.Add(_pageActs[start + i]);
+                icons?.Add(_pageIcons[start + i]);
             }
             if (pages > 1)
             {
                 labels.Add(Strings.Get("jr.page", _pageIndex + 1, pages));
                 vals.Add("");
                 acts.Add(() => { _pageIndex = (_pageIndex + 1) % pages; LayoutPage(); Select(0); });
+                icons?.Add(-1);
             }
             labels.Add(Strings.Get("menu.back"));
             vals.Add("");
             acts.Add(ShowJournal);
+            icons?.Add(14);
 
             float rowsTop = LayoutCard(_pagePanel, 16.4f, labels.Count, true);
             _pageTitle.transform.localPosition = new Vector3(0f, _cardTop - 1.9f, 0f);
             _pageSub.transform.localPosition = new Vector3(0f, _cardTop - 3.5f, 0f);
-            float bottom = LayRows(_pageRows, labels.ToArray(), acts.ToArray(), vals.ToArray(), rowsTop, labels.Count);
+            float bottom = LayRows(_pageRows, labels.ToArray(), acts.ToArray(), vals.ToArray(), rowsTop, labels.Count, icons?.ToArray());
             _pageFoot.transform.localPosition = new Vector3(0f, FootY(bottom), 0f);
             _pageFoot.Set(Strings.Get("jr.pagehint"));
         }

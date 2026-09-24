@@ -563,7 +563,7 @@ namespace MoonThief
         static Sprite _icoAtk, _icoFriend, _icoFood, _icoRun, _icoPlay, _icoBook, _icoSave, _icoGear, _icoDoor,
             _icoText, _icoNote, _icoSpeaker, _icoShake, _icoAuto, _icoBack, _icoTrash,
             _icoPerson, _icoBag, _icoShield, _icoPaw, _icoScroll,
-            _icoStar, _icoShare, _icoInfo, _icoMoon;
+            _icoStar, _icoShare, _icoInfo, _icoMoon, _icoBell;
 
         /// <summary>Tiny pictogram beside each battle command so the four cells read at a
         /// glance: sword for strike, heart for befriend, apple for morsel, boot for run —
@@ -596,7 +596,8 @@ namespace MoonThief
                 case 21: return _icoStar ??= MaskIcon("icoStar", MaskStar);
                 case 22: return _icoShare ??= MaskIcon("icoShare", MaskShare);
                 case 23: return _icoInfo ??= MaskIcon("icoInfo", MaskInfo);
-                default: return _icoMoon ??= MaskIcon("icoMoon", MaskMoon);
+                case 24: return _icoMoon ??= MaskIcon("icoMoon", MaskMoon);
+                default: return _icoBell ??= MaskIcon("icoBell", MaskBell);
             }
         }
 
@@ -892,6 +893,17 @@ namespace MoonThief
             "..gg.....",
             "...gg....",
             "....gg...",
+            ".........",
+        };
+        static readonly string[] MaskBell = {
+            ".........",
+            "...gg....",
+            "..gggg...",
+            "..gggg...",
+            ".gggggg..",
+            ".gggggg..",
+            "..gggg...",
+            "...gg....",
             ".........",
         };
 
