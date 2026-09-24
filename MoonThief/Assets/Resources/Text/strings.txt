@@ -172,6 +172,7 @@ bt.friendturn|{0} fights for you!
 bt.enemyturn|{0} strikes!
 bt.herodown|{0} falls...
 bt.fainted|{0} fades into mist.
+bt.fellpack|{0} beasts fall together.
 bt.trybefriend|{0} looks at you... ({1}%)
 bt.befriended|{0} joins you!
 bt.befriended.rare|The MOONLIT {0} joins your night!

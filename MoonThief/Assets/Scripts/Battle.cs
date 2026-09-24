@@ -1996,7 +1996,9 @@ namespace MoonThief
                 }
                 if (felled > 0)
                 {
-                    View.SetMessage(Strings.Get("bt.fainted", last));
+                    View.SetMessage(felled > 1
+                        ? Strings.Get("bt.fellpack", felled)
+                        : Strings.Get("bt.fainted", last));
                     yield return Fx.Wait(0.6f);
                 }
                 for (int i = 0; i < View.Enemies.Length; i++)
