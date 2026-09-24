@@ -108,10 +108,11 @@ namespace MoonThief
             _hudNight = Label("hudNight", 2, new Color(1f, 0.93f, 0.72f), TextAlign.Left, 50);
             _hudNight.transform.localPosition = new Vector3(Left + 0.45f, Top - 0.42f, 0f);
 
-            _hudRound = Label("hudRound", 2, new Color(0.75f, 0.73f, 0.88f), TextAlign.Right, 50);
-            // ends clear of the AUTO chip's left edge (the chip spans Right-4.5 .. Right-0.9):
-            // the chip draws above text, so a round counter reaching into it was half-covered
-            _hudRound.transform.localPosition = new Vector3(Right - 4.85f, Top - 0.42f, 0f);
+            _hudRound = Label("hudRound", 2, new Color(0.75f, 0.73f, 0.88f), TextAlign.Left, 50);
+            // anchored LEFT at a fixed x right after NIGHT: a right-aligned round label
+            // floated toward the night text whenever the flow suffix stretched it, so the
+            // two ran together as "NIGHT 2R6 FLOW x2"
+            _hudRound.transform.localPosition = new Vector3(Left + 6.3f, Top - 0.42f, 0f);
 
             _moonIcon = SpriteRendererUtil.Make(Stage, "bmoon", Game.State.Chapter >= 3 ? TexArt.MoonFull() : TexArt.MoonEmpty(), 50);
             _moonIcon.transform.localPosition = new Vector3(Right - 0.9f, Top - 0.85f, 0f);
