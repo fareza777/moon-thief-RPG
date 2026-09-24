@@ -869,11 +869,12 @@ namespace MoonThief
         public float Speed;
         public bool Boss, Captured, Dead;
         public string BattlerPath;      // Resources path of the battler sprite
+        public string Species;          // monster string key - set on wild foes and befriended allies
         public string ColorDir;         // party only: "color_1"
         public int Look = -1;           // party only: which headwear this friend wears (-1 = none)
         public int Style;               // party only: 0 strike (crit), 1 sweep (hits all), 2 mend (heals)
         public int Scale = 2;
-        public bool Alive => !Dead && Hp > 0;
+        public bool Alive => !Dead && !Captured && Hp > 0;
         public float Hp01 => MaxHp > 0 ? Mathf.Clamp01((float)Hp / MaxHp) : 0f;
     }
 
@@ -955,6 +956,13 @@ namespace MoonThief
             Name = "mon.minotaur", Battler = "Art/Battlers/MinotaurA", MapSheet = "Art/Mon/Monsters_04_0",
             Tier = 5, Chapter = 3, Hp = 120, AtkMin = 8, AtkMax = 13, Speed = 4.4f, Boss = true
         };
+
+        /// <summary>Look a wild species up by its string key (befriended allies rebuild from it).</summary>
+        public static MonsterSpec? Species(string key)
+        {
+            foreach (var s in Bestiary) if (s.Name == key) return s;
+            return null;
+        }
 
         /// <summary>A random encounter for a chapter. Usually one foe, sometimes two.</summary>
         public static MonsterSpec[] Roll(int chapter, System.Random rng)

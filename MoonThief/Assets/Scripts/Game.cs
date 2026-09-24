@@ -29,6 +29,7 @@ namespace MoonThief
 
             // ---- the journal: the bag, what is worn, what has been seen, what has been done ----
             public static readonly List<string> Bag = new List<string>();          // item keys, repeats allowed
+            public static readonly List<string> Friends = new List<string>();      // befriended species keys (max 2)
             public static readonly string[] Worn = new string[3];                  // blade, cloth, charm
             public static readonly List<string> Zones = new List<string>();        // places walked into
             public static readonly List<string> ChestsDone = new List<string>();   // chests already opened
@@ -42,7 +43,7 @@ namespace MoonThief
                 Chapter = 1; MoonShards = 0; Befriended = 0; HeldItems = 0; MorselsUsed = 0;
                 Gold = 0; Xp = 0; ChestsOpened = 0; Defeats = 0;
                 Bag.Clear(); Worn[0] = Worn[1] = Worn[2] = null;
-                Zones.Clear(); Seen.Clear(); ChestsDone.Clear();
+                Zones.Clear(); Seen.Clear(); ChestsDone.Clear(); Friends.Clear();
                 Quests.Reset();
             }
 
@@ -150,6 +151,7 @@ namespace MoonThief
                 gold = Gold, xp = Xp, morsels = MorselsUsed, items = HeldItems,
                 chestsOpened = ChestsOpened, heroX = heroX, heroY = heroY,
                 defeats = Defeats, bag = Bag.ToArray(), worn = (string[])Worn.Clone(),
+                friends = Friends.ToArray(),
                 zones = Zones.ToArray(), quests = Quests.Capture(),
                 seen = SeenKeys(), chests = ChestsDone.ToArray(),
             };
@@ -191,6 +193,9 @@ namespace MoonThief
                     }
                 ChestsDone.Clear();
                 if (d.chests != null) foreach (var k in d.chests) if (!string.IsNullOrEmpty(k) && !ChestsDone.Contains(k)) ChestsDone.Add(k);
+                Friends.Clear();
+                if (d.friends != null) foreach (var f in d.friends)
+                    if (!string.IsNullOrEmpty(f) && Friends.Count < 2) Friends.Add(f);
                 Quests.Apply(d.quests);
             }
         }
@@ -1482,6 +1487,7 @@ namespace MoonThief
             _paused = false;
             FollowHero();
             World.ResetForChapter();
+            World.SyncFriends();
             World.SetTextVisible(true);
             RefreshHud();
             SaveRun();

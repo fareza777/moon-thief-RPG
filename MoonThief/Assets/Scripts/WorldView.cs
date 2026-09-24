@@ -1613,6 +1613,7 @@ namespace MoonThief
                 if (fr.Length > 0) f.Anim.Play(fr, 1f, true);
                 _friends.Add(f);
             }
+            SyncFriends();
         }
 
         static readonly string[] FriendArt =
@@ -1620,6 +1621,39 @@ namespace MoonThief
             "Art/Hero/hero/color_2/walk/hero_walk_DOWN",
             "Art/Hero/hero/color_3/walk/hero_walk_DOWN",
         };
+
+        /// <summary>Beasts raised in battle walk the line too: a befriended monster joins the
+        /// trail behind sea and moss on the first frame back in the world. Built here (and
+        /// called again when a battle lets one go) so a saved game keeps its company.</summary>
+        public void SyncFriends()
+        {
+            for (int i = 0; i < Game.State.Friends.Count; i++)
+            {
+                string key = Game.State.Friends[i];
+                bool have = false;
+                for (int j = 0; j < _friends.Count; j++)
+                    if (_friends[j].Spec.Name == key) { have = true; break; }
+                if (have) continue;
+                var s = BattleData.Species(key);
+                if (!s.HasValue) continue;
+                var f = MakeActor(Vector2.zero, WorldOrder(0f), isNpc: false);
+                f.Root.name = "friend" + _friends.Count;
+                f.Name = null;
+                f.Speed = 4.6f;
+                f.Spec = s.Value;
+                var spr = TexArt.MapMonster(s.Value.MapSheet, 1);
+                if (spr != null) f.Anim.Play(new[] { spr }, 1f, true);
+                if (Hero?.Root != null)
+                {
+                    var hp = (Vector2)Hero.Root.localPosition;
+                    var back = hp + new Vector2(0f, -0.55f * (_friends.Count + 1));
+                    f.Root.localPosition = CanStand(back) ? new Vector3(back.x, back.y, 0f)
+                        : new Vector3(hp.x, hp.y, 0f);
+                }
+                _friends.Add(f);
+                SortActor(f);
+            }
+        }
 
         bool _heroWalking;
         float _stepT;

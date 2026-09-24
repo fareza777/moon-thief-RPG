@@ -88,6 +88,7 @@ namespace MoonThief
         public string[] worn;
         public string[] zones;
         public string[] seen;
+        public string[] friends;
         public string[] quests;
         public string[] chests;
     }

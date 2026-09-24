@@ -128,6 +128,7 @@ bt.two|{0} and a friend appear!
 bt.boss|The {0} bars your way!
 bt.slam|The {0} rears up and SLAMS down!
 bt.yourturn|{0} - your move.
+bt.friendturn|{0} fights for you!
 bt.enemyturn|{0} strikes!
 bt.herodown|{0} falls...
 bt.fainted|{0} fades into mist.

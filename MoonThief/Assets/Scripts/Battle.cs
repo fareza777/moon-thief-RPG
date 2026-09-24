@@ -180,34 +180,74 @@ namespace MoonThief
             }
         }
 
+        /// Footer spots for a party of any size: three heroes spread wide, more squeeze in.
+        static float[] PartyXs(int n)
+        {
+            if (n <= 3) return new[] { -4.2f, 0f, 4.2f };
+            var xs = new float[n];
+            for (int i = 0; i < n; i++) xs[i] = Mathf.Lerp(-5.6f, 5.6f, i / (n - 1f));
+            return xs;
+        }
+
         void BuildParty()
         {
             var specs = BattleData.Party;
-            Party = new Fighter[specs.Length];
-            PartyRigs = new Rig[specs.Length];
-            float[] xs = { -4.2f, 0f, 4.2f };
-            for (int i = 0; i < specs.Length; i++)
+            // befriended beasts stand behind the heroes, up to the two-heart cap
+            var friends = new List<MonsterSpec>();
+            foreach (var key in Game.State.Friends)
             {
-                var spec = specs[i];
-                // levels and worn gear both count, otherwise the journal pages are a museum:
-                // a level adds health and edge (HeroStats), a blade attack, cloth hp, a charm both
-                BattleData.HeroStats(spec, Game.State.Level, out int hp, out int aMin, out int aMax);
-                Party[i] = new Fighter
+                var s = BattleData.Species(key);
+                if (s.HasValue) friends.Add(s.Value);
+            }
+            Party = new Fighter[specs.Length + friends.Count];
+            PartyRigs = new Rig[Party.Length];
+            float[] xs = PartyXs(Party.Length);
+            for (int i = 0; i < Party.Length; i++)
+            {
+                bool friend = i >= specs.Length;
+                if (!friend)
                 {
-                    Id = "p" + i,
-                    Name = Strings.Get(spec.NameKey),
-                    Side = Side.Party,
-                    MaxHp = hp + Game.State.BonusHp,
-                    Hp = hp + Game.State.BonusHp,
-                    AtkMin = aMin + Game.State.BonusAtk,
-                    AtkMax = aMax + Game.State.BonusAtk,
-                    Speed = spec.Speed,
-                    ColorDir = spec.ColorDir,
-                    Look = spec.Look,
-                    Style = spec.Style,
-                    BattlerPath = BattleData.ClipPath(spec.ColorDir, "breath_idle"),
-                    Scale = 2
-                };
+                    var spec = specs[i];
+                    // levels and worn gear both count, otherwise the journal pages are a museum:
+                    // a level adds health and edge (HeroStats), a blade attack, cloth hp, a charm both
+                    BattleData.HeroStats(spec, Game.State.Level, out int hp, out int aMin, out int aMax);
+                    Party[i] = new Fighter
+                    {
+                        Id = "p" + i,
+                        Name = Strings.Get(spec.NameKey),
+                        Side = Side.Party,
+                        MaxHp = hp + Game.State.BonusHp,
+                        Hp = hp + Game.State.BonusHp,
+                        AtkMin = aMin + Game.State.BonusAtk,
+                        AtkMax = aMax + Game.State.BonusAtk,
+                        Speed = spec.Speed,
+                        ColorDir = spec.ColorDir,
+                        Look = spec.Look,
+                        Style = spec.Style,
+                        BattlerPath = BattleData.ClipPath(spec.ColorDir, "breath_idle"),
+                        Scale = 2
+                    };
+                }
+                else
+                {
+                    var ms = friends[i - specs.Length];
+                    int flv = (Game.State.Level - 1) * 2;
+                    Party[i] = new Fighter
+                    {
+                        Id = "p" + i,
+                        Name = Strings.Get(ms.Name),
+                        Side = Side.Party,
+                        Species = ms.Name,
+                        MaxHp = ms.Hp + flv,
+                        Hp = ms.Hp + flv,
+                        AtkMin = ms.AtkMin,
+                        AtkMax = ms.AtkMax,
+                        Speed = ms.Speed,
+                        Style = 0,
+                        BattlerPath = ms.Battler,
+                        Scale = FitScale(Bank.One(ms.Battler), 3.2f, 2)
+                    };
+                }
                 var home = new Vector3(xs[i], PartyFeet, 0f);
                 var rig = MakeRig(Party[i], home, 20 + i);
                 // The party footer is a tight stack between the fighters' feet and the message
@@ -221,9 +261,31 @@ namespace MoonThief
                 Plate(rig.NameChip, rig.Name, Party[i].Name);
                 rig.BarBg = SpriteRendererUtil.Make(Stage, "pbg" + i, TexArt.Solid(), 22);
                 rig.BarFill = SpriteRendererUtil.Make(Stage, "pfill" + i, TexArt.Solid(), 23);
-                rig.Anim.Play(Bank.Frames(BattleData.ClipPath(spec.ColorDir, "breath_idle")), 6f, true);
+                rig.Anim.Play(friend
+                    ? new[] { Bank.One(Party[i].BattlerPath) }
+                    : Bank.Frames(BattleData.ClipPath(specs[i].ColorDir, "breath_idle")), 6f, true);
                 PartyRigs[i] = rig;
             }
+        }
+
+        /// <summary>The line-up is rebuilt at every encounter: worn gear and levels shift
+        /// the stats the heroes were created with, and befriended beasts join mid-run.
+        /// ResetPartyHp runs right after and tops everyone off, so wounds do not carry.</summary>
+        public void RebuildParty()
+        {
+            if (PartyRigs != null)
+                foreach (var r in PartyRigs) DisposeRig(r);
+            BuildParty();
+        }
+
+        void DisposeRig(Rig rig)
+        {
+            if (rig == null) return;
+            if (rig.Root != null) UtilDestroy(rig.Root.gameObject);
+            if (rig.Name != null) UtilDestroy(rig.Name.gameObject);
+            if (rig.NameChip != null) UtilDestroy(rig.NameChip.gameObject);
+            if (rig.BarBg != null) UtilDestroy(rig.BarBg.gameObject);
+            if (rig.BarFill != null) UtilDestroy(rig.BarFill.gameObject);
         }
 
         Rig MakeRig(Fighter f, Vector3 home, int sorting)
@@ -327,6 +389,7 @@ namespace MoonThief
                     AtkMin = spec.AtkMin, AtkMax = spec.AtkMax,
                     Speed = spec.Speed,
                     Boss = spec.Boss,
+                    Species = spec.Name,
                     BattlerPath = spec.Battler,
                     Scale = FitScale(battler, spec.Boss ? 8.5f : 5.6f, 2)
                 };
@@ -371,7 +434,9 @@ namespace MoonThief
                 rig.Body.localPosition = Vector3.zero;
                 rig.Sr.enabled = true;
                 rig.Anim.SetTint(Color.white);
-                rig.Anim.Play(Bank.Frames(BattleData.ClipPath(rig.F.ColorDir, "breath_idle")), 6f, true);
+                rig.Anim.Play(rig.F.Species != null
+                    ? new[] { Bank.One(rig.F.BattlerPath) }
+                    : Bank.Frames(BattleData.ClipPath(rig.F.ColorDir, "breath_idle")), 6f, true);
             }
             Refresh();
         }
@@ -559,7 +624,7 @@ namespace MoonThief
 
         public void Refresh()
         {
-            float[] xs = { -4.2f, 0f, 4.2f };
+            var xs = PartyXs(PartyRigs.Length);
             for (int i = 0; i < PartyRigs.Length; i++)
             {
                 var rig = PartyRigs[i];
@@ -973,6 +1038,7 @@ namespace MoonThief
                 : Game.State.Chapter == 2 ? "Art/Backgrounds/PlainA" : "Art/Backgrounds/ForestA");
             View.SetNight(Game.State.Chapter);
             View.SetMoonIcon(Game.State.Chapter >= 3);
+            View.RebuildParty();
             View.ResetPartyHp();
             View.SetEncounter(specs);
             View.HideCard();
@@ -1036,6 +1102,12 @@ namespace MoonThief
 
         void BeginPlayerTurn(Fighter f)
         {
+            // a befriended beast acts on its own - no command menu, it just helps
+            if (f.Species != null && Application.isPlaying)
+            {
+                StartCoroutine(FriendTurn(f));
+                return;
+            }
             AwaitingInput = true;
             View.SetMenuVisible(true);
             View.SetSelected(0);
@@ -1072,8 +1144,41 @@ namespace MoonThief
         void PlayIdle(BattleView.Rig rig)
         {
             if (rig?.Anim == null) return;
-            if (rig.F.Side == Side.Party)
-                rig.Anim.Play(Bank.Frames(BattleData.ClipPath(rig.F.ColorDir, "breath_idle")), 6f, true);
+            if (rig.F.Side != Side.Party) return;
+            rig.Anim.Play(rig.F.Species != null
+                ? new[] { Bank.One(rig.F.BattlerPath) }
+                : Bank.Frames(BattleData.ClipPath(rig.F.ColorDir, "breath_idle")), 6f, true);
+        }
+
+        /// <summary>A befriended beast's turn: a quick lunge at the weakest standing foe, no
+        /// menu in the way - it earned its spot in line.</summary>
+        IEnumerator FriendTurn(Fighter f)
+        {
+            _ph = Ph.Acting;
+            var aRig = View.RigOf(f);
+            int ti = -1; float low = float.MaxValue;
+            for (int i = 0; i < View.Enemies.Length; i++)
+                if (View.Enemies[i].Alive && View.Enemies[i].Hp < low) { low = View.Enemies[i].Hp; ti = i; }
+            if (ti < 0) { EndTurn(); yield break; }
+            var target = View.Enemies[ti];
+            var tRig = View.RigOf(target);
+            View.SetMessage(Strings.Get("bt.friendturn", f.Name));
+            yield return Fx.Wait(0.4f);
+            yield return Lunge(aRig, tRig != null ? tRig.Home : aRig.Home, 0.3f);
+            bool crit = UnityEngine.Random.value < 0.18f;
+            int dmg = Mathf.RoundToInt(UnityEngine.Random.Range(f.AtkMin, f.AtkMax + 1) * (crit ? 1.6f : 1f));
+            HitFoe(target, dmg, crit);
+            View.Refresh();
+            yield return Fx.Wait(0.45f);
+            yield return Lunge(aRig, aRig.Home, 0.3f);
+            PlayIdle(aRig);
+            if (!target.Alive)
+            {
+                yield return FadeOut(tRig);
+                View.SetMessage(Strings.Get("bt.fainted", target.Name));
+                yield return Fx.Wait(0.6f);
+            }
+            EndTurn();
         }
 
         IEnumerator EnemyTurn(Fighter e)
@@ -1363,11 +1468,14 @@ namespace MoonThief
             View.Sparkle(tRig.Home + new Vector3(0f, tRig.BodyHeight * 0.5f, 0f), new Color(0.85f, 0.9f, 1f), 8);
             yield return Fx.Wait(0.9f);
 
-            if (UnityEngine.Random.value < chance && _befriended + PartyStanding() < 2)
+            if (UnityEngine.Random.value < chance && !target.Boss
+                && target.Species != null && !Game.State.Friends.Contains(target.Species)
+                && Game.State.Friends.Count < 2)
             {
                 target.Captured = true;
                 _befriended++;
                 Game.State.Befriended++;
+                Game.State.Friends.Add(target.Species);
                 View.Sparkle(tRig.Home + new Vector3(0f, tRig.BodyHeight * 0.5f, 0f), new Color(1f, 0.95f, 0.6f), 14);
                 Sfx.Play("befriend");
                 View.SetMessage(Strings.Get("bt.befriended", target.Name));
