@@ -1797,13 +1797,15 @@ namespace MoonThief
         void SpawnDust(Vector2 at)
         {
             // kicking in place would stamp puff on puff: a fresh puff barely moved from
-            // the last live one reads as a smudge, so it is skipped entirely
+            // the last live one reads as a smudge, so it is skipped entirely. The check
+            // runs on the jittered landing spot - comparing the heel instead let the
+            // jitter stack two puffs on the same cell
+            Vector2 land = at + new Vector2(UnityEngine.Random.Range(-0.3f, 0.3f), UnityEngine.Random.Range(-0.2f, 0.05f));
             foreach (var x in _dust)
-                if (x.Sr.enabled && (x.Sr.transform.localPosition - new Vector3(at.x, at.y, 0f)).sqrMagnitude < 0.04f)
+                if (x.Sr.enabled && (x.Sr.transform.localPosition - new Vector3(land.x, land.y, 0f)).sqrMagnitude < 0.14f)
                     return;
             var c = new Color(0.95f, 0.9f, 0.74f, 0.55f);
-            SpawnPuff(at + new Vector2(UnityEngine.Random.Range(-0.3f, 0.3f), UnityEngine.Random.Range(-0.2f, 0.05f)),
-                Vector2.up * 0.5f, TexArt.Glow(), 0.62f, c, 0.42f);
+            SpawnPuff(land, Vector2.up * 0.5f, TexArt.Glow(), 0.62f, c, 0.42f);
         }
 
         /// <summary>Gold flecks fan out over an opened chest and fall away - the loot

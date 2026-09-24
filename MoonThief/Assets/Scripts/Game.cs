@@ -2188,6 +2188,7 @@ namespace MoonThief
             World.gameObject.SetActive(true);
             if (World.Ready) World.Teardown();
             _overworld = World;
+            _overworld.gameObject.SetActive(false);   // EnterHouse hides it too - its canopy mesh reads as black patches inside the room
             if (_houseRoot == null)
             {
                 _houseRoot = new GameObject("house").transform;
