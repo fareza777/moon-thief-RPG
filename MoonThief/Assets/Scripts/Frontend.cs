@@ -910,11 +910,14 @@ namespace MoonThief
 
         /// <summary>Marn's stall: a pause-like card the shopkeeper opens instead of dialogue.
         /// Rows are his wares; the value column is the price; BACK hands control to Game.</summary>
+        bool _shopSell;
+
         public void ShowShop()
         {
             HideAll();
             _sc = Sc.Shop;
             _sel = 0;
+            _shopSell = false;
             _shopRoot.gameObject.SetActive(true);
             RefreshShop();
             Select(0);
@@ -937,32 +940,77 @@ namespace MoonThief
         void RefreshShop()
         {
             _shopSub.Set(Strings.Get("shop.sub", Game.State.Gold));
-            float rowsTop = LayoutCard(_shopPanel, 16.4f, ShopStock().Length + 1, true);
             _shopTitle.transform.localPosition = new Vector3(0f, _cardTop - 1.7f, 0f);
             _shopSub.transform.localPosition = new Vector3(0f, _cardTop - 3.6f, 0f);
             var labels = new List<string>();
             var vals = new List<string>();
             var acts = new List<Action>();
             var icons = new List<int>();
-            foreach (var key in ShopStock())
+            int iconOf(ItemKind kind) => kind == ItemKind.Food ? 2
+                : kind == ItemKind.Blade ? 0 : kind == ItemKind.Cloth ? 18 : 25;
+            if (_shopSell)
             {
-                var def = Items.Get(key);
-                labels.Add(Strings.Get(key) + "  " + Items.Effect(def));
-                bool owned = Items.IsEquip(def.Kind)
-                    && (Game.State.BagCount(key) > 0 || Array.IndexOf(Game.State.Worn, key) >= 0);
-                vals.Add(owned ? Strings.Get("shop.owned") : def.Price + " G");
-                var k = key;
-                acts.Add(() => Buy(k));
-                icons.Add(def.Kind == ItemKind.Food ? 2
-                    : def.Kind == ItemKind.Blade ? 0
-                    : def.Kind == ItemKind.Cloth ? 18 : 25);
+                // Marn buys anything that isn't already on your back or tied to a
+                // quest: half her shelf price, she says, and a story thrown in free.
+                var keys = new List<string>();
+                foreach (var b in Game.State.Bag) if (!keys.Contains(b)) keys.Add(b);
+                int shown = 0;
+                foreach (var key in keys)
+                {
+                    var def = Items.Get(key);
+                    if (def.Kind == ItemKind.Key) continue;          // quest things stay
+                    if (Items.IsEquip(def.Kind) && IsWorn(key)) continue;   // on your back
+                    int n = Game.State.BagCount(key);
+                    labels.Add(Strings.Get(key) + (n > 1 ? " x" + n : ""));
+                    vals.Add(Mathf.Max(1, def.Price / 2) + " G");
+                    icons.Add(iconOf(def.Kind));
+                    var k = key;
+                    acts.Add(() => Sell(k));
+                    shown++;
+                }
+                if (shown == 0) { AddK(labels, vals, acts, "jr.empty", ""); icons.Add(-1); }
+                labels.Add(Strings.Get("shop.buymode"));
+                vals.Add("");
+                acts.Add(() => { _shopSell = false; RefreshShop(); Select(0); });
+                icons.Add(28);
             }
-            labels.Add(Strings.Get("menu.back"));
-            vals.Add("");
-            acts.Add(() => OnShopClosed?.Invoke());
-            icons.Add(14);
+            else
+            {
+                foreach (var key in ShopStock())
+                {
+                    var def = Items.Get(key);
+                    labels.Add(Strings.Get(key) + "  " + Items.Effect(def));
+                    bool owned = Items.IsEquip(def.Kind)
+                        && (Game.State.BagCount(key) > 0 || Array.IndexOf(Game.State.Worn, key) >= 0);
+                    vals.Add(owned ? Strings.Get("shop.owned") : def.Price + " G");
+                    var k = key;
+                    acts.Add(() => Buy(k));
+                    icons.Add(iconOf(def.Kind));
+                }
+                labels.Add(Strings.Get("shop.sellmode"));
+                vals.Add("");
+                acts.Add(() => { _shopSell = true; RefreshShop(); Select(0); });
+                icons.Add(28);
+                labels.Add(Strings.Get("menu.back"));
+                vals.Add("");
+                acts.Add(() => OnShopClosed?.Invoke());
+                icons.Add(14);
+            }
+            float rowsTop = LayoutCard(_shopPanel, 16.4f, labels.Count, true);
             float bottom = LayRows(_shopRows, labels.ToArray(), acts.ToArray(), vals.ToArray(), rowsTop, labels.Count, icons.ToArray());
             _shopFoot.transform.localPosition = new Vector3(0f, FootY(bottom), 0f);
+        }
+
+        void Sell(string key)
+        {
+            var def = Items.Get(key);
+            int got = Mathf.Max(1, def.Price / 2);
+            Game.State.RemoveBag(key);
+            Game.State.Gold += got;
+            Sfx.Play("coin");
+            ShowToast(Strings.Get("shop.soldout", got), 2.6f);
+            RefreshShop();
+            Select(0);
         }
 
         void Buy(string key)

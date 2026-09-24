@@ -73,6 +73,9 @@ shop.poor|Not enough gold, love.
 shop.owned|OWNED
 shop.have|You already have one, love.
 shop.hint|TAP A WARE TO BUY IT
+shop.sellmode|SELL SOMETHING
+shop.buymode|BUY SOMETHING
+shop.soldout|Sold. {0} gold for the road.
 
 # ---- pause
 pause.title|PAUSED
