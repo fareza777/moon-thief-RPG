@@ -1338,7 +1338,11 @@ namespace MoonThief
         void AddBeast(List<string> labels, List<string> vals, List<Action> acts, MonsterSpec spec)
         {
             bool known = Game.State.Seen.ContainsKey(spec.Name);
-            labels.Add(known ? Strings.Get(spec.Name) : Strings.Get("jr.unknown"));
+            // a species that walks with the party carries its mark on the page
+            bool tamed = Game.State.Friends.Contains(spec.Name) || Game.State.Friends.Contains("moon." + spec.Name);
+            labels.Add(known
+                ? Strings.Get(spec.Name) + (tamed ? " <" + Strings.Get("jr.friend") + ">" : "")
+                : Strings.Get("jr.unknown"));
             vals.Add(known
                 ? Strings.Get("jr.beast", spec.Hp, spec.AtkMin, spec.AtkMax, WeaknessOf(spec))
                 : "?");

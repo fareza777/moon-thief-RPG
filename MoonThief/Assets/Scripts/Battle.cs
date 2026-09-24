@@ -1395,6 +1395,16 @@ namespace MoonThief
             int dmg = Mathf.RoundToInt(UnityEngine.Random.Range(f.AtkMin, f.AtkMax + 1) * (crit ? 1.6f : 1f) * (weakHit ? 1.5f : 1f) * FlowMul());
             HitFoe(target, dmg, crit, weakHit);
             View.Refresh();
+            // a scorpion friend carries its sting over to your side: its bite
+            // can leave the same venom the wild ones leave in you
+            var fFam = f.Species != null && BattleData.Species(f.Species).HasValue
+                ? BattleData.FamilyOf(BattleData.Species(f.Species).Value) : "";
+            if (fFam == "scorpion" && target.Alive && UnityEngine.Random.value < 0.4f)
+            {
+                target.Poison = 3;
+                View.FloatNumber(tRig.Home + new Vector3(0f, 1.75f, 0f),
+                    Strings.Get("bt.poisoned"), new Color(0.55f, 1f, 0.5f));
+            }
             yield return Fx.Wait(0.45f);
             yield return Lunge(aRig, aRig.Home, 0.3f);
             PlayIdle(aRig);
@@ -1409,6 +1419,17 @@ namespace MoonThief
 
         IEnumerator EnemyTurn(Fighter e)
         {
+            // venom works on the wild things too: a befriended stinger turns
+            // their own trick on them, ticking before the creature can act
+            if (e.Poison > 0 && Application.isPlaying)
+            {
+                StartCoroutine(PoisonTick(e, () =>
+                {
+                    if (e.Alive) StartCoroutine(EnemyTurn(e));
+                    else EndTurn();
+                }));
+                yield break;
+            }
             _ph = Ph.Acting;
             View.SetTurnRig(View.RigOf(e), true);
             // cornered, the guard loses its patience: under a third of its bar it rears
@@ -1594,9 +1615,25 @@ namespace MoonThief
             yield return Fx.Wait(0.5f);
             if (!f.Alive)
             {
+                // the bones keep their promise even to venom: down once, up once
+                var pfam = f.Species != null && BattleData.Species(f.Species).HasValue
+                    ? BattleData.FamilyOf(BattleData.Species(f.Species).Value) : "";
+                if (pfam == "skeleton" && !f.Boss && !f.Risen)
+                {
+                    f.Risen = true;
+                    f.Hp = Mathf.Max(1, Mathf.RoundToInt(f.MaxHp * 0.4f));
+                    if (rig != null)
+                        View.FloatNumber(rig.Home + new Vector3(0f, 1.9f, 0f),
+                            Strings.Get("bt.rises"), new Color(0.9f, 0.9f, 1f));
+                    Sfx.Play("enemy");
+                    View.Refresh();
+                    yield return Fx.Wait(0.7f);
+                    done();
+                    yield break;
+                }
                 if (rig != null) yield return FadeOut(rig, true);
                 Sfx.Play("faint");
-                View.SetMessage(Strings.Get("bt.herodown", f.Name));
+                View.SetMessage(Strings.Get(f.Side == Side.Party ? "bt.herodown" : "bt.fainted", f.Name));
                 yield return Fx.Wait(0.7f);
             }
             done();
