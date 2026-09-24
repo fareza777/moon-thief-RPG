@@ -52,6 +52,7 @@ namespace MoonThief
                 case "fail":     return Slide(320f, 170f, 0.22f, Wave.Square, 0.32f);
                 case "chest":    return Arp(new[] { 392f, 494f, 587f, 784f }, 0.06f, Wave.Tri, 0.38f);
                 case "blip":     return Segs(new[] { (880f, 0.03f) }, Wave.Square, 0.18f);
+                case "tick":     return Segs(new[] { (1500f, 0.012f) }, Wave.Square, 0.07f);
                 case "ui":       return Segs(new[] { (660f, 0.045f) }, Wave.Square, 0.22f);
                 case "win":      return Arp(new[] { 523f, 659f, 784f, 659f, 784f, 1047f }, 0.09f, Wave.Square, 0.38f);
                 case "boss":     return Slide(110f, 45f, 0.55f, Wave.Saw, 0.5f);

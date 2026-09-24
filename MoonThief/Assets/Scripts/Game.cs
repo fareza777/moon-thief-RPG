@@ -249,6 +249,7 @@ namespace MoonThief
         float _tapTime;
         bool _tapMoved;
         PixelLabel _dlgText, _dlgName, _dlgNext, _hudZone, _hudShards;
+        int _dlgChars;
         SpriteRenderer _dlgPanel, _dlgPanelName, _dlgPortrait;
         bool _dlgOpen;
         string[] _dlgLines;
@@ -1435,6 +1436,9 @@ namespace MoonThief
             }
             if (_dlgText.IsRevealing)
             {
+                // soft tick every few revealed characters, the typewriter chatter
+                int vc = _dlgText.VisibleChars;
+                if (vc < _dlgChars || vc - _dlgChars >= 4) { _dlgChars = vc; Sfx.Play("tick"); }
                 if (TapPressed() || KeyConfirm()) _dlgText.Set(_dlgText.Text, true);
                 return;
             }

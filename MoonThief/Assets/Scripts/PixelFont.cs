@@ -164,6 +164,7 @@ namespace MoonThief
         int _visible;
 
         public bool IsRevealing => RevealSpeed > 0f && _visible < _shown.Length;
+        public int VisibleChars => _visible;
 
         public void Set(string text, bool instant = false)
         {
