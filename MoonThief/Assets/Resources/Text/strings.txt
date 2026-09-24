@@ -141,7 +141,7 @@ bt.befriendfail|{0} is not ready yet.
 bt.stablefull|Your stable is full.
 bt.morsel|You lay down a moonlit morsel.
 bt.nomore|The bag is empty.
-bt.hint|pick a command, then a foe
+bt.hint|PICK A COMMAND, TAP A FOE TO AIM
 bt.auto.on|AUTO on - the party fights itself.
 bt.auto.off|AUTO off.
 bt.attack.0|{0} lunges!
@@ -473,5 +473,5 @@ ev.dog|A hunting dog will not leave the gate. It has waited long enough to forge
 # ---- ending
 end.notyet|The crystal is cold. {0} more to find.
 end.tap|TAP OR ENTER TO CONTINUE
-end.stats|LEVEL {0}    {1} FRIENDS    {2} GOLD
+end.stats|LEVEL {0}    {1} {2}    {3} GOLD
 end.text|The shards rise\nfrom your hands and\nclimb the sky.\n\nThe moon takes\nits old place over\nthe fields.\nYour new friends\nwalk home beside\nyou.\n\nThe village wakes\nto its first gold\nmorning.

@@ -1586,7 +1586,8 @@ namespace MoonThief
                 Sfx.Mus.Play("end");
                 _endLines.RevealSpeed = 0f;
                 _endLines.Set(Strings.Get("end.text", State.Befriended));
-                _endStats.Set(Strings.Get("end.stats", State.Level, State.Befriended, State.Gold));
+                _endStats.Set(Strings.Get("end.stats", State.Level, State.Befriended,
+                    State.Befriended == 1 ? "FRIEND" : "FRIENDS", State.Gold));
                 SaveSystem.Erase();          // the tale is told; the menu offers a fresh night
             }, 0.4f, 0.6f);
         }
