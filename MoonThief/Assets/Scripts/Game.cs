@@ -2613,6 +2613,33 @@ namespace MoonThief
             }
             Debug.Log("[selftest] after battles phase=" + Phase);
 
+            // the one screen no win ever shows: losing. Stage the night's gatekeeper against
+            // a party at one health apiece, let AUTO play it honestly, photograph the fall
+            // card, then take the long walk home - the whole defeat path was a blind spot
+            if (Phase == St.Explore)
+            {
+                EditorBattle();
+                Director.StartBattle(BattleData.BossFight(State.Chapter));
+                foreach (var p in BattleViewRef.Party) p.Hp = 1;
+                if (!Director.Auto) Director.ToggleAuto();
+                int loseGuard = 0;
+                while (Phase == St.Battle && loseGuard++ < 4000)
+                {
+                    if (BattleViewRef.OverlayButtonCount > 0)
+                    {
+                        yield return new WaitForSeconds(0.9f);
+                        Shot("12b-losscard");
+                        BattleViewRef.CardButtonAt(BattleViewRef.OverlayButtonCount - 1)?.Invoke();
+                        break;
+                    }
+                    TickWorldForTest();
+                    yield return null;
+                }
+                Debug.Log("[selftest] defeat ended phase=" + Phase + " hero=" + World.HeroPos);
+                yield return new WaitForSeconds(1.4f);
+                Shot("12c-retreat");
+            }
+
             // keep exploring to the boss if we are still alive
             // one loop per night: walk the map to its gatekeeper, let AUTO win the fight,
             // tap the fall card and ride the chapter dissolve into the next night. The whole
