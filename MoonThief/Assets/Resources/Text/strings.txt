@@ -250,7 +250,7 @@ card.bossline|The last shard slips out of its hands.
 card.bossline.1|The road north lies open.
 card.bossline.2|Its helm rings once on the stones, and is still.
 card.bossline.3|The last shard slips out of its hands.
-card.lossline|The party wakes by the crystal. The moon is still gone.
+card.lossline|The party wakes in the village. The moon is still gone.
 card.tithe|The dark takes its due: {0} gold slips away.
 card.xp|XP {0}
 card.gold|GOLD {0}
