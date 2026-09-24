@@ -1169,6 +1169,11 @@ namespace MoonThief
             View.SetMenuVisible(true);
             View.SetSelected(0);
             View.ShowHint(true);
+            // the strike button names the move this hero actually does: amber strikes,
+            // sea sweeps the whole field, moss mends the hurtest friend
+            int style = f.Style;
+            View.Menu[0].Text.Set(Strings.Get(style == 1 ? "menu.sweep" : style == 2 ? "menu.mend" : "menu.strike"));
+            View.Menu[0].Icon.sprite = TexArt.MenuIcon(style == 1 ? 13 : style == 2 ? 29 : 0);
             View.SetMessage(Strings.Get("bt.yourturn", f.Name));
             // auto-battle acts after a short beat, so the player sees whose turn it was
             if (Auto && Application.isPlaying)

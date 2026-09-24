@@ -118,6 +118,9 @@ hero.you|YOU
 
 # ---- battle menu
 menu.attack|ATTACK
+menu.strike|STRIKE
+menu.sweep|SWEEP
+menu.mend|MEND
 menu.befriend|BEFRIEND
 menu.morsel|MORSEL
 menu.run|LET GO
