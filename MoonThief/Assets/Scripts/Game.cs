@@ -1997,6 +1997,7 @@ namespace MoonThief
             State.Chapter = chapter;
             Phase = St.Explore;
             _metMira = true;
+            _inHouse = false;          // staging the street cancels any room we stood in
             Menus.Hide();
             _titleRoot.gameObject.SetActive(false);
             _endRoot.gameObject.SetActive(false);
@@ -2300,6 +2301,13 @@ namespace MoonThief
             Debug.Log("[selftest] dialog open=" + _dlgOpen);
             CloseDialog();
             yield return new WaitForSeconds(0.2f);
+
+            // an interior: the one space no pass had ever photographed. Mira's house
+            // (0) is the shrine room - rug, shelf, statue, hearth fire, lamp by the door
+            EditorInterior(0);
+            yield return new WaitForSeconds(0.9f);
+            Shot("11c-interior");
+            Debug.Log("[selftest] interior inHouse=" + _inHouse + " hero=" + World.HeroPos);
 
             // Marn's stall: open the shop card for real, buy one thing, leave
             State.Gold = 40;
