@@ -414,7 +414,7 @@ namespace MoonThief
 
         // ---------------------------------------------------------------- procedural UI
 
-        static Sprite _solid, _panel, _shadow, _glow, _moon, _spark, _chevron, _moonFull, _ring, _dot;
+        static Sprite _solid, _panel, _shadow, _glow, _moon, _spark, _chevron, _moonFull, _ring, _dot, _slash;
         static Sprite _mat;
         static Sprite[] _wear;
         static Sprite _night, _vignette, _stars, _star, _alert;
@@ -483,6 +483,22 @@ namespace MoonThief
                 }, Vector4.zero);
             }
             return _glow;
+        }
+
+        /// <summary>A thin bright diagonal streak - the instant a hit lands.</summary>
+        public static Sprite Slash()
+        {
+            if (_slash == null)
+            {
+                _slash = Make("slash", 16, 16, (x, y) =>
+                {
+                    int d = Mathf.Abs(x + y - 15);   // distance off the hot diagonal
+                    if (d == 0) return new Color32(255, 255, 255, 235);
+                    if (d == 1) return new Color32(255, 238, 190, 140);
+                    return new Color32(0, 0, 0, 0);
+                }, Vector4.zero);
+            }
+            return _slash;
         }
 
         /// <summary>The empty-sky icon: dark disc, dashed rim.</summary>
