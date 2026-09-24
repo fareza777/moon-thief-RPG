@@ -141,7 +141,10 @@ namespace MoonThief
             // inside the message box: there it sat on the same line as the battle message and
             // the two printed over each other whenever the message wrapped to two lines.
             _hint = Label("bhint", 1, new Color(0.76f, 0.82f, 1f), TextAlign.Left, 50);
-            _hint.transform.localPosition = new Vector3(Left + 0.45f, Top - 1.62f, 0f);
+            // the spare third line of the bar: the scale-2 round glyphs hang to about
+            // Top-1.4 and the flow counter owns Top-1.72, so -1.62 sheared through both
+            _hint.transform.localPosition = new Vector3(Left + 0.45f, Top - 2.13f, 0f);
+            _hint.MaxWidthUnits = 10.5f;
             _hint.Set(Strings.Get("bt.hint"));
             _hint.gameObject.SetActive(false);
 
