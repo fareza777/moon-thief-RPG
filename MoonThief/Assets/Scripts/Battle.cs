@@ -1790,7 +1790,7 @@ namespace MoonThief
                 {
                     yield return FadeOut(tRig, true);
                     Sfx.Play("faint");
-                    View.SetMessage(Strings.Get("bt.herodown", target.Name));
+                    View.SetMessage(Strings.Get(target.Species != null ? "bt.fainted" : "bt.herodown", target.Name));
                     yield return Fx.Wait(0.8f);
                 }
             }
@@ -1835,7 +1835,7 @@ namespace MoonThief
                 }
                 if (rig != null) yield return FadeOut(rig, true);
                 Sfx.Play("faint");
-                View.SetMessage(Strings.Get(f.Side == Side.Party ? "bt.herodown" : "bt.fainted", f.Name));
+                View.SetMessage(Strings.Get(f.Species != null ? "bt.fainted" : "bt.herodown", f.Name));
                 yield return Fx.Wait(0.7f);
             }
             done();
@@ -2113,7 +2113,7 @@ namespace MoonThief
                         else
                         {
                             yield return FadeOut(aRig, true);
-                            View.SetMessage(Strings.Get("bt.herodown", actor.Name));
+                            View.SetMessage(Strings.Get(actor.Species != null ? "bt.fainted" : "bt.herodown", actor.Name));
                             yield return Fx.Wait(0.6f);
                         }
                     }
