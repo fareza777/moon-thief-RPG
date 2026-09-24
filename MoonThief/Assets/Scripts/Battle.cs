@@ -2087,8 +2087,8 @@ namespace MoonThief
             int xp = 0, gold = 0;
             foreach (var e in View.Enemies)
             {
-                xp += 45 * Mathf.Max(1, e.Boss ? 4 : 1);
-                gold += UnityEngine.Random.Range(18, 40);
+                xp += 45 * Mathf.Max(1, e.Boss ? 4 : 1) * (e.Rare ? 2 : 1);
+                gold += UnityEngine.Random.Range(18, 40) * (e.Boss ? 3 : 1);
                 Game.State.Defeats++;   // one step for the nightwatch
             }
             // the bestiary is keyed by the species, not its printed name
