@@ -574,24 +574,26 @@ namespace MoonThief
         {
             _onbRoot = Root("onboard", 0);
             FullQuad(_onbRoot, "dim", 6000, new Color(6f / 255f, 5f / 255f, 16f / 255f, 0.94f));
-            _onbPanel = Panel(_onbRoot, "onbPanel", 6002, 15.6f, 13.6f, 0.4f);
-            var moon = SpriteRendererUtil.Make(_onbRoot, "onbMoon", TexArt.MoonFull(), 6004);
+            _onbCard = new GameObject("card").transform;
+            _onbCard.SetParent(_onbRoot, false);
+            _onbPanel = Panel(_onbCard, "onbPanel", 6002, 15.6f, 13.6f, 0.4f);
+            var moon = SpriteRendererUtil.Make(_onbCard, "onbMoon", TexArt.MoonFull(), 6004);
             moon.transform.localPosition = new Vector3(0f, 6.4f, 0f);
             moon.transform.localScale = Vector3.one * 2.4f;
-            _onbTitle = PixelLabelUtil.Make(_onbRoot, "onbTitle", 3, new Color(1f, 0.95f, 0.78f), TextAlign.Center, 6006);
+            _onbTitle = PixelLabelUtil.Make(_onbCard, "onbTitle", 3, new Color(1f, 0.95f, 0.78f), TextAlign.Center, 6006);
             _onbTitle.transform.localPosition = new Vector3(0f, 4.3f, 0f);
             _onbTitle.MaxWidthUnits = 14.2f;   // FIGHT & BEFRIEND stacks to two lines rather than clip
-            _onbBody = PixelLabelUtil.Make(_onbRoot, "onbBody", 1, new Color(0.93f, 0.95f, 1f), TextAlign.Center, 6006);
+            _onbBody = PixelLabelUtil.Make(_onbCard, "onbBody", 1, new Color(0.93f, 0.95f, 1f), TextAlign.Center, 6006);
             _onbBody.MaxWidthUnits = 14.2f;
             _onbBody.transform.localPosition = new Vector3(0f, 0.4f, 0f);
             for (int i = 0; i < 3; i++)
             {
-                var dot = SpriteRendererUtil.Make(_onbRoot, "onbDot" + i, TexArt.Dot(), 6006);
+                var dot = SpriteRendererUtil.Make(_onbCard, "onbDot" + i, TexArt.Dot(), 6006);
                 dot.transform.localPosition = new Vector3((i - 1) * 1.1f, -2.6f, 0f);
                 dot.transform.localScale = Vector3.one * 0.35f;
                 _onbDots.Add(dot);
             }
-            _onbRows = BuildRows(_onbRoot);
+            _onbRows = BuildRows(_onbCard);
         }
 
         /// <summary>Marn's stall as a menu card: wares with prices in the value column,
@@ -643,7 +645,7 @@ namespace MoonThief
         string _toastHeld;             // a notice that arrived while a dialog box was up
         float _toastHeldT;
         Transform _cardSlide;          // the card currently dropping in; null once settled
-        Transform _setCard, _credCard, _pauseCard, _shopCard;   // card content under the dim
+        Transform _setCard, _credCard, _pauseCard, _shopCard, _onbCard;   // card content under the dim
         float _cardSlideT;             // settle progress 0..1
 
         /// <summary>While this is true a toast is parked instead of drawn. Game sets it while a
@@ -904,6 +906,7 @@ namespace MoonThief
             _onbPage = 0;
             _sel = 0;
             _onbRoot.gameObject.SetActive(true);
+            SlideIn(_onbCard);
             RefreshOnboard();
             Select(0);
         }
