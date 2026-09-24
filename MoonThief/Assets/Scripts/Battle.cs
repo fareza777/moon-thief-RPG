@@ -908,32 +908,37 @@ namespace MoonThief
                 scale--;
             }
 
-            var lineH = new float[lines.Length];
-            float linesH = 0f;
-            while (_ovLines.Count < lines.Length)
-                _ovLines.Add(LabelUnder(_overlayRoot, "ovLine" + _ovLines.Count, 2, new Color(0.92f, 0.94f, 1f), TextAlign.Center, 82));
-            for (int i = 0; i < lines.Length; i++)
-            {
-                var l = _ovLines[i];
-                l.Configure(2, new Color(0.92f, 0.94f, 1f), TextAlign.Center, 82);
-                l.MaxWidthUnits = innerW;
-                l.Set(lines[i]);
-                lineH[i] = string.IsNullOrEmpty(lines[i]) ? 0f : l.MeasureHeight(lines[i]);
-                if (lineH[i] > 0f) linesH += lineH[i] + (linesH > 0f ? 0.3f : 0f);
-            }
-
             int btnN = buttons.Length;
             const float BtnW = 13.2f, BtnH = 1.75f, BtnGap = 0.5f;
             float buttonsH = btnN > 0 ? btnN * BtnH + (btnN - 1) * BtnGap : 0f;
-
-            float total = 1.4f * 2f + titleH + linesH + buttonsH
-                        + (titleH > 0f && (linesH > 0f || buttonsH > 0f) ? 0.8f : 0f)
-                        + (linesH > 0f && buttonsH > 0f ? 1.0f : 0f);
-            // The card lives between the HUD strip and the log box. It used to be allowed down to
-            // the bottom of the frame, so a tall result card (night end, level up) overlapped the
-            // message panel by a few pixels -- two framed cards fighting for the same strip, with
-            // the last line of the fight half covered. The last log line stays readable instead.
+            // The card lives between the HUD strip and the log box, so its room is fixed:
+            // a card that outgrows it shrinks its body text to scale 1 rather than
+            // letting the buttons spill past the panel.
             float room = (Top - 1.2f) - (MsgTop + 0.35f);
+
+            var lineH = new float[lines.Length];
+            float linesH = 0f, total = 0f;
+            int bodyScale = 2;
+            while (_ovLines.Count < lines.Length)
+                _ovLines.Add(LabelUnder(_overlayRoot, "ovLine" + _ovLines.Count, 2, new Color(0.92f, 0.94f, 1f), TextAlign.Center, 82));
+            while (true)
+            {
+                linesH = 0f;
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    var l = _ovLines[i];
+                    l.Configure(bodyScale, new Color(0.92f, 0.94f, 1f), TextAlign.Center, 82);
+                    l.MaxWidthUnits = innerW;
+                    l.Set(lines[i]);
+                    lineH[i] = string.IsNullOrEmpty(lines[i]) ? 0f : l.MeasureHeight(lines[i]);
+                    if (lineH[i] > 0f) linesH += lineH[i] + (linesH > 0f ? 0.3f : 0f);
+                }
+                total = 1.4f * 2f + titleH + linesH + buttonsH
+                            + (titleH > 0f && (linesH > 0f || buttonsH > 0f) ? 0.8f : 0f)
+                            + (linesH > 0f && buttonsH > 0f ? 1.0f : 0f);
+                if (total <= room || bodyScale == 1) break;
+                bodyScale = 1;
+            }
             float h = Mathf.Min(total, room);
             float panelBottom = Mathf.Clamp(0.4f - h * 0.5f, MsgTop + 0.35f, Top - 1.2f - h);
             Box(_ovPanel, Left + 0.9f, panelBottom, 16.2f, h, Color.white);
