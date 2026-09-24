@@ -1560,14 +1560,23 @@ namespace MoonThief
             // that swallows the next blow whole - break the wisp to break the ward
             if (e.Species == "mon.wisp")
             {
+                // the wisp's light goes where it matters: to the Guard first, and in
+                // a wild pack to whichever companion still stands
                 Fighter guard = null;
                 foreach (var f in View.Enemies)
                     if (f.Alive && f.Species == "mon.minotaur") guard = f;
+                if (guard == null)
+                {
+                    var others = new List<Fighter>();
+                    foreach (var f in View.Enemies)
+                        if (f.Alive && f != e && !f.Ward) others.Add(f);
+                    if (others.Count > 0) guard = others[UnityEngine.Random.Range(0, others.Count)];
+                }
                 if (guard != null && !guard.Ward && UnityEngine.Random.value < 0.55f)
                 {
                     var wRig0 = View.RigOf(e);
                     var gRig = View.RigOf(guard);
-                    View.SetMessage(Strings.Get("bt.ward", e.Name));
+                    View.SetMessage(Strings.Get(guard.Boss ? "bt.ward" : "bt.ward2", e.Name, guard.Name));
                     yield return Fx.Wait(0.4f);
                     if (wRig0 != null && gRig != null)
                         yield return Lunge(wRig0, gRig.Home, 0.3f);

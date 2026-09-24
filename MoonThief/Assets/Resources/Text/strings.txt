@@ -156,6 +156,7 @@ bt.poisoned|POISONED
 bt.phased|PHASED THROUGH!
 bt.rises|IT RISES AGAIN!
 bt.ward|The {0} wreathes the Guard in light.
+bt.ward2|The {0} wreathes the {1} in light.
 bt.warded|WARDED
 bt.squiremend|The {0} mends its thane.
 bt.riposte|The {0} strikes right back!
