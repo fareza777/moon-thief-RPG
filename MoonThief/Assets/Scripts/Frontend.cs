@@ -1435,11 +1435,11 @@ namespace MoonThief
                         int step = Quests.Step(q.Id);
                         if (!q.Main && step == 0) continue;   // side quests list only once taken on
                         labels.Add(Strings.Get(q.TitleKey));
-                        // an active errand shows its count, not just the word ACTIVE - the
-                        // journal is where the night's order lives, so it should say how far along
-                        vals.Add(q.Main && step < 3 ? Strings.Get("jr.main")
-                            : step == 1 ? Strings.Get("jr.prog", Mathf.Min(Quests.Progress(q), q.Need), q.Need)
-                            : Quests.StateWord(step));
+                        // every row says where it stands: mains used to print MAIN again and
+                        // again (the sub already counts them); an active side errand still
+                        // shows its count - the state word reads better than a kind marker
+                        vals.Add(q.Main || step != 1 ? Quests.StateWord(step)
+                            : Strings.Get("jr.prog", Mathf.Min(Quests.Progress(q), q.Need), q.Need));
                         icons.Add(step == 3 ? 26 : 20);
                         var quest = q;
                         acts.Add(() => ShowToast(Quests.Line(quest), 4.2f));
