@@ -2437,7 +2437,7 @@ namespace MoonThief
                 float dh = Vector2.Distance(mpos, HeroPos);
                 // a chase runs at full field speed; the 0.55 gait is only for wandering -
                 // without this every hunter chases at a stroll the hero can simply outwalk
-                if (!m.Aggro && dh < 3.2f) { m.Aggro = true; m.AggroT = 0.85f; m.Speed = m.Spec.Speed; Sfx.Play("alert"); }
+                if (!m.Aggro && dh < 3.2f && ClearLineOfSight(mpos, HeroPos)) { m.Aggro = true; m.AggroT = 0.85f; m.Speed = m.Spec.Speed; Sfx.Play("alert"); }
                 if (m.Aggro && dh > 6.5f) { m.Aggro = false; m.Speed = m.Spec.Speed * 0.55f; }
 
                 if (m.Aggro)
@@ -2511,6 +2511,22 @@ namespace MoonThief
             }
 
             RefreshNamePlates();
+        }
+
+        /// <summary>Whether a monster can see the hero from where it stands: the straight line
+        /// between them must not cross a solid cell. Distance alone made walls transparent -
+        /// a hunter would sound the alert through a house wall and then grind against it. The
+        /// chase itself is still allowed to round corners; sight only gates noticing.</summary>
+        bool ClearLineOfSight(Vector2 from, Vector2 to)
+        {
+            float dist = Vector2.Distance(from, to);
+            int steps = Mathf.Max(1, Mathf.CeilToInt(dist * 2f));
+            for (int i = 1; i < steps; i++)
+            {
+                var p = Vector2.Lerp(from, to, i / (float)steps);
+                if (!Map.Walkable(Map.CellOf(p))) return false;
+            }
+            return true;
         }
     }
 
