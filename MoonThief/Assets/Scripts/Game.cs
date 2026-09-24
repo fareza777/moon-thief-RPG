@@ -2364,6 +2364,10 @@ namespace MoonThief
                 yield return new WaitForSeconds(0.7f);
                 Shot("11c" + h + "-interior");
             }
+            // step back into the street before anything else: the hunt for a monster
+            // steered inside the last room once, and rooms have no monsters to find
+            if (_inHouse) LeaveHouse();
+            yield return new WaitForSeconds(0.6f);
 
             // Marn's stall: open the shop card for real, buy one thing, leave
             State.Gold = 40;
