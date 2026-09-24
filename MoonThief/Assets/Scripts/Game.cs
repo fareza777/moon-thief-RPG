@@ -2350,6 +2350,11 @@ namespace MoonThief
             Debug.Log("[selftest] hero=" + World.HeroPos + " mons=" + World.Monsters.Count
                 + " respawns=" + World.PendingRespawns);
 
+            // stand beside Mira a moment: passing a villager should bubble a bark
+            World.PlaceHero(new Vector2(27.5f, 8.9f));
+            yield return new WaitForSeconds(1.4f);
+            Shot("11d-bark");
+
             // the dialog frame - portrait plate, name tag, typewriter - is the one
             // interactive surface every earlier pass left unphotographed
             EditorTalk();
