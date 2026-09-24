@@ -265,6 +265,7 @@ namespace MoonThief
         float _tapTime;
         bool _tapMoved;
         PixelLabel _dlgText, _dlgName, _dlgNext, _hudZone, _hudShards;
+        Transform _dlgSheet;           // the box's contents: rises into place when a talk opens
         int _dlgChars;
         SpriteRenderer _dlgPanel, _dlgPanelName, _dlgPortrait, _dlgPortPlate;
         bool _dlgOpen;
@@ -599,13 +600,17 @@ namespace MoonThief
         {
             var root = new GameObject("Dialog").transform;
             root.SetParent(StageRoot, false);
-            _dlgPanel = SpriteRendererUtil.Make(root, "dlgPanel", TexArt.Panel(), 3000);
+            // the box rides the camera on the root; the sheet under it is what rises into
+            // place when a talk opens, so the cam write never fights the entrance
+            _dlgSheet = new GameObject("sheet").transform;
+            _dlgSheet.SetParent(root, false);
+            _dlgPanel = SpriteRendererUtil.Make(_dlgSheet, "dlgPanel", TexArt.Panel(), 3000);
             _dlgPanel.drawMode = SpriteDrawMode.Sliced;
             _dlgPanel.transform.localScale = Vector3.one;
             _dlgPanel.size = new Vector2(17.4f, DialogMinH);
 
-            _dlgName = PixelLabelUtil.Make(root, "dlgName", 1, new Color(1f, 0.9f, 0.6f), TextAlign.Left, 3002);
-            _dlgText = PixelLabelUtil.Make(root, "dlgText", 2, new Color(1f, 0.97f, 0.88f), TextAlign.Left, 3002);
+            _dlgName = PixelLabelUtil.Make(_dlgSheet, "dlgName", 1, new Color(1f, 0.9f, 0.6f), TextAlign.Left, 3002);
+            _dlgText = PixelLabelUtil.Make(_dlgSheet, "dlgText", 2, new Color(1f, 0.97f, 0.88f), TextAlign.Left, 3002);
             // 14.4 units of body: 19 characters per line at scale 2, and no line ever reaches the
             // box edge. The old 13.2 packed 17 characters into every row and the box was a fixed
             // 5.6 units tall, so a four-line line of dialog ended exactly on the bottom border and
@@ -615,20 +620,20 @@ namespace MoonThief
 
             // speaker portrait: the NPC's own overworld sheet, scaled up inside the box,
             // framed by its own small plate and name tag instead of floating on the panel
-            _dlgPortPlate = SpriteRendererUtil.Make(root, "dlgPortPlate", TexArt.Panel(), 3000);
+            _dlgPortPlate = SpriteRendererUtil.Make(_dlgSheet, "dlgPortPlate", TexArt.Panel(), 3000);
             _dlgPortPlate.drawMode = SpriteDrawMode.Sliced;
             _dlgPortPlate.color = new Color(0.92f, 0.88f, 1f);
-            _dlgPanelName = SpriteRendererUtil.Make(root, "dlgPanelName", TexArt.Panel(), 3001);
+            _dlgPanelName = SpriteRendererUtil.Make(_dlgSheet, "dlgPanelName", TexArt.Panel(), 3001);
             _dlgPanelName.drawMode = SpriteDrawMode.Sliced;
             _dlgPanelName.color = new Color(0.78f, 0.72f, 0.95f);
-            _dlgPortrait = SpriteRendererUtil.Make(root, "dlgPortrait", null, 3001);
+            _dlgPortrait = SpriteRendererUtil.Make(_dlgSheet, "dlgPortrait", null, 3001);
             // 3.0, not 3.4: the pack's chara cell is 16 px wide, so 3.4 grew the portrait to 54 px
             // and its right edge landed 3 px *past* the first letter of the line it introduces.
             _dlgPortrait.transform.localScale = Vector3.one * 3f;
 
             // the "there is more" tick at the box's bottom corner - lit once a line is done
             // spelling itself out, blink-bobbing so a waiting tap is obvious
-            _dlgNext = PixelLabelUtil.Make(root, "dlgNext", 1, new Color(1f, 0.85f, 0.5f), TextAlign.Right, 3002);
+            _dlgNext = PixelLabelUtil.Make(_dlgSheet, "dlgNext", 1, new Color(1f, 0.85f, 0.5f), TextAlign.Right, 3002);
             _dlgNext.Set("v");
 
             LayoutDialogBox("");
@@ -1403,6 +1408,11 @@ namespace MoonThief
             _dlgOpen = true;
             _dlgThen = null;   // a fresh talk never runs whatever a previous close had queued
             DialogRoot.gameObject.SetActive(true);
+            if (_dlgSheet != null && Application.isPlaying)
+            {
+                _dlgSheet.localPosition = new Vector3(0f, -0.55f, 0f);
+                StartCoroutine(Fx.MoveLocal(_dlgSheet, Vector3.zero, 0.18f));
+            }
             _dlgText.RevealSpeed = Prefs.RevealSpeed;
             _dlgName.Set(Strings.Get(npc.NameKey));
             string body = FormatLine(lines[0]);
@@ -1451,6 +1461,11 @@ namespace MoonThief
             _dlgOpen = true;
             _dlgThen = null;
             DialogRoot.gameObject.SetActive(true);
+            if (_dlgSheet != null && Application.isPlaying)
+            {
+                _dlgSheet.localPosition = new Vector3(0f, -0.55f, 0f);
+                StartCoroutine(Fx.MoveLocal(_dlgSheet, Vector3.zero, 0.18f));
+            }
             _dlgText.RevealSpeed = Prefs.RevealSpeed;
             _dlgName.Set(Strings.Get(npc.NameKey));
             LayoutDialogBox(Strings.Get(_dlgLines[_dlgIndex]));
