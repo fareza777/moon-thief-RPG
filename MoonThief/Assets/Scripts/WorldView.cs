@@ -2192,7 +2192,7 @@ namespace MoonThief
                 // notice the hero: close in, give up if they slip away. The "!" holds a beat
                 // before the chase so the player gets a dodge window instead of an ambush.
                 float dh = Vector2.Distance(mpos, HeroPos);
-                if (!m.Aggro && dh < 3.2f) { m.Aggro = true; m.AggroT = 0.85f; }
+                if (!m.Aggro && dh < 3.2f) { m.Aggro = true; m.AggroT = 0.85f; Sfx.Play("alert"); }
                 if (m.Aggro && dh > 6.5f) m.Aggro = false;
 
                 if (m.Aggro)
