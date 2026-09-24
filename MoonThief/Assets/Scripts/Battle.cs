@@ -515,15 +515,16 @@ namespace MoonThief
         IEnumerator CardSparkRoutine(Transform t, float dur)
         {
             var start = t.localPosition;
+            var sr = t.GetComponent<SpriteRenderer>();
             float e = 0f;
             while (e < dur)
             {
                 e += Time.deltaTime;
                 float k = e / dur;
                 t.localPosition = start + new Vector3(Mathf.Sin(k * 9f) * 0.3f, -2.5f * k, 0f);
-                var c = t.GetComponent<SpriteRenderer>().color;
+                var c = sr.color;
                 c.a = 1f - k;
-                t.GetComponent<SpriteRenderer>().color = c;
+                sr.color = c;
                 yield return null;
             }
             UtilDestroy(t.gameObject);
@@ -1259,6 +1260,16 @@ namespace MoonThief
 
         void BeginPlayerTurn(Fighter f)
         {
+            // a stung fighter bleeds before they can act - venom does not wait for the menu
+            if (f.Poison > 0 && Application.isPlaying)
+            {
+                StartCoroutine(PoisonTick(f, () =>
+                {
+                    if (f.Alive) BeginPlayerTurn(f);   // survived the tick: act as normal
+                    else EndTurn();                     // venom spent the turn (EndTurn spots a wipe)
+                }));
+                return;
+            }
             View.SetTurnRig(View.RigOf(f));
             // a befriended beast acts on its own - no command menu, it just helps
             if (f.Species != null && Application.isPlaying)
@@ -1386,6 +1397,37 @@ namespace MoonThief
                     rig.Anim.SetTint(new Color(Mathf.Min(1f, c.r + 0.25f), c.g * 0.55f, c.b * 0.55f));
                 }
             }
+            // the shade squire is no brawler: while its thane stands it weaves health
+            // back into the split helm - killing the page first IS the night-two fight
+            if (e.Species == "mon.squire")
+            {
+                Fighter liege = null;
+                foreach (var f in View.Enemies)
+                    if (f.Alive && f.Species == "mon.thane") liege = f;
+                if (liege != null && liege.Hp < liege.MaxHp && UnityEngine.Random.value < 0.7f)
+                {
+                    var sRig = View.RigOf(e);
+                    var mRig = View.RigOf(liege);
+                    View.SetMessage(Strings.Get("bt.squiremend", e.Name));
+                    yield return Fx.Wait(0.4f);
+                    if (sRig != null && mRig != null)
+                        yield return Lunge(sRig, mRig.Home, 0.3f);
+                    int mend = UnityEngine.Random.Range(6, 11);
+                    liege.Hp = Mathf.Min(liege.MaxHp, liege.Hp + mend);
+                    if (mRig != null)
+                    {
+                        View.FloatNumber(mRig.Home + new Vector3(0f, 1.5f, 0f),
+                            "+" + mend, new Color(0.6f, 1f, 0.7f));
+                        StartCoroutine(Fx.FlashTint(mRig.Anim, new Color(0.55f, 1f, 0.6f), 2, 0.09f, 0.09f));
+                    }
+                    Sfx.Play("heal");
+                    View.Refresh();
+                    yield return Fx.Wait(0.5f);
+                    if (sRig != null) yield return Lunge(sRig, sRig.Home, 0.3f);
+                    EndTurn();
+                    yield break;
+                }
+            }
             bool slam = e.Boss && UnityEngine.Random.value < (_enraged ? 0.45f : 0.35f);
             View.SetMessage(Strings.Get(slam ? "bt.slam" : "bt.enemyturn", e.Name));
             yield return Fx.Wait(slam ? 0.85f : 0.5f);
@@ -1442,6 +1484,13 @@ namespace MoonThief
                 View.FloatNumber(tRig.Home + new Vector3(0f, 1.9f, 0f),
                     Strings.Get("bt.dazed"), new Color(1f, 0.9f, 0.5f));
             }
+            // a scorpion's sting keeps working after the blow: three rounds of venom
+            if (fam == "scorpion" && target.Alive && UnityEngine.Random.value < 0.4f)
+            {
+                target.Poison = 3;
+                View.FloatNumber(tRig.Home + new Vector3(0f, 1.75f, 0f),
+                    Strings.Get("bt.poisoned"), new Color(0.55f, 1f, 0.5f));
+            }
             View.FloatNumber(tRig.Home + new Vector3(0f, 1.4f, 0f), "-" + dmg,
                 slam ? new Color(1f, 0.45f, 0.3f) : new Color(1f, 0.6f, 0.55f));
             Sfx.Play("hurt");
@@ -1458,6 +1507,33 @@ namespace MoonThief
             }
             else PlayIdle(tRig);
             EndTurn();
+        }
+
+        /// <summary>The venom tick at a party fighter's turn start: it always costs the
+        /// turn's opening beat, and it can drop a fighter before they ever act.</summary>
+        IEnumerator PoisonTick(Fighter f, System.Action done)
+        {
+            f.Poison--;
+            var rig = View.RigOf(f);
+            if (rig != null)
+            {
+                StartCoroutine(Fx.FlashTint(rig.Anim, new Color(0.5f, 1f, 0.5f), 2, 0.1f, 0.1f));
+                View.FloatNumber(rig.Home + new Vector3(0f, 1.4f, 0f), "-2", new Color(0.55f, 1f, 0.5f));
+                View.FloatNumber(rig.Home + new Vector3(0f, 1.9f, 0f),
+                    Strings.Get("bt.poison"), new Color(0.55f, 1f, 0.5f));
+            }
+            Sfx.Play("hurt");
+            f.Hp = Mathf.Max(0, f.Hp - 2);
+            View.Refresh();
+            yield return Fx.Wait(0.5f);
+            if (!f.Alive)
+            {
+                if (rig != null) yield return FadeOut(rig, true);
+                Sfx.Play("faint");
+                View.SetMessage(Strings.Get("bt.herodown", f.Name));
+                yield return Fx.Wait(0.7f);
+            }
+            done();
         }
 
         void EnemyTurnImmediate(Fighter e)

@@ -139,6 +139,9 @@ bt.boss|The {0} bars your way!
 bt.slam|The {0} rears up and SLAMS down!
 bt.enraged|The {0} is cornered - it fights without mercy now!
 bt.dazed|DAZED
+bt.poison|POISON
+bt.poisoned|POISONED
+bt.squiremend|The {0} mends its thane.
 bt.miss|MISS
 bt.yourturn|{0} - your move.
 bt.friendturn|{0} fights for you!
