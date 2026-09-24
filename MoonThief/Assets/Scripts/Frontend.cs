@@ -946,8 +946,6 @@ namespace MoonThief
         void RefreshShop()
         {
             _shopSub.Set(Strings.Get("shop.sub", Game.State.Gold));
-            _shopTitle.transform.localPosition = new Vector3(0f, _cardTop - 1.7f, 0f);
-            _shopSub.transform.localPosition = new Vector3(0f, _cardTop - 3.6f, 0f);
             var labels = new List<string>();
             var vals = new List<string>();
             var acts = new List<Action>();
@@ -1003,6 +1001,10 @@ namespace MoonThief
                 icons.Add(14);
             }
             float rowsTop = LayoutCard(_shopPanel, 16.4f, labels.Count, true);
+            // placed AFTER the card is sized: read _cardTop before LayoutCard rewrote it and
+            // the sign and the gold line floated down into the middle of the wares
+            _shopTitle.transform.localPosition = new Vector3(0f, _cardTop - 1.7f, 0f);
+            _shopSub.transform.localPosition = new Vector3(0f, _cardTop - 3.6f, 0f);
             float bottom = LayRows(_shopRows, labels.ToArray(), acts.ToArray(), vals.ToArray(), rowsTop, labels.Count, icons.ToArray());
             _shopFoot.transform.localPosition = new Vector3(0f, FootY(bottom), 0f);
         }
