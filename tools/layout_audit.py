@@ -57,7 +57,7 @@ FLOATERS = ("dmg", "Float", "pop", "spark", "puff")
 # Screen-fixed chrome can never "land on" a character: the HUD strip rides its own plate at
 # the top of the frame and world actors wander under it by design. The OFF/CLIP/EDGE rules
 # still measure these labels - only the actor check stops pretending they are world names.
-CHROME = ("hudroot/", "npcname")
+CHROME = ("hudroot/", "npcname", "toast/")
 
 # every glyph of every label is its own sprite, so a sprite walk sees thousands of them. They are
 # the text, not the cast: a name plate landing on a letter of another label is already a CLASH.
