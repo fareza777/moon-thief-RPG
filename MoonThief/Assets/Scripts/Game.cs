@@ -1627,6 +1627,10 @@ namespace MoonThief
 
         public void StartBattle(MonsterSpec[] specs)
         {
+            // a fight queued before the ending was called must not land after it: its
+            // transition middle re-activates the stage over the dawn - caught on film by
+            // the audit, party rigs standing under the ending prose
+            if (_ending || Phase == St.End) return;
             Phase = St.Battle;
             // breathing room after a fight before the next wild touch can trigger
             _encounterCooldown = 6f;
@@ -1638,6 +1642,9 @@ namespace MoonThief
             // the arena blinks in rather than snapping: a fast dark beat covers the swap
             DoTransition(() =>
             {
+                // the fade rides ahead of the middle: if the ending was called while this
+                // battle's blackout was still running, the stage must stay down
+                if (_ending || Phase == St.End) return;
                 SetCamY(0f);
                 World.gameObject.SetActive(false);
                 if (_hudZone != null) _hudZone.enabled = false;
@@ -1652,6 +1659,8 @@ namespace MoonThief
 
         void OnEncounterWon()
         {
+            // a stale director finishing under the dawn must not pull the phase back
+            if (_ending || Phase == St.End) return;
             Sfx.Mus.Duck = 1f; Sfx.Mus.Play("explore");
             DoTransition(() =>
             {
@@ -1705,6 +1714,7 @@ namespace MoonThief
 
         void OnRunLost()
         {
+            if (_ending || Phase == St.End) return;
             Sfx.Mus.Duck = 1f; Sfx.Mus.Play("explore");
             DoTransition(() =>
             {
