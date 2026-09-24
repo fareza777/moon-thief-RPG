@@ -2373,6 +2373,12 @@ namespace MoonThief
                     _houseView.DebugStripAllSprites();
                     yield return new WaitForSeconds(0.15f);
                     Shot("11c1-interior-meshonly");
+                    // and count every MeshRenderer in the SCENE - the house view only lists
+                    // its own, so a quad living under a sibling root stays invisible
+                    foreach (var mf in FindObjectsOfType<MeshFilter>())
+                        if (mf.GetComponent<MeshRenderer>() != null && mf.GetComponent<MeshRenderer>().enabled)
+                            Debug.Log("[scenemesh] " + mf.transform.name + " parent=" + (mf.transform.parent != null ? mf.transform.parent.name : "-") +
+                                " verts=" + (mf.sharedMesh != null ? mf.sharedMesh.vertexCount : -1));
                 }
             }
 
