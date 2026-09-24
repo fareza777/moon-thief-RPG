@@ -294,6 +294,7 @@ namespace MoonThief
         // ducks inside a house keeps steering for a BossPos that lives on the other map
         bool _testNoDoors;
         readonly HashSet<int> _shotFight = new HashSet<int>();   // nights already photographed mid-fight
+        bool _shotMoon;                                          // moonlit-label shot already taken
         int _houseIndex = -1;
         Vector2 _doorReturn;          // where to stand when the door closes behind you
         float _doorCooldown;
@@ -2453,6 +2454,9 @@ namespace MoonThief
             {
                 yield return new WaitForSeconds(1.6f);
                 Shot("13-battle-" + battles);
+                // jump the moonflow before the first hero turn lands, so the pale
+                // MOONSTRIKE / MOONSWEEP / MOONMEND labels finally reach a screenshot
+                if (battles == 1) Director.DebugFlow = 5;
                 // run one encounter on auto-battle so the AUTO chip path is exercised end to end
                 if (battles == 2 && !Director.Auto)
                 {
@@ -2467,6 +2471,12 @@ namespace MoonThief
                     t++;
                     if (Director.AwaitingInput)
                     {
+                        // the first hero turn after the flow jump carries the pale labels
+                        if (battles == 1 && !_shotMoon)
+                        {
+                            _shotMoon = true;
+                            Shot("13c-battle-moon");
+                        }
                         // one turn in three goes through the real tap path, so the hit test
                         // that a finger uses is exercised instead of only the shortcut. The
                         // point is round-tripped through the screen mapping a finger goes

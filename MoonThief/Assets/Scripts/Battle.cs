@@ -1287,6 +1287,16 @@ namespace MoonThief
         public int DebugQi => _qi;
         public int DebugRound => _round;
         public int DebugQueue => _queue.Count;
+        /// <summary>Selftest only: jump the moonflow so the pale MOONSTRIKE labels get
+        /// photographed - real fights reach 4 so rarely the tint never made a shot.</summary>
+        public int DebugFlow
+        {
+            set
+            {
+                _flow = Mathf.Clamp(value, 0, 9);
+                View.SetRound(_round, _flow);
+            }
+        }
 
         public void StartBattle(MonsterSpec[] specs)
         {
