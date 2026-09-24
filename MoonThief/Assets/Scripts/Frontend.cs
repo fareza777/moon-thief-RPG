@@ -248,6 +248,13 @@ namespace MoonThief
         Transform _jrRoot, _pageRoot;
         PixelLabel _jrTitle, _jrSub, _jrFoot, _pageTitle, _pageSub, _pageFoot, _setFoot;
         SpriteRenderer _jrPanel, _pagePanel;
+        // the world-map page's chrome and the live-map feed Game wires in
+        public Func<GameMap> GetMap;
+        public Func<Vector2?> GetHeroPos;
+        public Func<Vector2?> GetObjectivePos;
+        SpriteRenderer _mapSr, _mapHeroDot, _mapQuestDot;
+        readonly PixelLabel[] _mapZoneLbl = new PixelLabel[4];
+        Sprite _mapSpr;
         string[] _pageLabels = new string[0], _pageVals = new string[0];
         int[] _pageIcons;
         Sprite[] _pageIconSprites;
@@ -567,6 +574,24 @@ namespace MoonThief
             _pageSub.MaxWidthUnits = 15f;
             _pageFoot = PixelLabelUtil.Make(_pageRoot, "pgFoot", 1, new Color(0.6f, 0.64f, 0.86f), TextAlign.Center, 6007);
             _pageRows = BuildRows(_pageRoot);
+
+            // the world-map page's chrome: a real pixel minimap of the night's ground
+            // with a dot where the hero stands and one where the compass points
+            _mapSr = SpriteRendererUtil.Make(_pageRoot, "pgMapImg", null, 6002);
+            _mapSr.enabled = false;
+            _mapHeroDot = SpriteRendererUtil.Make(_pageRoot, "pgMapHero", TexArt.Dot(), 6005);
+            _mapHeroDot.transform.localScale = Vector3.one * 0.055f;
+            _mapHeroDot.color = new Color(1f, 0.82f, 0.4f);
+            _mapHeroDot.enabled = false;
+            _mapQuestDot = SpriteRendererUtil.Make(_pageRoot, "pgMapQuest", TexArt.Spark(), 6005);
+            _mapQuestDot.transform.localScale = Vector3.one * 0.16f;
+            _mapQuestDot.color = new Color(0.74f, 0.62f, 1f);
+            _mapQuestDot.enabled = false;
+            for (int i = 0; i < 4; i++)
+            {
+                _mapZoneLbl[i] = PixelLabelUtil.Make(_pageRoot, "pgMapZone" + i, 1, new Color(0.86f, 0.86f, 0.96f), TextAlign.Left, 6007);
+                _mapZoneLbl[i].gameObject.SetActive(false);
+            }
         }
 
         /// <summary>The three first-boot cards. One card, one line of dots, a NEXT row that
@@ -731,6 +756,13 @@ namespace MoonThief
             if (_pageRoot != null) _pageRoot.gameObject.SetActive(false);
             if (_onbRoot != null) _onbRoot.gameObject.SetActive(false);
             if (_shopRoot != null) _shopRoot.gameObject.SetActive(false);
+            if (_mapSr != null)
+            {
+                _mapSr.enabled = false;
+                _mapHeroDot.enabled = false;
+                _mapQuestDot.enabled = false;
+                for (int i = 0; i < 4; i++) _mapZoneLbl[i].gameObject.SetActive(false);
+            }
         }
 
         // ------------------------------------------------------------------ screens
@@ -1286,6 +1318,7 @@ namespace MoonThief
         /// bag with twenty things in it is still a card with six rows.</summary>
         void ShowPage(Page2 kind)
         {
+            if (kind == Page2.Map) { ShowMapCard(); return; }
             var labels = new List<string>();
             var vals = new List<string>();
             var acts = new List<Action>();
@@ -1378,28 +1411,6 @@ namespace MoonThief
                         ? TexArt.MapMonster(BattleData.Boss.MapSheet, 1) : null);
                     break;
 
-                case Page2.Map:
-                    title = "jr.map";
-                    sub = Strings.Get("jr.map.sub");
-                    // the road reads south to north, the way the night is walked: the
-                    // hollow where the errands live, the fields where they run, the wood
-                    // and the gate the night is fenced by
-                    string boss = Strings.Get(BattleData.BossNameKey(Game.State.Chapter));
-                    Add(labels, vals, acts, Strings.Get("zone.name.village"), Strings.Get("jr.map.hollow"), null);
-                    Add(labels, vals, acts, Strings.Get("zone.name.fields"), Strings.Get("jr.map.fields"), null);
-                    Add(labels, vals, acts, Strings.Get("zone.name.wood"), Strings.Get("jr.map.wood"), null);
-                    Add(labels, vals, acts, boss, Strings.Get("jr.map.gate"), null);
-                    // the row you stand in says so; the row the compass points at says it
-                    // holds the night's errand - when they differ, the map reads as a route
-                    int at = Game.State.CurZone == "wood" ? 2 : Game.State.CurZone == "fields" ? 1 : 0;
-                    vals[at] = Strings.Get("jr.map.here");
-                    var mapZones = new[] { "village", "fields", "wood", "gate" };
-                    for (int i = 0; i < 4; i++)
-                        if (i != at && Game.State.ObjZone == mapZones[i])
-                            vals[i] = Strings.Get("jr.map.quest");
-                    icons = new List<int> { 16, 17, 19, 0 };
-                    break;
-
                 default:
                     title = "jr.quests";
                     sub = Strings.Get("jr.quests.sub", Quests.ActiveCount, Quests.DoneCount);
@@ -1448,6 +1459,89 @@ namespace MoonThief
             HideAll();
             ShowPage((Page2)Mathf.Clamp(page, 0, 5));
         }
+
+        // ---------------------------------------------------------------- world map card
+
+        /// <summary>The map page is not a list: it is the night's actual ground drawn at one
+        /// pixel a cell, zone names down the side, an amber dot where the hero stands and a
+        /// violet spark where the night's errand is. The route south-to-north reads whole.</summary>
+        void ShowMapCard()
+        {
+            HideAll();
+            _sc = Sc.Page;
+            _pageIndex = 0;
+            _sel = 0;
+            _t = 0f;
+            _pageRoot.gameObject.SetActive(true);
+            SlideIn(_pageRoot);
+            _pageTitle.Set(Strings.Get("jr.map"));
+            _pageSub.Set(Strings.Get("jr.map.sub"));
+
+            GameMap m = GetMap != null ? GetMap() : null;
+            if (m != null && m != _mapObj)
+            {
+                _mapObj = m;
+                if (_mapSpr != null) { Destroy(_mapSpr.texture); Destroy(_mapSpr); _mapSpr = null; }
+                var tex = m.MiniMapTex();
+                _mapSpr = Sprite.Create(tex, new Rect(0f, 0f, GameMap.W, GameMap.H), new Vector2(0.5f, 0.5f), 8f);
+            }
+
+            bool haveMap = _mapSpr != null;
+            float rowsTop = LayoutCard(_pagePanel, 16.4f, haveMap ? 7 : 6, true);
+            _pageTitle.transform.localPosition = new Vector3(0f, _cardTop - 1.9f, 0f);
+            _pageSub.transform.localPosition = new Vector3(0f, _cardTop - 3.5f, 0f);
+            _pageFoot.Set(Strings.Get("jr.pagehint"));
+
+            if (haveMap)
+            {
+                float upc = _mapSpr.bounds.size.y / GameMap.H;   // units per map cell (0.125)
+                float mapCx = 2.6f, mapCy = rowsTop - 0.45f - _mapSpr.bounds.size.y * 0.5f;
+                _mapSr.sprite = _mapSpr;
+                _mapSr.transform.localPosition = new Vector3(mapCx, mapCy, 0f);
+                _mapSr.enabled = true;
+
+                // zone names ride the left gutter, each level with its stretch of the road
+                string boss = Strings.Get(BattleData.BossNameKey(Game.State.Chapter));
+                string[] zNames =
+                {
+                    Strings.Get("zone.name.village"), Strings.Get("zone.name.fields"),
+                    Strings.Get("zone.name.wood"), boss,
+                };
+                float[] zYs = { 13f, 42f, 72f, GameMap.H - 5f };
+                for (int i = 0; i < 4; i++)
+                {
+                    _mapZoneLbl[i].Set(zNames[i]);
+                    _mapZoneLbl[i].transform.localPosition = new Vector3(-7.05f, mapCy + (zYs[i] - GameMap.H * 0.5f) * upc - 0.25f, 0f);
+                    _mapZoneLbl[i].gameObject.SetActive(true);
+                }
+
+                var hp = GetHeroPos != null ? GetHeroPos() : null;
+                if (hp.HasValue)
+                {
+                    _mapHeroDot.transform.localPosition = new Vector3(
+                        mapCx + (hp.Value.x - GameMap.W * 0.5f) * upc,
+                        mapCy + (hp.Value.y - GameMap.H * 0.5f) * upc, 0f);
+                    _mapHeroDot.enabled = true;
+                }
+                var op = GetObjectivePos != null ? GetObjectivePos() : null;
+                if (op.HasValue)
+                {
+                    _mapQuestDot.transform.localPosition = new Vector3(
+                        mapCx + (op.Value.x - GameMap.W * 0.5f) * upc,
+                        mapCy + (op.Value.y - GameMap.H * 0.5f) * upc, 0f);
+                    _mapQuestDot.enabled = true;
+                }
+            }
+            else _mapObj = null;
+
+            float bottom = LayRows(_pageRows, new[] { Strings.Get("menu.back") },
+                new Action[] { ShowJournal }, new[] { "" },
+                haveMap ? rowsTop - _mapSpr.bounds.size.y - 0.9f : rowsTop, 1, new[] { 14 });
+            _pageFoot.transform.localPosition = new Vector3(0f, FootY(bottom), 0f);
+            Select(0);
+        }
+
+        GameMap _mapObj;
 
         void AddBeast(List<string> labels, List<string> vals, List<Action> acts, MonsterSpec spec)
         {
@@ -1879,6 +1973,13 @@ namespace MoonThief
             }
 
             _t += dt;
+            // the errand marker on the world map breathes so the eye finds it first
+            if (_mapQuestDot != null && _mapQuestDot.enabled)
+            {
+                var qc = _mapQuestDot.color;
+                qc.a = 0.5f + 0.5f * Mathf.PingPong(_t * 1.7f, 1f);
+                _mapQuestDot.color = qc;
+            }
             // cards arrive by dropping the last half unit into place instead of popping -
             // the dim behind them still snaps, only the sheet the eye follows settles
             if (_cardSlide != null)

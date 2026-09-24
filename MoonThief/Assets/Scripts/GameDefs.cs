@@ -177,6 +177,39 @@ namespace MoonThief
 
         public Ground At(Vector2Int c) => InBounds(c) ? Grounds[c.y * W + c.x] : Ground.Block;
 
+        /// <summary>A 1px-per-cell picture of the night's ground for the journal's map page:
+        /// the whole route reads at a glance - village green, field rows, the dark wood.</summary>
+        public Texture2D MiniMapTex()
+        {
+            var t = new Texture2D(W, H, TextureFormat.RGBA32, false)
+            {
+                filterMode = FilterMode.Point,
+                wrapMode = TextureWrapMode.Clamp,
+            };
+            var px = new Color32[W * H];
+            for (int y = 0; y < H; y++)
+                for (int x = 0; x < W; x++)
+                    px[y * W + x] = MiniCol(At(new Vector2Int(x, y)));
+            t.SetPixels32(px);
+            t.Apply(false);
+            return t;
+        }
+
+        static Color32 MiniCol(Ground g)
+        {
+            switch (g)
+            {
+                case Ground.Grass: return new Color32(38, 72, 46, 255);
+                case Ground.Path:  return new Color32(104, 72, 46, 255);
+                case Ground.Water: return new Color32(40, 62, 112, 255);
+                case Ground.Tree:  return new Color32(22, 56, 36, 255);
+                case Ground.Rock:  return new Color32(92, 90, 100, 255);
+                case Ground.Wall:  return new Color32(48, 38, 52, 255);
+                case Ground.Floor: return new Color32(108, 76, 52, 255);
+                default:           return new Color32(12, 12, 20, 255);
+            }
+        }
+
         /// <summary>Overworld sheet of the chapter's gatekeeper.</summary>
         public static string BossMapSheet(int chapter)
             => chapter <= 1 ? "Art/Mon/Monsters_03_0"

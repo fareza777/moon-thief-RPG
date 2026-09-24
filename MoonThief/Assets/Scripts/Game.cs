@@ -522,6 +522,11 @@ namespace MoonThief
             Menus.OnShopClosed = ClosePause;
             Menus.OnStory = ReplayStory;
             Menus.OnReleaseFriend = key => { if (World != null) World.ReleaseFriend(key); SaveRun(); };
+            // the journal's world map reads the live overworld through these three hooks;
+            // indoors they hand back nothing and the card falls back to its last picture
+            Menus.GetMap = () => World != null && World.Map != null && !World.Map.Interior ? World.Map : null;
+            Menus.GetHeroPos = () => World != null && World.Map != null && !World.Map.Interior ? (Vector2?)World.HeroPos : null;
+            Menus.GetObjectivePos = () => ObjectivePos();
         }
 
         void BuildTitle()
