@@ -1939,12 +1939,16 @@ namespace MoonThief
             if (confirm) { Activate(); return; }
             if (!tap) return;
 
+            // rows live inside the sliding card; their hit rects are card-local, so the tap
+            // must be measured in the card's frame too while it is still settling
+            var pt = stage;
+            if (_cardSlide != null) pt -= (Vector2)_cardSlide.localPosition;
             var rows = Rows;
             for (int i = 0; i < rows.Count; i++)
             {
                 var r = rows[i];
                 if (!r.Panel.gameObject.activeSelf) continue;
-                if (!r.Hit.Contains(stage)) continue;
+                if (!r.Hit.Contains(pt)) continue;
                 if (!r.Enabled) return;
                 Select(i);
                 Activate();
