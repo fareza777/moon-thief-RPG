@@ -189,7 +189,7 @@ namespace MoonThief
 
         class Row
         {
-            public SpriteRenderer Panel, Chev;
+            public SpriteRenderer Panel, Chev, Icon;
             public PixelLabel Text, ValLabel;
             public Rect Hit;
             public Action Act;
@@ -674,6 +674,9 @@ namespace MoonThief
                 r.Panel.drawMode = SpriteDrawMode.Sliced;
                 r.Chev = SpriteRendererUtil.Make(parent, "rowChev" + i, TexArt.Chevron(), 6007);
                 r.Chev.transform.localScale = Vector3.one * 1.5f;
+                r.Icon = SpriteRendererUtil.Make(parent, "rowIcon" + i, null, 6007);
+                r.Icon.transform.localScale = Vector3.one * 1.4f;
+                r.Icon.enabled = false;
                 r.Text = PixelLabelUtil.Make(parent, "rowText" + i, 2, Color.white, TextAlign.Left, 6006);
                 r.ValLabel = PixelLabelUtil.Make(parent, "rowVal" + i, 2, new Color(0.85f, 0.88f, 1f), TextAlign.Right, 6006);
                 rows.Add(r);
@@ -1056,7 +1059,7 @@ namespace MoonThief
             };
             float rowsTop = LayoutCard(_pausePanel, 16.4f, 5, true);
             _pauseTitle.transform.localPosition = new Vector3(0f, _cardTop - 2.15f, 0f);
-            float bottom = LayRows(_pauseRows, labels, acts, vals, rowsTop, 5);
+            float bottom = LayRows(_pauseRows, labels, acts, vals, rowsTop, 5, new[] { 4, 5, 6, 7, 8 });
             _pauseSub.transform.localPosition = new Vector3(0f, FootY(bottom), 0f);
             Select(0);
         }
@@ -1444,7 +1447,7 @@ namespace MoonThief
         /// card that has one calls this with the value LayRows returned.</summary>
         static float FootY(float lastRowBottom) => lastRowBottom - 1.12f;
 
-        float LayRows(List<Row> rows, string[] labels, Action[] acts, string[] vals, float topY, int count)
+        float LayRows(List<Row> rows, string[] labels, Action[] acts, string[] vals, float topY, int count, int[] icons = null)
         {
             // One pitch for the whole list: evenly spaced rows read as a table, and the returned
             // bottom edge is what the card and its footnote are placed from.
@@ -1467,10 +1470,13 @@ namespace MoonThief
             {
                 var r = rows[i];
                 bool used = i < count;
+                int icon = icons != null && i < icons.Length ? icons[i] : -1;
+                r.Icon.sprite = used && icon >= 0 ? TexArt.MenuIcon(icon) : null;
                 r.Panel.gameObject.SetActive(used);
                 r.Text.gameObject.SetActive(used);
                 r.Chev.gameObject.SetActive(used);
                 r.ValLabel.gameObject.SetActive(used && i < vals.Length && !string.IsNullOrEmpty(vals[i]));
+                r.Icon.enabled = false;
                 if (!used) continue;
 
                 float y = topY - i * pitch;
@@ -1483,7 +1489,8 @@ namespace MoonThief
                 // inner edge. Values use the list-wide column size computed above; the label alone
                 // steps down when the pair still overflows, so the column stays one size.
                 const float gap = 0.7f;
-                float labelX = -RowW * 0.5f + TextInset;
+                float iconW = icon >= 0 ? 1.25f : 0f;
+                float labelX = -RowW * 0.5f + TextInset + iconW;
                 float valX = RowW * 0.5f - ValInset;
                 float room = valX - labelX;
                 bool hasVal = !string.IsNullOrEmpty(val);
@@ -1503,6 +1510,11 @@ namespace MoonThief
 
                 r.Panel.size = new Vector2(RowW, RowH);
                 r.Panel.transform.localPosition = new Vector3(0f, y - RowH * 0.5f, 0f);
+                if (icon >= 0)
+                {
+                    r.Icon.transform.localPosition = new Vector3(labelX - iconW + 0.6f, y - RowH * 0.5f, 0f);
+                    r.Icon.enabled = true;
+                }
                 r.Text.Scale = labelScale;
                 r.Text.transform.localPosition = new Vector3(labelX, y - (RowH - PixelFont.GlyphHUnits(labelScale)) * 0.5f, 0f);
                 r.Text.Set(label);

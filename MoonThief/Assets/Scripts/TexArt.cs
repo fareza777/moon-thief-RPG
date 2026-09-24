@@ -560,10 +560,11 @@ namespace MoonThief
             return _chevron;
         }
 
-        static Sprite _icoAtk, _icoFriend, _icoFood, _icoRun;
+        static Sprite _icoAtk, _icoFriend, _icoFood, _icoRun, _icoPlay, _icoBook, _icoSave, _icoGear, _icoDoor;
 
         /// <summary>Tiny pictogram beside each battle command so the four cells read at a
-        /// glance: sword for strike, heart for befriend, apple for morsel, boot for run.</summary>
+        /// glance: sword for strike, heart for befriend, apple for morsel, boot for run —
+        /// then the pause rows: play, book, floppy, gear, door.</summary>
         public static Sprite MenuIcon(int kind)
         {
             switch (kind)
@@ -571,7 +572,12 @@ namespace MoonThief
                 case 0: return _icoAtk ??= MaskIcon("icoAtk", MaskSword);
                 case 1: return _icoFriend ??= MaskIcon("icoFriend", MaskHeart);
                 case 2: return _icoFood ??= MaskIcon("icoFood", MaskApple);
-                default: return _icoRun ??= MaskIcon("icoRun", MaskBoot);
+                case 3: return _icoRun ??= MaskIcon("icoRun", MaskBoot);
+                case 4: return _icoPlay ??= MaskIcon("icoPlay", MaskPlay);
+                case 5: return _icoBook ??= MaskIcon("icoBook", MaskBook);
+                case 6: return _icoSave ??= MaskIcon("icoSave", MaskSave);
+                case 7: return _icoGear ??= MaskIcon("icoGear", MaskGear);
+                default: return _icoDoor ??= MaskIcon("icoDoor", MaskDoor);
             }
         }
 
@@ -636,6 +642,61 @@ namespace MoonThief
             ".bbbbbb..",
             ".bbbbbb..",
             ".dddddd..",
+            ".........",
+        };
+        static readonly string[] MaskPlay = {
+            ".........",
+            "..gg.....",
+            "..gggg...",
+            "..gggggg.",
+            "..gggg...",
+            "..gg.....",
+            ".........",
+            ".........",
+            ".........",
+        };
+        static readonly string[] MaskBook = {
+            ".........",
+            ".bwwww...",
+            ".bwwww...",
+            ".bwwww...",
+            ".bwwww...",
+            ".bwwww...",
+            ".bwwww...",
+            ".........",
+            ".........",
+        };
+        static readonly string[] MaskSave = {
+            ".........",
+            ".dddddd..",
+            ".dg..gd..",
+            ".dddddd..",
+            ".dddddd..",
+            ".dwwwwd..",
+            ".dddddd..",
+            ".........",
+            ".........",
+        };
+        static readonly string[] MaskGear = {
+            ".........",
+            "..w.w.w..",
+            ".wwwwwww.",
+            ".ww...ww.",
+            ".ww...ww.",
+            ".wwwwwww.",
+            "..w.w.w..",
+            ".........",
+            ".........",
+        };
+        static readonly string[] MaskDoor = {
+            ".........",
+            "..ddddd..",
+            "..d...d..",
+            "..d.gg...",
+            "..d..ggg.",
+            "..d.gg...",
+            "..d...d..",
+            "..ddddd..",
             ".........",
         };
 
