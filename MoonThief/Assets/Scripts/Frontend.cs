@@ -1031,7 +1031,7 @@ namespace MoonThief
             _pauseTitle.transform.localPosition = new Vector3(0f, _cardTop - 2.15f, 0f);
             float bottom = LayRows(_pauseRows,
                 new[] { Strings.Get("conf.yes"), Strings.Get("conf.no") },
-                acts, new[] { "", "" }, rowsTop, 2);
+                acts, new[] { "", "" }, rowsTop, 2, new[] { 26, 27 });
             _pauseSub.transform.localPosition = new Vector3(0f, FootY(bottom), 0f);
             Select(1);   // the safe answer is selected first
         }
