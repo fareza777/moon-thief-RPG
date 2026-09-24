@@ -1336,12 +1336,17 @@ namespace MoonThief
                 return;
             }
             int ti = -1; float low = float.MaxValue;
+            // a ward drinks the whole swing: while a free target stands, spend hits there
+            bool freeTarget = false;
+            foreach (var e in View.Enemies) if (e.Alive && !e.Ward) freeTarget = true;
             // cut the foe this hero is built against first; else the most wounded
             for (int i = 0; i < View.Enemies.Length; i++)
-                if (View.Enemies[i].Alive && WeakTo(actor.Style, View.Enemies[i])) { ti = i; break; }
+                if (View.Enemies[i].Alive && WeakTo(actor.Style, View.Enemies[i])
+                    && (!View.Enemies[i].Ward || !freeTarget)) { ti = i; break; }
             if (ti < 0)
                 for (int i = 0; i < View.Enemies.Length; i++)
-                    if (View.Enemies[i].Alive && View.Enemies[i].Hp < low) { low = View.Enemies[i].Hp; ti = i; }
+                    if (View.Enemies[i].Alive && View.Enemies[i].Hp < low
+                        && (!View.Enemies[i].Ward || !freeTarget)) { low = View.Enemies[i].Hp; ti = i; }
             if (ti >= 0) View.SetTarget(ti);
             View.SetSelected(0);
             Confirm();
