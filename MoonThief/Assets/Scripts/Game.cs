@@ -582,11 +582,11 @@ namespace MoonThief
 
             // the run's ledger, set small under the epilogue: level, friends made, gold kept
             _endStats = PixelLabelUtil.Make(_endRoot, "endStats", 1, new Color(0.78f, 0.8f, 0.95f), TextAlign.Center, 100);
-            _endStats.transform.localPosition = new Vector3(0f, -HalfH + 5.0f, 0f);
+            _endStats.transform.localPosition = new Vector3(0f, -HalfH + 5.9f, 0f);
 
             _tapHint = PixelLabelUtil.Make(_endRoot, "endTap", 2, new Color(1f, 0.88f, 0.5f), TextAlign.Center, 100);
             _tapHint.MaxWidthUnits = 16f;   // an unbounded wrap box reads as text at the frame edge
-            _tapHint.transform.localPosition = new Vector3(0f, -HalfH + 4.2f, 0f);
+            _tapHint.transform.localPosition = new Vector3(0f, -HalfH + 3.9f, 0f);
             _tapHint.Set(Strings.Get("end.tap"));
             _endRoot.gameObject.SetActive(false);
         }
@@ -1628,7 +1628,8 @@ namespace MoonThief
                 _endLines.RevealSpeed = 0f;
                 _endLines.Set(Strings.Get("end.text", State.Befriended));
                 _endStats.Set(Strings.Get("end.stats", State.Level, State.Befriended,
-                    State.Befriended == 1 ? "FRIEND" : "FRIENDS", State.Gold));
+                    State.Befriended == 1 ? "FRIEND" : "FRIENDS", State.Gold,
+                    State.Defeats, State.Defeats == 1 ? "BEAST" : "BEASTS"));
                 SaveSystem.Erase();          // the tale is told; the menu offers a fresh night
             }, 0.4f, 0.6f);
         }

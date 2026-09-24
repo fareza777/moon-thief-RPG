@@ -540,5 +540,5 @@ ev.dog|A hunting dog will not leave the gate. It has waited long enough to forge
 # ---- ending
 end.notyet|The crystal is cold. {0} more to find.
 end.tap|TAP OR ENTER TO CONTINUE
-end.stats|LEVEL {0}    {1} {2}    {3} GOLD
+end.stats|LEVEL {0}    {1} {2}    {3} GOLD\n{4} {5} FACED THE NIGHT
 end.text|The shards rise\nfrom your hands and\nclimb the sky.\n\nThe moon takes\nits old place over\nthe fields.\nYour new friends\nwalk home beside\nyou.\n\nThe village wakes\nto its first gold\nmorning.
