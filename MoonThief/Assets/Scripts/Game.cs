@@ -245,6 +245,7 @@ namespace MoonThief
         bool _hintTalk = true, _hintChest = true;
         float _hintT;                                            // countdown for the deferred chapter toast
         string _hintKey;
+        bool _bannerWas;                                         // rising-edge watch for toast yield
         PixelLabel _hudQuest;
         SpriteRenderer _hudQuestChip;
         Vector2? _resumePos;
@@ -1068,6 +1069,11 @@ namespace MoonThief
                 Menus.HoldToasts = holdNotice;
                 if (!holdNotice) Menus.FlushToast();
             }
+            // a banner can arrive while a notice is already up (zone-crossing mid-walk):
+            // the banner outranks it, so the toast steps aside rather than printing through
+            bool bannerNow = World != null && World.BannerUp;
+            if (bannerNow && !_bannerWas) Menus.HideToast();
+            _bannerWas = bannerNow;
             if (Phase != St.Explore)
             {
                 Menus.SetAnchor(Cam.transform.localPosition);
