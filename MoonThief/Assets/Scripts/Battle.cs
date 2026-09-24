@@ -18,7 +18,7 @@ namespace MoonThief
             public Transform Root, Body, SpriteT;
             public SpriteRenderer Sr;
             public Anim Anim;
-            public SpriteRenderer Shadow, BarBg, BarFill, NameChip, Hat, Stun;
+            public SpriteRenderer Shadow, BarBg, BarFill, NameChip, Hat, Stun, WardMark;
             public PixelLabel Name;
             public Vector3 Home;
             public float BodyHeight, BobPhase;
@@ -307,6 +307,7 @@ namespace MoonThief
             if (rig.BarBg != null) UtilDestroy(rig.BarBg.gameObject);
             if (rig.BarFill != null) UtilDestroy(rig.BarFill.gameObject);
             if (rig.Stun != null) UtilDestroy(rig.Stun.gameObject);
+            if (rig.WardMark != null) UtilDestroy(rig.WardMark.gameObject);
         }
 
         Rig MakeRig(Fighter f, Vector3 home, int sorting)
@@ -350,6 +351,9 @@ namespace MoonThief
             // effects die with the rig, and this one must not linger in the air
             rig.Stun = SpriteRendererUtil.Make(Stage, "stun", TexArt.MenuIcon(21), 70);
             rig.Stun.enabled = false;
+            // and the ward shield beside it: same chrome rules, a different omen
+            rig.WardMark = SpriteRendererUtil.Make(Stage, "ward", TexArt.MenuIcon(18), 70);
+            rig.WardMark.enabled = false;
             return rig;
         }
 
@@ -395,6 +399,7 @@ namespace MoonThief
                 if (EnemyRigs[i].Name != null) UtilDestroy(EnemyRigs[i].Name.gameObject);
                 if (EnemyRigs[i].NameChip != null) UtilDestroy(EnemyRigs[i].NameChip.gameObject);
                 if (EnemyRigs[i].Stun != null) UtilDestroy(EnemyRigs[i].Stun.gameObject);
+                if (EnemyRigs[i].WardMark != null) UtilDestroy(EnemyRigs[i].WardMark.gameObject);
             }
 
             Enemies = new Fighter[specs.Length];
@@ -677,6 +682,19 @@ namespace MoonThief
             rig.Stun.transform.localScale = Vector3.one * (1.5f + Mathf.Sin(_time * 8f) * 0.15f);
         }
 
+        void TickWard(Rig rig)
+        {
+            if (rig?.WardMark == null) return;
+            bool on = rig.F != null && rig.F.Alive && rig.F.Ward;
+            rig.WardMark.enabled = on;
+            if (!on) return;
+            // it hovers off the shoulder, breathing - opposite the daze star so a fighter
+            // could in principle carry both omens at once
+            rig.WardMark.transform.localPosition = new Vector3(rig.Home.x - 0.85f,
+                rig.Home.y + rig.BodyHeight + 0.55f + Mathf.Sin(_time * 5f) * 0.09f, 0f);
+            rig.WardMark.transform.localScale = Vector3.one * (1.35f + Mathf.Sin(_time * 7f) * 0.12f);
+        }
+
         void TickBar(Rig rig)
         {
             if (rig == null || rig.HpShown < 0f) return;
@@ -734,8 +752,8 @@ namespace MoonThief
                 _turnChev.transform.localScale = Vector3.one * 1.6f;
             }
             // the daze star spins over whoever took a slam last turn
-            foreach (var rig in EnemyRigs) TickStun(rig);
-            foreach (var rig in PartyRigs) TickStun(rig);
+            foreach (var rig in EnemyRigs) { TickStun(rig); TickWard(rig); }
+            foreach (var rig in PartyRigs) { TickStun(rig); TickWard(rig); }
             // hp bars bleed toward the real value instead of snapping
             foreach (var rig in PartyRigs) TickBar(rig);
             foreach (var rig in EnemyRigs) TickBar(rig);
@@ -1894,6 +1912,7 @@ namespace MoonThief
             if (rig.NameChip != null) rig.NameChip.enabled = false;       // stops the component:
             if (rig.Hat != null) rig.Hat.enabled = false;                 // the glyph pool stays lit
             if (rig.Stun != null) rig.Stun.enabled = false;               // and its marker is stage chrome too
+            if (rig.WardMark != null) rig.WardMark.enabled = false;
             if (!keepRoot)                                                // and the hat is its own
             {                                                             // renderer off the sprite
                 if (rig.BarBg != null) rig.BarBg.enabled = false;         // transform, not the body

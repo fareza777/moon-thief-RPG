@@ -200,10 +200,10 @@ mon.gloop.d|Smells like the pond. The bad side.
 mon.impB.d|Older than the hollow. Grumpier.
 mon.wasp.d|Still looking for a lamp to die on.
 mon.wasp2.d|Stings first. Asks never.
-mon.shade.d|A shadow that lost its person.
-mon.bones.d|Keeps walking. Out of habit.
-mon.hob.d|Sleeps as a rock. Walks as a grudge.
-mon.wisp.d|Lamp smoke that learned to float.
+mon.shade.d|A shadow that lost its person. Blows pass through it.
+mon.bones.d|Keeps walking. Out of habit. Knocked down, it gets up once.
+mon.hob.d|Sleeps as a rock. Walks as a grudge. Its sting lingers.
+mon.wisp.d|Lamp smoke that learned to float. Its light shields friends.
 mon.minotaur.d|It wears the shard like a crown.
 mon.thane.d|The dark's own knight. No oath, just hunger.
 mon.thick.d|The hedge grew teeth last winter.
