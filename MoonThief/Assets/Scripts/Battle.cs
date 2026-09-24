@@ -2189,6 +2189,9 @@ namespace MoonThief
 
         IEnumerator FadeOut(BattleView.Rig rig, bool keepRoot = false)
         {
+            // a gatekeeper's fall is the night's climax: the world holds still longer
+            // than a common crit before the body goes
+            if (rig.F != null && rig.F.Boss) yield return HitStop(0.14f);
             // what leaves a body should be seen leaving: a small pale burst rises
             // where the fighter stood as it goes
             View.Sparkle(rig.Home + new Vector3(0f, 0.9f, 0f), new Color(0.85f, 0.9f, 1f, 0.9f), 8);
