@@ -95,6 +95,13 @@ namespace MoonThief
             _backdrop = SpriteRendererUtil.Make(Stage, "bbackdrop", null, -1);
             _backdrop.transform.localPosition = new Vector3(0f, HudBottom - 7.5f, 0f);
 
+            // the same soft frame the night world wears, sized to the arena: it pulls
+            // the eye off the edges without touching the HUD above it
+            var vig = SpriteRendererUtil.Make(Stage, "bvig", TexArt.Vignette(), 35);
+            vig.transform.localPosition = new Vector3(0f, (ArenaTop + MenuTop) * 0.5f, 0f);
+            vig.transform.localScale = new Vector3(18f, ArenaTop - MenuTop, 1f);
+            vig.color = new Color(1f, 1f, 1f, 0.7f);
+
             _hudPanel = Sliced("hud", TexArt.Panel(), 46);
             Box(_hudPanel, Left, HudBottom, 18f, HudH, Color.white);
 
