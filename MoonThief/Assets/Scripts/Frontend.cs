@@ -1571,6 +1571,13 @@ namespace MoonThief
             ApplyToastLift();
         }
 
+        /// <summary>Fades one label in over its own delay on the chapter card.</summary>
+        static void SetCardLine(PixelLabel l, Color c, float t)
+        {
+            c.a = Mathf.Clamp01(t * 2.2f);
+            l.SetColor(c);
+        }
+
         /// <summary>The card sheet rides a short drop into place; the dim under it snaps. The
         /// drop is short enough that it reads as weight, not as an animation you wait on.</summary>
         void SlideIn(Transform card)
@@ -1907,7 +1914,12 @@ namespace MoonThief
                     }
 
                 case Sc.ChapterCard:
-                    if (_t > 2.4f || tap || confirm) { Hide(); OnIntroDone?.Invoke(); }
+                    // the night arrives a line at a time: its name, the place, then what it
+                    // wants - one breath each, so the card reads as a briefing not a poster
+                    SetCardLine(_ccNight, new Color(1f, 0.95f, 0.78f), _t - 0.10f);
+                    SetCardLine(_ccPlace, new Color(0.78f, 0.8f, 0.95f), _t - 0.50f);
+                    SetCardLine(_ccGoal, new Color(0.92f, 0.85f, 0.62f), _t - 0.90f);
+                    if (_t > 2.9f || tap || confirm) { Hide(); OnIntroDone?.Invoke(); }
                     return;
             }
 
