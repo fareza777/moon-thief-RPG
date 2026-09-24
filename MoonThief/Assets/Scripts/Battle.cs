@@ -2041,7 +2041,7 @@ namespace MoonThief
             if (crit) StartCoroutine(Fx.Shake(View.Stage, 0.13f, 0.18f));
             View.FloatNumber(tRig.Home + new Vector3(0f, 1.2f, 0f), "-" + dmg,
                 crit ? new Color(1f, 0.85f, 0.3f) : weak ? new Color(0.65f, 1f, 0.95f) : new Color(1f, 0.95f, 0.75f),
-                crit ? 3 : 2);
+                crit || weak ? 3 : 2);   // payoff hits read bigger than ordinary ones
             if (weak)
                 View.FloatNumber(tRig.Home + new Vector3(0f, 1.9f, 0f), Strings.Get("bt.weak"), new Color(0.65f, 1f, 0.95f));
             // a ringing crit can knock the sense out of a lesser foe — the Guard shrugs it off
