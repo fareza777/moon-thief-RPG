@@ -1404,6 +1404,12 @@ namespace MoonThief
 
         void UpdateDialog()
         {
+            if (_dlgPortrait != null && _dlgPortrait.enabled)
+            {
+                var pp = _dlgPortrait.transform.localPosition;
+                pp.y = -HalfH + 0.4f + 2.1f + Mathf.Sin(Time.time * 2.2f) * 0.045f;
+                _dlgPortrait.transform.localPosition = pp;
+            }
             if (_dlgNext != null)
             {
                 _dlgNext.enabled = !_dlgText.IsRevealing;

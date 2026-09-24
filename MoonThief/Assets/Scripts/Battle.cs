@@ -342,7 +342,7 @@ namespace MoonThief
 
                 rig.BarBg = SpriteRendererUtil.Make(Stage, "ebg" + i, TexArt.Solid(), 6);
                 rig.BarFill = SpriteRendererUtil.Make(Stage, "efill" + i, TexArt.Solid(), 7);
-                rig.Name = Label("ename" + i, 1, new Color(1f, 0.86f, 0.86f), TextAlign.Center, 8);
+                rig.Name = Label("ename" + i, 1, f.Boss ? new Color(1f, 0.6f, 0.52f) : new Color(1f, 0.86f, 0.86f), TextAlign.Center, 8);
                 // a floating/tall foe's name would sit inside the HUD strip -- but lowering it
                 // onto the sprite leaves the body covering the label, so it moves under the foe's
                 // HP bar (the bar sits at home.y-0.55 .. -0.35) instead
@@ -353,7 +353,7 @@ namespace MoonThief
                 // dark plate behind the name: the arena art has flat bright patches and light
                 // text lying straight on top of them read as a smear
                 rig.NameChip = SpriteRendererUtil.Make(Stage, "enameChip" + i, TexArt.Solid(), 7);
-                Plate(rig.NameChip, rig.Name, f.Name);
+                Plate(rig.NameChip, rig.Name, f.Name, f.Boss);
                 EnemyRigs[i] = rig;
             }
             SetTarget(0);
@@ -879,12 +879,13 @@ namespace MoonThief
 
         /// <summary>Fits a dark plate to the measured name above it, so a short name and a
         /// long one both get a plate that matches.</summary>
-        void Plate(SpriteRenderer chip, PixelLabel label, string text)
+        void Plate(SpriteRenderer chip, PixelLabel label, string text, bool boss = false)
         {
             var at = label.transform.localPosition;
             float w = Mathf.Max(1.0f, label.MeasureWidth(text) + 0.46f);
             float h = PixelFont.GlyphHUnits(1) + 0.16f;
-            Box(chip, at.x - w * 0.5f, at.y - h + 0.05f, w, h, new Color32(10, 8, 20, 205));
+            Box(chip, at.x - w * 0.5f, at.y - h + 0.05f, w, h,
+                boss ? new Color32(48, 10, 18, 215) : new Color32(10, 8, 20, 205));
         }
 
         static void Box(SpriteRenderer sr, float left, float bottom, float wUnits, float hUnits, Color color)
