@@ -909,8 +909,8 @@ namespace MoonThief
 
             // the banner owns the top band for its first couple of seconds - a toast
             // landing on the same beat was one text printed through another
-            if (chapter == 1) { _hintT = 2.6f; _hintKey = "onb.move"; }
-            else if (chapter == 3) { _hintT = 2.6f; _hintKey = "quest.4"; }
+            if (chapter == 1) { _hintT = 3.4f; _hintKey = "onb.move"; }
+            else if (chapter == 3) { _hintT = 3.4f; _hintKey = "quest.4"; }
         }
 
         void RefreshHud()
