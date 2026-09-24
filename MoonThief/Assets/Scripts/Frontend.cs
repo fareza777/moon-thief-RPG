@@ -827,7 +827,10 @@ namespace MoonThief
         {
             GUIUtility.systemCopyBuffer = Strings.Get("share.text", StoreUrl);
             Sfx.Play("ui");
-            ShowToast(Strings.Get("share.copied"), 3.2f);
+            // the world's notice lane is parked on the title, and ShowToast parks with it -
+            // this notice belongs to THIS screen, so it draws now instead of surfacing
+            // when a run finally starts
+            DrawToast(Strings.Get("share.copied"), 3.2f);
         }
 
         /// <summary>market:// on a phone opens the Play Store app; everywhere else the web page
