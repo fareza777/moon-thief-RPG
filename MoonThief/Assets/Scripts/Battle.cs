@@ -53,7 +53,7 @@ namespace MoonThief
 
         SpriteRenderer _backdrop, _floorTint, _hudPanel, _menuPanel, _msgPanel, _moonIcon, _targetChev, _turnChev, _nextChev;
         SpriteRenderer _autoChip;
-        PixelLabel _hudNight, _hudRound, _msg, _hint, _autoLabel;
+        PixelLabel _hudNight, _hudRound, _hudFlow, _msg, _hint, _autoLabel;
         Transform _overlayRoot;
         SpriteRenderer _ovDim, _ovPanel;
         Transform _ovCard;             // panel + title + lines + buttons ride this; the dim snaps
@@ -113,6 +113,10 @@ namespace MoonThief
             // floated toward the night text whenever the flow suffix stretched it, so the
             // two ran together as "NIGHT 2R6 FLOW x2"
             _hudRound.transform.localPosition = new Vector3(Left + 6.3f, Top - 0.42f, 0f);
+            // flow gets the HUD's spare second line instead of stretching the round counter:
+            // "R1 FLOW x5" at scale 2 ran its tail into the AUTO chip
+            _hudFlow = Label("hudFlow", 1, new Color(0.66f, 0.72f, 0.95f), TextAlign.Left, 50);
+            _hudFlow.transform.localPosition = new Vector3(Left + 6.3f, Top - 1.72f, 0f);
 
             _moonIcon = SpriteRendererUtil.Make(Stage, "bmoon", Game.State.Chapter >= 3 ? TexArt.MoonFull() : TexArt.MoonEmpty(), 50);
             _moonIcon.transform.localPosition = new Vector3(Right - 0.9f, Top - 0.85f, 0f);
@@ -466,8 +470,11 @@ namespace MoonThief
                 // a floating/tall foe's name would sit inside the HUD strip -- but lowering it
                 // onto the sprite leaves the body covering the label, so it moves under the foe's
                 // HP bar (the bar sits at home.y-0.55 .. -0.35) instead
-                float aboveHead = home.y + rig.BodyHeight + 0.45f;
-                float nameTop = aboveHead <= HudBottom - 0.2f ? aboveHead : home.y - 0.95f;
+                float aboveHead = home.y + rig.BodyHeight + 1.05f;
+                // a tall foe's head nearly touches the HUD strip, and the turn/next chevrons
+                // hover a half-unit over it - a nameplate parked at +0.45 overlapped both, so
+                // it rides a unit up when there is room and drops under the sprite when not
+                float nameTop = aboveHead <= HudBottom - 0.4f ? aboveHead : home.y - 1.0f;
                 rig.Name.transform.localPosition = new Vector3(home.x, nameTop, 0f);
                 rig.Name.Set(f.Name);
                 // dark plate behind the name: the arena art has flat bright patches and light
@@ -579,9 +586,11 @@ namespace MoonThief
                 : new Color32(17, 14, 30, 255);
         }
 
-        public void SetRound(int round, int flow = 0) => _hudRound.Set(flow >= 2
-            ? Strings.Get("hud.roundf", round, flow)
-            : Strings.Get("hud.round", round));
+        public void SetRound(int round, int flow = 0)
+        {
+            _hudRound.Set(Strings.Get("hud.round", round));
+            _hudFlow.Set(flow >= 2 ? Strings.Get("hud.roundf", flow) : "");
+        }
 
         public void SetMessage(string text)
         {
@@ -908,6 +917,7 @@ namespace MoonThief
             if (_hudPanel != null) _hudPanel.enabled = on;
             if (_hudNight != null) _hudNight.gameObject.SetActive(on);
             if (_hudRound != null) _hudRound.gameObject.SetActive(on);
+            if (_hudFlow != null) _hudFlow.gameObject.SetActive(on);
             if (_moonIcon != null) _moonIcon.enabled = on;
             if (_autoChip != null) _autoChip.enabled = on;
             if (_autoLabel != null) _autoLabel.gameObject.SetActive(on);
