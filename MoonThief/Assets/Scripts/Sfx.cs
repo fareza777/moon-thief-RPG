@@ -13,7 +13,7 @@ namespace MoonThief
     {
         const int Rate = 22050;
 
-        static AudioSource _src;
+        static AudioSource _src, _pitchSrc;
         static readonly Dictionary<string, AudioClip> _cache = new Dictionary<string, AudioClip>();
 
         /// <summary>Silenced by the settings screen without tearing the source down.</summary>
@@ -32,6 +32,11 @@ namespace MoonThief
             _src = host.AddComponent<AudioSource>();
             _src.playOnAwake = false;
             _src.spatialBlend = 0f;
+            // one-shots through _src share its pitch, so anything that wants to bend a
+            // note - footsteps, drips, a run of hits - goes through a twin source
+            _pitchSrc = host.AddComponent<AudioSource>();
+            _pitchSrc.playOnAwake = false;
+            _pitchSrc.spatialBlend = 0f;
         }
 
         public static void Play(string name)
@@ -39,6 +44,17 @@ namespace MoonThief
             if (_src == null || Muted || !Application.isPlaying) return;
             if (!_cache.TryGetValue(name, out var clip)) { clip = Build(name); _cache[name] = clip; }
             if (clip != null) _src.PlayOneShot(clip, Volume);
+        }
+
+        /// <summary>Play with a pitch bend - a step that always lands on the same note
+        /// reads as a metronome after a minute of walking.</summary>
+        public static void Play(string name, float pitch)
+        {
+            if (_pitchSrc == null || Muted || !Application.isPlaying) return;
+            if (!_cache.TryGetValue(name, out var clip)) { clip = Build(name); _cache[name] = clip; }
+            if (clip == null) return;
+            _pitchSrc.pitch = pitch;
+            _pitchSrc.PlayOneShot(clip, Volume);
         }
 
         static AudioClip Build(string name)

@@ -1753,7 +1753,7 @@ namespace MoonThief
             _stepSfxT -= dt;
             if (_stepSfxT <= 0f)
             {
-                Sfx.Play("step");
+                Sfx.Play("step", 0.9f + UnityEngine.Random.value * 0.2f);
                 SpawnDust((Vector2)Hero.Root.localPosition - input.normalized * 0.35f);
                 _stepSfxT = 0.24f;
             }
