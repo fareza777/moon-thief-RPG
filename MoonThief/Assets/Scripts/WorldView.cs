@@ -206,18 +206,7 @@ namespace MoonThief
                 for (int x = 0; x < W; x++)
                 {
                     var g = Map.At(new Vector2Int(x, y));
-                    int tile = g switch
-                    {
-                        Ground.Path => Tiles.Path,
-                        Ground.Water => Tiles.Water,
-                        Ground.Floor => Hash01(x, y) < 0.22f ? Tiles.FloorAlt : Tiles.Floor,
-                        // the wall tile that sits right above the floor gets the footing, so the
-                        // room reads as a wall standing on a floor instead of two flat sheets
-                        Ground.Wall => Map.At(new Vector2Int(x, y - 1)) == Ground.Floor
-                            ? Tiles.WallBase : Tiles.Wall,
-                        Ground.Void => Tiles.Void,
-                        _ => Tiles.Grass
-                    };
+                    int tile = TileIndex(x, y, g);
                     // vertex order: bl, br, tl, tr (Unity UV v grows upward)
                     var tileCol = tile % cols;
                     var tileRow = tile / cols;
@@ -268,6 +257,43 @@ namespace MoonThief
             _groundMf.sharedMesh = mesh;
             _groundMr.sharedMaterial = SpriteRendererUtil.SpriteMat(tex);
             _groundMr.sortingOrder = 0;
+        }
+
+        int TileIndex(int x, int y, Ground g)
+        {
+            return g switch
+            {
+                Ground.Path => Tiles.Path,
+                Ground.Water => Tiles.Water,
+                Ground.Floor => Hash01(x, y) < 0.22f ? Tiles.FloorAlt : Tiles.Floor,
+                // the wall tile that sits right above the floor gets the footing, so the
+                // room reads as a wall standing on a floor instead of two flat sheets
+                Ground.Wall => Map.At(new Vector2Int(x, y - 1)) == Ground.Floor
+                    ? Tiles.WallBase : Tiles.Wall,
+                Ground.Void => Tiles.Void,
+                _ => Tiles.Grass
+            };
+        }
+
+        /// <summary>Diagnostics: one line per interior cell, tile id + shade - the dump the
+        /// prop audit cannot fake, because it replays the mesh's own chooser.</summary>
+        public void DumpRoomTiles()
+        {
+            var sb = new System.Text.StringBuilder();
+            for (int yy = 24; yy >= 5; yy--)
+            {
+                for (int xx = 0; xx < 19; xx++)
+                {
+                    var g = Map.At(new Vector2Int(xx, yy));
+                    int t = TileIndex(xx, yy, g) - TexArt.InteriorBase;
+                    sb.Append(t < 0 ? '?' : (char)('0' + t));
+                }
+                sb.Append('|');
+                for (int xx = 0; xx < 19; xx += 2)
+                    sb.Append((char)('0' + Mathf.Clamp(ShadeFor(xx, yy, Map.At(new Vector2Int(xx, yy))) / 28, 0, 9)));
+                sb.Append('\n');
+            }
+            UnityEngine.Debug.Log("[roomtiles] tile|shade\n" + sb);
         }
 
         static byte ShadeFor(int x, int y, Ground g)

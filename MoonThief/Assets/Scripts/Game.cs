@@ -2229,6 +2229,7 @@ namespace MoonThief
                 // rogue quad inside the room never shows up on a dump at all
                 foreach (var mf in _houseView.GetComponentsInChildren<MeshFilter>())
                     Debug.Log("[roommesh] " + mf.name + " verts=" + (mf.sharedMesh != null ? mf.sharedMesh.vertexCount : -1));
+                _houseView.DumpRoomTiles();
             }
             World = _houseView;
             World.PlaceHero(new Vector2(9.5f, 12.5f));
