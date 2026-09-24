@@ -1755,7 +1755,12 @@ namespace MoonThief
             _stepSfxT -= dt;
             if (_stepSfxT <= 0f)
             {
-                Sfx.Play("step", 0.9f + UnityEngine.Random.value * 0.2f);
+                // the ground answers back: wood floors ring higher than packed road,
+                // and grass is softest of the three
+                var g = Map != null ? Map.At(new Vector2Int(
+                    Mathf.RoundToInt(HeroPos.x), Mathf.RoundToInt(HeroPos.y))) : Ground.Grass;
+                float surf = g == Ground.Floor ? 1.28f : g == Ground.Path ? 1.12f : 1f;
+                Sfx.Play("step", (0.9f + UnityEngine.Random.value * 0.2f) * surf);
                 SpawnDust((Vector2)Hero.Root.localPosition - input.normalized * 0.35f);
                 _stepSfxT = 0.24f;
             }
