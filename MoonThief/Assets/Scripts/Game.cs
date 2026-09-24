@@ -2457,11 +2457,12 @@ namespace MoonThief
             int battles = 0;
             while (Phase == St.Battle && battles++ < 6)
             {
+                // jump the moonflow the moment the encounter begins, before the first
+                // hero turn draws its labels - a menu labelled STRIKE stays labelled
+                // STRIKE if the flow lands after it opens
+                if (battles == 1) Director.DebugFlow = 5;
                 yield return new WaitForSeconds(1.6f);
                 Shot("13-battle-" + battles);
-                // jump the moonflow before the first hero turn lands, so the pale
-                // MOONSTRIKE / MOONSWEEP / MOONMEND labels finally reach a screenshot
-                if (battles == 1) Director.DebugFlow = 5;
                 // run one encounter on auto-battle so the AUTO chip path is exercised end to end
                 if (battles == 2 && !Director.Auto)
                 {
@@ -2476,8 +2477,8 @@ namespace MoonThief
                     t++;
                     if (Director.AwaitingInput)
                     {
-                        // the first hero turn after the flow jump carries the pale labels
-                        if (battles == 1 && !_shotMoon)
+                        // a hero turn at flow five carries the pale MOONSTRIKE labels
+                        if (battles == 1 && t >= 2 && !_shotMoon)
                         {
                             _shotMoon = true;
                             Shot("13c-battle-moon");
