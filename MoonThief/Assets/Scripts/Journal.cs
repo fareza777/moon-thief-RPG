@@ -515,6 +515,9 @@ namespace MoonThief
             // a talk errand that names another soul is only half done until that soul
             // has been found and told - step 2 is the found-and-told mark
             if (q.Kind == QuestKind.Talk) return string.IsNullOrEmpty(q.Target) ? 1 : (Step(q.Id) >= 2 ? 1 : 0);
+            // a toll counts the purse, not the earnings: a hunter who accepts the errand
+            // already holding the gold should read "0 left", not be sent out to earn more
+            if (q.Kind == QuestKind.Pay) return Mathf.Min(q.Need, Game.State.Gold);
             int b = Base.TryGetValue(q.Id, out var v) ? v : 0;
             return Mathf.Max(0, Counter(q.Kind) - b);
         }
