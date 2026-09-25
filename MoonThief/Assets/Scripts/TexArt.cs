@@ -579,7 +579,8 @@ namespace MoonThief
         static Sprite _icoAtk, _icoFriend, _icoFood, _icoRun, _icoPlay, _icoBook, _icoSave, _icoGear, _icoDoor,
             _icoText, _icoNote, _icoSpeaker, _icoShake, _icoAuto, _icoBack, _icoTrash,
             _icoPerson, _icoBag, _icoShield, _icoPaw, _icoScroll,
-            _icoStar, _icoShare, _icoInfo, _icoMoon, _icoBell, _icoCheck, _icoX, _icoCoin, _icoPlus, _icoDrop;
+            _icoStar, _icoShare, _icoInfo, _icoMoon, _icoBell, _icoCheck, _icoX, _icoCoin, _icoPlus, _icoDrop,
+            _icoCoil, _icoHex, _icoRust;
 
         /// <summary>Tiny pictogram beside each battle command so the four cells read at a
         /// glance: sword for strike, heart for befriend, apple for morsel, boot for run —
@@ -618,6 +619,9 @@ namespace MoonThief
                 case 27: return _icoX ??= MaskIcon("icoX", MaskX);
                 case 28: return _icoCoin ??= MaskIcon("icoCoin", MaskCoin);
                 case 29: return _icoDrop ??= MaskIcon("icoDrop", MaskDrop);
+                case 30: return _icoCoil ??= MaskIcon("icoCoil", MaskCoil);
+                case 31: return _icoHex ??= MaskIcon("icoHex", MaskHex);
+                case 32: return _icoRust ??= MaskIcon("icoRust", MaskRust);
                 default: return _icoPlus ??= MaskIcon("icoPlus", MaskPlus);
             }
         }
@@ -881,6 +885,39 @@ namespace MoonThief
             ".nnnnnnn.",
             "..nnnnn..",
             "...nnn...",
+            ".........",
+        };
+        static readonly string[] MaskCoil = {
+            ".........",
+            "..bbbbb..",
+            ".b.....b.",
+            ".b..b..b.",
+            ".b..b..b.",
+            ".b...b.b.",
+            ".b.....b.",
+            "..bbbbb..",
+            ".........",
+        };
+        static readonly string[] MaskHex = {
+            ".........",
+            "....p....",
+            "....p....",
+            "....p....",
+            ".p..p..p.",
+            "..p.p.p..",
+            "...ppp...",
+            "....p....",
+            ".........",
+        };
+        static readonly string[] MaskRust = {
+            ".........",
+            "....b....",
+            "...bbb...",
+            "..bb.bb..",
+            ".bb.bbb..",
+            ".b..bb.b.",
+            "..bbb.b..",
+            "...bb....",
             ".........",
         };
         static readonly string[] MaskStar = {

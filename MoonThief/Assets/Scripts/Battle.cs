@@ -18,7 +18,8 @@ namespace MoonThief
             public Transform Root, Body, SpriteT;
             public SpriteRenderer Sr;
             public Anim Anim;
-            public SpriteRenderer Shadow, BarBg, BarFill, NameChip, Hat, Stun, WardMark, PoisonMark;
+            public SpriteRenderer Shadow, BarBg, BarFill, NameChip, Hat, Stun, WardMark, PoisonMark,
+                SnareMark, WeakenMark, CorrodeMark;
             public PixelLabel Name;
             public Vector3 Home;
             public float BodyHeight, BobPhase;
@@ -339,6 +340,9 @@ namespace MoonThief
             if (rig.Stun != null) UtilDestroy(rig.Stun.gameObject);
             if (rig.WardMark != null) UtilDestroy(rig.WardMark.gameObject);
             if (rig.PoisonMark != null) UtilDestroy(rig.PoisonMark.gameObject);
+            if (rig.SnareMark != null) UtilDestroy(rig.SnareMark.gameObject);
+            if (rig.WeakenMark != null) UtilDestroy(rig.WeakenMark.gameObject);
+            if (rig.CorrodeMark != null) UtilDestroy(rig.CorrodeMark.gameObject);
         }
 
         Rig MakeRig(Fighter f, Vector3 home, int sorting)
@@ -388,6 +392,14 @@ namespace MoonThief
             // venom gets the third omen: a green droplet off the right shoulder
             rig.PoisonMark = SpriteRendererUtil.Make(Stage, "poison", TexArt.MenuIcon(29), 70);
             rig.PoisonMark.enabled = false;
+            // three more omens for the newer hexes: coil for snare, pale arrow for weaken,
+            // rust fleck for corrode - same row over the name plate, their own slots
+            rig.SnareMark = SpriteRendererUtil.Make(Stage, "snare", TexArt.MenuIcon(30), 70);
+            rig.SnareMark.enabled = false;
+            rig.WeakenMark = SpriteRendererUtil.Make(Stage, "weaken", TexArt.MenuIcon(31), 70);
+            rig.WeakenMark.enabled = false;
+            rig.CorrodeMark = SpriteRendererUtil.Make(Stage, "corrode", TexArt.MenuIcon(32), 70);
+            rig.CorrodeMark.enabled = false;
             return rig;
         }
 
@@ -439,6 +451,9 @@ namespace MoonThief
                 if (EnemyRigs[i].Stun != null) UtilDestroy(EnemyRigs[i].Stun.gameObject);
                 if (EnemyRigs[i].WardMark != null) UtilDestroy(EnemyRigs[i].WardMark.gameObject);
                 if (EnemyRigs[i].PoisonMark != null) UtilDestroy(EnemyRigs[i].PoisonMark.gameObject);
+                if (EnemyRigs[i].SnareMark != null) UtilDestroy(EnemyRigs[i].SnareMark.gameObject);
+                if (EnemyRigs[i].WeakenMark != null) UtilDestroy(EnemyRigs[i].WeakenMark.gameObject);
+                if (EnemyRigs[i].CorrodeMark != null) UtilDestroy(EnemyRigs[i].CorrodeMark.gameObject);
             }
 
             Enemies = new Fighter[specs.Length];
@@ -809,6 +824,41 @@ namespace MoonThief
             rig.WardMark.transform.localScale = Vector3.one * (1.35f + Mathf.Sin(_time * 7f) * 0.12f);
         }
 
+        /// <summary>Coil/hex/rust ride the same omen row as the rest, each at its own
+        /// x so any mix of marks can stand together without stacking.</summary>
+        void TickSnare(Rig rig)
+        {
+            if (rig?.SnareMark == null) return;
+            bool on = rig.F != null && rig.F.Alive && rig.F.Snare > 0;
+            rig.SnareMark.enabled = on;
+            if (!on) return;
+            rig.SnareMark.transform.localPosition = new Vector3(rig.Home.x + 1.3f,
+                rig.Home.y + rig.BodyHeight + 1.9f + Mathf.Sin(_time * 7f) * 0.1f, 0f);
+            rig.SnareMark.transform.localScale = Vector3.one * (1.25f + Mathf.Sin(_time * 8f) * 0.12f);
+        }
+
+        void TickWeaken(Rig rig)
+        {
+            if (rig?.WeakenMark == null) return;
+            bool on = rig.F != null && rig.F.Alive && rig.F.Weaken > 0;
+            rig.WeakenMark.enabled = on;
+            if (!on) return;
+            rig.WeakenMark.transform.localPosition = new Vector3(rig.Home.x - 0.35f,
+                rig.Home.y + rig.BodyHeight + 1.9f + Mathf.Sin(_time * 6f) * 0.09f, 0f);
+            rig.WeakenMark.transform.localScale = Vector3.one * (1.3f + Mathf.Sin(_time * 8f) * 0.12f);
+        }
+
+        void TickCorrode(Rig rig)
+        {
+            if (rig?.CorrodeMark == null) return;
+            bool on = rig.F != null && rig.F.Alive && rig.F.Corrode > 0;
+            rig.CorrodeMark.enabled = on;
+            if (!on) return;
+            rig.CorrodeMark.transform.localPosition = new Vector3(rig.Home.x + 0.35f,
+                rig.Home.y + rig.BodyHeight + 1.9f + Mathf.Sin(_time * 8f) * 0.1f, 0f);
+            rig.CorrodeMark.transform.localScale = Vector3.one * (1.25f + Mathf.Sin(_time * 9f) * 0.12f);
+        }
+
         void TickBar(Rig rig)
         {
             if (rig == null || rig.HpShown < 0f) return;
@@ -883,8 +933,8 @@ namespace MoonThief
                 _nextChev.transform.localScale = Vector3.one * 1.0f;
             }
             // the daze star spins over whoever took a slam last turn
-            foreach (var rig in EnemyRigs) { TickStun(rig); TickWard(rig); TickPoison(rig); }
-            foreach (var rig in PartyRigs) { TickStun(rig); TickWard(rig); TickPoison(rig); }
+            foreach (var rig in EnemyRigs) { TickStun(rig); TickWard(rig); TickPoison(rig); TickSnare(rig); TickWeaken(rig); TickCorrode(rig); }
+            foreach (var rig in PartyRigs) { TickStun(rig); TickWard(rig); TickPoison(rig); TickSnare(rig); TickWeaken(rig); TickCorrode(rig); }
             // hp bars bleed toward the real value instead of snapping
             foreach (var rig in PartyRigs) TickBar(rig);
             foreach (var rig in EnemyRigs) TickBar(rig);
