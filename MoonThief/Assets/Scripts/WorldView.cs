@@ -2910,6 +2910,13 @@ namespace MoonThief
                 a.Spec = r.Spec;
                 a.Speed = r.Spec.Speed * 0.55f;
                 a.HomeCell = new Vector2(cell.x, cell.y);
+                // a respawn used to come back wide awake every time - clear a patch of
+                // dozers and the night forgot how to nap. The return rolls the same
+                // doze dice the first spawn did
+                int doze = MapChapter == 1 ? 20 : MapChapter == 2 ? 13 : 7;
+                if (Prefs.Hard) doze /= 2;
+                a.Asleep = UnityEngine.Random.Range(0, 100) < doze;
+                a.Sleeps = a.Asleep;
                 a.Anim.Play(MonsterClip(r.Spec.MapSheet, Dir.Down), 4f, true);
                 a.Sr.transform.localScale = Vector3.one * (0.68f + r.Spec.Tier * 0.04f + (r.Spec.Rare ? 0.1f : 0f));
                 if (r.Spec.Rare) a.Sr.color = new Color(0.72f, 0.84f, 1f);
