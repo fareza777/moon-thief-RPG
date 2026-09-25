@@ -825,3 +825,14 @@ md.ender.h|Unearned: walk the moon home.
 md.ngp.h|Unearned: when the credits end, the night offers a retelling.
 md.fleet.h|Unearned: a friend can be wished back to the wild, from its page.
 md.warden.h|Unearned: the villagers' errand list, emptied.
+
+# ---- battle barks: the friends mutter one line a breath while they fight
+bk.amber.0|stay sharp
+bk.amber.1|here goes
+bk.amber.2|steady now
+bk.sea.0|my swing!
+bk.sea.1|spread them!
+bk.sea.2|wide open!
+bk.moss.0|hold together
+bk.moss.1|patches first!
+bk.moss.2|don't drop!

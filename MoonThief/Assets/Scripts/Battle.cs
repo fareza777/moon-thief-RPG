@@ -1593,6 +1593,18 @@ namespace MoonThief
                 return;
             }
             View.SetTurnRig(View.RigOf(f));
+            // the friends talk in a fight: a short bark over the rig now and then, so a
+            // party of three reads as three people, not three cogs. One in three turns,
+            // one line each - chatter, not a second log.
+            if (f.Species == null && Application.isPlaying && UnityEngine.Random.value < 0.3f)
+            {
+                var bRig = View.RigOf(f);
+                if (bRig != null)
+                    View.FloatNumber(bRig.Home + new Vector3(0f, 2.15f, 0f),
+                        Strings.Get("bk." + (f.Style == 0 ? "amber" : f.Style == 1 ? "sea" : "moss")
+                            + "." + UnityEngine.Random.Range(0, 3)),
+                        new Color(1f, 0.96f, 0.72f), 1);
+            }
             // a befriended beast acts on its own - no command menu, it just helps
             if (f.Species != null && Application.isPlaying)
             {
