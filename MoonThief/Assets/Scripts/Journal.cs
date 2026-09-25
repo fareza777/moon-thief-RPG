@@ -628,9 +628,21 @@ namespace MoonThief
         /// Without the cap the rhyme quest could never be handed in.</summary>
         static int EffectiveNeed(QuestDef q)
         {
-            if (q == null || q.Kind != QuestKind.Zones) return q != null ? q.Need : 0;
-            int b = Base.TryGetValue(q.Id, out var v) ? v : 0;
-            return Mathf.Min(q.Need, Mathf.Max(0, 9 - b));
+            if (q == null) return 0;
+            if (q.Kind == QuestKind.Zones)
+            {
+                int b = Base.TryGetValue(q.Id, out var v) ? v : 0;
+                return Mathf.Min(q.Need, Mathf.Max(0, 9 - b));
+            }
+            if (q.Kind == QuestKind.Chests)
+            {
+                // a chest errand can only ask for what the night still holds shut - a thief
+                // who loots half the field before hearing the errand can't be sent for more
+                // caches than exist. The last wood has exactly six and the ledger wants five.
+                int shut = GameMap.ChestsPlaced(Game.State.Chapter) - Game.State.ChestsOpenedIn(Game.State.Chapter);
+                return Mathf.Min(q.Need, Mathf.Max(0, shut));
+            }
+            return q.Need;
         }
 
         /// <summary>The line the quest log shows for a quest.</summary>

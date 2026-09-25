@@ -93,6 +93,15 @@ namespace MoonThief
             public static bool HasChestKey(string key) => ChestsDone.Contains(key);
             public static void MarkChestKey(string key) { if (!ChestsDone.Contains(key)) ChestsDone.Add(key); }
 
+            /// <summary>Field chests already spent inside one chapter (the "ch:x,y" keys - a
+            /// house cache's "hN:x,y" key never matches the chapter prefix).</summary>
+            public static int ChestsOpenedIn(int chapter)
+            {
+                string p = chapter + ":"; int n = 0;
+                foreach (var k in ChestsDone) if (k.StartsWith(p)) n++;
+                return n;
+            }
+
             /// <summary>Records a place the hero has walked into (drives the bard's quest).
             /// True only on the first visit, so a zone banner can fire once, ever.</summary>
             public static bool NoteZone(string key)

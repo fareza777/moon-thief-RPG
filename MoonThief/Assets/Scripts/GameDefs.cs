@@ -210,6 +210,11 @@ namespace MoonThief
             }
         }
 
+        /// <summary>Field chests a chapter's map places: two early nights, all six in the
+        /// last night's wood. The quest book needs the same number to cap chest errands at
+        /// what the night still holds shut.</summary>
+        public static int ChestsPlaced(int chapter) => chapter >= 3 ? 6 : Mathf.Clamp(1 + chapter, 2, 4);
+
         /// <summary>Overworld sheet of the chapter's gatekeeper.</summary>
         public static string BossMapSheet(int chapter)
             => chapter <= 1 ? "Art/Mon/Monsters_03_0"
@@ -543,7 +548,7 @@ namespace MoonThief
             };
             // the last night's dark wood holds every spot the map knows - two of the
             // six were drawn but never stood, and the ledger quest below wants them
-            int chests = chapter >= 3 ? chestSpots.Length : Mathf.Clamp(1 + chapter, 2, 4);
+            int chests = ChestsPlaced(chapter);
             for (int i = 0; i < chests; i++) m.Chests.Add(chestSpots[i]);
             // A chest stands on its own cell. It used to be scenery: nothing marked the cell, so
             // the dressers were free to plant a tree or a boulder on top of it (a chest cut in
