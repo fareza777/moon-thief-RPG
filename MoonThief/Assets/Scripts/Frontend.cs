@@ -84,6 +84,7 @@ namespace MoonThief
         public int items;
         public int chestsOpened;
         public int defeats;
+        public int ngp;             // how many retellings this save has survived
         public bool bossDown;
         public float heroX, heroY;
         public string stamp = "";
@@ -851,9 +852,10 @@ namespace MoonThief
         string SaveStamp()
         {
             var d = SaveSystem.Read();
-            // stamp reads "NIGHT 2  L7": the run's depth and strength at a glance
+            // stamp reads "NIGHT 2  L7": the run's depth and strength at a glance;
+            // a save that has told its tale once reads "NIGHT 1+" - the plus is the retelling
             return d == null || string.IsNullOrEmpty(d.stamp) ? ""
-                : Strings.Get("hud.nightshort", d.chapter) + "  L" + (1 + d.xp / 40);
+                : Strings.Get("hud.nightshort", d.chapter) + (d.ngp > 0 ? "+" : "") + "  L" + (1 + d.xp / 40);
         }
 
         public void ShowSettings(bool fromPause)

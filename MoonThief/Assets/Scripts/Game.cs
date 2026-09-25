@@ -26,6 +26,7 @@ namespace MoonThief
             public static int Xp;
             public static int ChestsOpened;    // the first few drops are always shards
             public static int Defeats;         // wild beasts put down (drives the nightwatch quests)
+            public static int NgPlus;          // how many times the tale has been told: each retelling bites deeper
 
             // ---- the journal: the bag, what is worn, what has been seen, what has been done ----
             public static readonly List<string> Bag = new List<string>();          // item keys, repeats allowed
@@ -46,7 +47,7 @@ namespace MoonThief
             public static void NewRun()
             {
                 Chapter = 1; MoonShards = 0; Befriended = 0; HeldItems = 0; MorselsUsed = 0;
-                Gold = 0; Xp = 0; ChestsOpened = 0; Defeats = 0;
+                Gold = 0; Xp = 0; ChestsOpened = 0; Defeats = 0; NgPlus = 0;
                 Bag.Clear(); Worn[0] = Worn[1] = Worn[2] = null;
                 Zones.Clear(); Seen.Clear(); ChestsDone.Clear(); Friends.Clear();
                 Joined.Clear();
@@ -185,7 +186,7 @@ namespace MoonThief
                 chapter = Chapter, shards = MoonShards, befriended = Befriended,
                 gold = Gold, xp = Xp, morsels = MorselsUsed, items = HeldItems,
                 chestsOpened = ChestsOpened, heroX = heroX, heroY = heroY,
-                defeats = Defeats, bossDown = bossDown,
+                defeats = Defeats, bossDown = bossDown, ngp = NgPlus,
                 bag = Bag.ToArray(), worn = (string[])Worn.Clone(),
                 friends = Friends.ToArray(), joined = JoinedArray(),
                 zones = Zones.ToArray(), quests = Quests.Capture(),
@@ -218,6 +219,7 @@ namespace MoonThief
                 HeldItems = Mathf.Max(0, d.items);
                 ChestsOpened = Mathf.Max(0, d.chestsOpened);
                 Defeats = Mathf.Max(0, d.defeats);
+                NgPlus = Mathf.Max(0, d.ngp);
 
                 Bag.Clear();
                 if (d.bag != null) foreach (var b in d.bag) if (!string.IsNullOrEmpty(b)) Bag.Add(b);
@@ -654,7 +656,8 @@ namespace MoonThief
 
             // the run's ledger, set small under the epilogue: level, friends made, gold kept
             _endStats = PixelLabelUtil.Make(_endRoot, "endStats", 1, new Color(0.78f, 0.8f, 0.95f), TextAlign.Center, 100);
-            _endStats.transform.localPosition = new Vector3(0f, -HalfH + 5.9f, 0f);
+            // three lines now: stats + the "night dreams again" promise - kept above the tap hint
+            _endStats.transform.localPosition = new Vector3(0f, -HalfH + 6.6f, 0f);
 
             _tapHint = PixelLabelUtil.Make(_endRoot, "endTap", 2, new Color(1f, 0.88f, 0.5f), TextAlign.Center, 100);
             _tapHint.MaxWidthUnits = 16f;   // an unbounded wrap box reads as text at the frame edge
@@ -976,7 +979,9 @@ namespace MoonThief
         void RefreshHud()
         {
             if (_hudZone != null)
-                _hudZone.Set(Strings.Get("hud.explore", State.Chapter, State.MoonShards, ShardsNeeded, State.Gold));
+                _hudZone.Set(Strings.Get("hud.explore",
+                    State.NgPlus > 0 ? State.Chapter + "+" : State.Chapter.ToString(),
+                    State.MoonShards, ShardsNeeded, State.Gold));
             if (World != null) World.SetMoonFill(State.MoonShards, ShardsNeeded);
             RefreshQuest();
         }
@@ -1969,13 +1974,25 @@ namespace MoonThief
                 string textKey = company == 0 ? "end.text.lone"
                     : company == 1 ? "end.text.one" : "end.text";
                 _endLines.Set(Strings.Get(textKey));
-                _endStats.Set(company == 0
+                _endStats.Set((company == 0
                     ? Strings.Get("end.stats.lone", State.Level, State.Gold,
                         State.Defeats, State.Defeats == 1 ? "BEAST" : "BEASTS")
                     : Strings.Get("end.stats", State.Level, company,
                         company == 1 ? "FRIEND" : "FRIENDS", State.Gold,
-                        State.Defeats, State.Defeats == 1 ? "BEAST" : "BEASTS"));
-                SaveSystem.Erase();          // the tale is told; the menu offers a fresh night
+                        State.Defeats, State.Defeats == 1 ? "BEAST" : "BEASTS"))
+                    + "\n" + Strings.Get("end.again"));
+                // the tale ends but the night keeps you: CONTINUE walks it again with the
+                // company's strength kept, its beasts grown bolder, its caches shut again,
+                // its errands unwritten - every retelling of the night bites deeper
+                State.NgPlus++;
+                State.Chapter = 1; State.MoonShards = 0;
+                State.ChestsOpened = 0; State.ChestsDone.Clear();
+                State.Zones.Clear(); State.CurZone = "village"; State.ObjZone = null;
+                Quests.Reset();
+                // and the telling starts where every telling starts: the village square
+                if (World != null && World.Ready) World.PlaceHero(World.Map.VillageCenter);
+                _bossDown = false;
+                SaveRun();
             }, 0.4f, 0.6f);
         }
 
@@ -2801,7 +2818,8 @@ namespace MoonThief
                 TryInteract();
                 yield return new WaitForSeconds(0.7f);
                 Debug.Log("[selftest] chest shards " + shardsBeforeChest + "->" + State.MoonShards
-                    + " left=" + World.ChestsLeft);
+                    + " left=" + World.ChestsLeft + " opened=" + State.ChestsOpened
+                    + " interior=" + (World.Map != null && World.Map.Interior));
                 Shot("12b-chest-shard");
             }
 
@@ -3107,6 +3125,19 @@ namespace MoonThief
                 yield return new WaitForSeconds(3.4f);
                 Shot("18b-ending-risen");     // the moon is up and the epilogue is on
                 Debug.Log("[selftest] ending shown");
+
+                // the night retells itself: out of the ending, back to the title, and
+                // straight into CONTINUE - the retold world must read as night 1
+                // again: caches shut, quests unwritten, beasts grown bolder (NG+)
+                DoTransition(() => ShowTitle());
+                yield return new WaitForSeconds(1.4f);
+                ContinueRun();
+                yield return new WaitForSeconds(2.2f);
+                Debug.Log("[selftest] ngp=" + State.NgPlus + " ch=" + State.Chapter
+                    + " shards=" + State.MoonShards + " chests=" + State.ChestsDone.Count
+                    + " quests=" + Quests.DoneCount + " joined=" + State.Joined.Count
+                    + " phase=" + Phase);
+                Shot("19-ngplus");
             }
 
             Debug.Log("[selftest] done");

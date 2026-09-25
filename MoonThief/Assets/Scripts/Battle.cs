@@ -466,15 +466,18 @@ namespace MoonThief
                 var spec = specs[i];
                 var battler = Bank.One(spec.Battler);
                 // wild things get a little tougher as the party levels, so levelling
-                // shortens a fight instead of making it meaningless
+                // shortens a fight instead of making it meaningless; a retold night
+                // (CONTINUE after the ending) bites a little deeper on top of that
                 int elv = (Game.State.Level - 1) * 2;
+                float nmul = 1f + 0.45f * Game.State.NgPlus;
                 var f = new Fighter
                 {
                     Id = "e" + i,
                     Name = Strings.Get(spec.Name),
                     Side = Side.Enemy,
-                    MaxHp = Mathf.RoundToInt(spec.Hp * (spec.Rare ? 1.45f : 1f)) + elv,
-                    AtkMin = spec.AtkMin, AtkMax = spec.AtkMax,
+                    MaxHp = Mathf.RoundToInt(spec.Hp * (spec.Rare ? 1.45f : 1f) * nmul) + elv,
+                    AtkMin = Mathf.RoundToInt(spec.AtkMin * nmul),
+                    AtkMax = Mathf.RoundToInt(spec.AtkMax * nmul),
                     Speed = spec.Speed,
                     Boss = spec.Boss,
                     Rare = spec.Rare,
@@ -2582,7 +2585,8 @@ namespace MoonThief
 
         /// <summary>What a fighter is worth at the moment it falls: gatekeepers pay four
         /// shares, moonlit two - the same table the win card totals.</summary>
-        static int XpOf(Fighter e) => 45 * Mathf.Max(1, e.Boss ? 4 : 1) * (e.Rare ? 2 : 1);
+        static int XpOf(Fighter e) => Mathf.RoundToInt(45 * Mathf.Max(1, e.Boss ? 4 : 1)
+            * (e.Rare ? 2 : 1) * (1f + 0.3f * Game.State.NgPlus));
 
         IEnumerator FadeOut(BattleView.Rig rig, bool keepRoot = false)
         {
