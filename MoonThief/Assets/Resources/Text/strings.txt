@@ -48,6 +48,7 @@ set.off|OFF
 set.saved|PROGRESS SAVED
 set.music|MUSIC
 set.autobattle|AUTO BATTLE
+set.haptics|HAPTICS
 set.difficulty|DIFFICULTY
 set.diff.story|STORY
 set.diff.normal|NORMAL

@@ -346,6 +346,7 @@ namespace MoonThief
         public static void Buzz()
         {
 #if UNITY_ANDROID || UNITY_IOS
+            if (!Prefs.Haptics) return;   // the settings page can still the motor
             try { Handheld.Vibrate(); } catch { }
 #endif
         }

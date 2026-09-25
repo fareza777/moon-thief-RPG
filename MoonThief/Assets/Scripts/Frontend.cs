@@ -18,6 +18,7 @@ namespace MoonThief
         public static int MusicLevel = 4;      // 0 off .. 4 full
         public static bool OnbSeen;            // the three onboarding cards only run once
         public static bool Auto;               // the party's standing battle stance
+        public static bool Haptics = true;      // the phone's small motor, on by default
         public static int MedalsSeen;          // how many medals the case has shown - drives the * on the hub
         public static int BeastsSeen;          // how many bestiary entries the book has shown - same * rule
 
@@ -48,6 +49,7 @@ namespace MoonThief
             MusicLevel = Mathf.Clamp(PlayerPrefs.GetInt("mt.muslvl", PlayerPrefs.GetInt("mt.music", 1) * 4), 0, 4);
             OnbSeen = PlayerPrefs.GetInt("mt.onb", 0) == 1;
             Auto = PlayerPrefs.GetInt("mt.auto", 0) == 1;
+            Haptics = PlayerPrefs.GetInt("mt.haptics", 1) == 1;
             MedalsSeen = PlayerPrefs.GetInt("mt.medals.seen", 0);
             BeastsSeen = PlayerPrefs.GetInt("mt.beasts.seen", 0);
             Sfx.Volume = SoundLevel * 0.25f;
@@ -66,6 +68,7 @@ namespace MoonThief
             PlayerPrefs.SetInt("mt.muslvl", MusicLevel);
             PlayerPrefs.SetInt("mt.onb", OnbSeen ? 1 : 0);
             PlayerPrefs.SetInt("mt.auto", Auto ? 1 : 0);
+            PlayerPrefs.SetInt("mt.haptics", Haptics ? 1 : 0);
             PlayerPrefs.SetInt("mt.medals.seen", MedalsSeen);
             PlayerPrefs.SetInt("mt.beasts.seen", BeastsSeen);
             PlayerPrefs.Save();
@@ -924,6 +927,7 @@ namespace MoonThief
                 Strings.Get("set.sound"),
                 Strings.Get("set.shake"),
                 Strings.Get("set.autobattle"),
+                Strings.Get("set.haptics"),
                 Strings.Get("set.difficulty"),
             };
             var acts = new List<Action>
@@ -933,6 +937,7 @@ namespace MoonThief
                 () => { Prefs.SoundLevel = (Prefs.SoundLevel + 4) % 5; Prefs.Store(); RefreshSettingsRows(); Select(_sel); },
                 () => { Prefs.Shake = !Prefs.Shake; Prefs.Store(); RefreshSettingsRows(); Select(_sel); },
                 () => { Prefs.Auto = !Prefs.Auto; Prefs.Store(); RefreshSettingsRows(); Select(_sel); },
+                () => { Prefs.Haptics = !Prefs.Haptics; Prefs.Store(); Fx.Buzz(); RefreshSettingsRows(); Select(_sel); },
                 () => { Prefs.Story = !Prefs.Story; Prefs.Store(); RefreshSettingsRows(); Select(_sel); },
             };
             var vals = new List<string>
@@ -942,10 +947,11 @@ namespace MoonThief
                 Prefs.SoundLevel <= 0 ? Strings.Get("set.off") : (Prefs.SoundLevel * 25) + "%",
                 Prefs.Shake ? Strings.Get("set.on") : Strings.Get("set.off"),
                 Prefs.Auto ? Strings.Get("set.on") : Strings.Get("set.off"),
+                Prefs.Haptics ? Strings.Get("set.on") : Strings.Get("set.off"),
                 Prefs.Story ? Strings.Get("set.diff.story") : Strings.Get("set.diff.normal"),
             };
 
-            var icons = new List<int> { 9, 10, 11, 12, 13, 18 };
+            var icons = new List<int> { 9, 10, 11, 12, 13, 25, 18 };
             // the wipe lives only on the title-side card: erasing mid-run would be
             // rewritten by the next autosave, which reads as the button doing nothing
             if (!_settingsFromPause)
