@@ -167,6 +167,7 @@ namespace MoonThief
 
             BuildCristal();
             BuildChests();
+            BuildEventSpots();
             SpawnNpcs(Folks.Village(Game.State.Chapter));
             // the companions stand their ground until they say yes: after that their
             // wandering selves are gone and the walkers carry them instead
@@ -904,6 +905,29 @@ namespace MoonThief
             _cristalAnim.Play(frames, 6f, true);
         }
 
+        class EventSpot { public string Id; public SpriteRenderer Sr; }
+        readonly List<EventSpot> _eventSpots = new List<EventSpot>();
+        float _evTick;
+
+        /// <summary>Each unfired world event wears a quiet ember: a "something rests here"
+        /// hint so the road's one-shot moments are found, not stumbled over. Cold light
+        /// for the sad ones, warm for the rest; it lifts for good once the event fires.
+        /// </summary>
+        void BuildEventSpots()
+        {
+            foreach (var ev in Quests.Events)
+            {
+                if (ev.Chapter > MapChapter || Quests.FiredAlready(ev.Id)) continue;
+                var g = SpriteRendererUtil.Make(_root, "evGlow" + ev.Id, TexArt.Glow(), 2006);
+                g.transform.localPosition = new Vector3(ev.Pos.x, ev.Pos.y + 0.15f, 0f);
+                g.transform.localScale = Vector3.one * 2.2f;
+                g.color = ev.Tragic ? new Color(0.62f, 0.76f, 1f, 0.42f)
+                    : new Color(1f, 0.84f, 0.42f, 0.48f);
+                _eventSpots.Add(new EventSpot { Id = ev.Id, Sr = g });
+                AddGlow(g, 0.3f);
+            }
+        }
+
         /// <summary>Fireflies: tiny drifting lights over the fields at night.
         /// Each night has its own kind - green flies on the fields, cold wisps deep
         /// in the forest, gold motes on the last march - and deeper nights swarm more.</summary>
@@ -1587,7 +1611,7 @@ namespace MoonThief
         {
             Ready = false;
             if (_root != null) Fx.Kill(_root.gameObject);
-            Monsters.Clear(); Npcs.Clear(); _props.Clear(); _glows.Clear(); _glowAmp.Clear(); _flies.Clear(); _flySprites.Clear();
+            Monsters.Clear(); Npcs.Clear(); _props.Clear(); _glows.Clear(); _glowAmp.Clear(); _flies.Clear(); _flySprites.Clear(); _eventSpots.Clear();
             _water.Clear(); _critters.Clear(); _respawns.Clear();
             _friends.Clear(); _crumbs.Clear(); _dust.Clear();
             _bossProp = null; _bossHidden = false;
@@ -2460,6 +2484,24 @@ namespace MoonThief
                 if (n.Body != null) n.Body.localPosition = new Vector3(0f, StepBob(_time + i, 6.5f, 0f), 0f);
                 if (n.Name != null)
                     n.Name.transform.localPosition = new Vector3(npos.x, npos.y + NameAnchorY, 0f);
+            }
+
+            // the embers under unfired events go out for good once their moment passes
+            if (_eventSpots.Count > 0)
+            {
+                _evTick -= dt;
+                if (_evTick <= 0f)
+                {
+                    _evTick = 0.5f;
+                    foreach (var s in _eventSpots)
+                        if (s.Sr != null && s.Sr.enabled && Quests.FiredAlready(s.Id))
+                        {
+                            // a last bright sigh, then nothing - a poof would read as a
+                            // pickup, and the event itself already paid out its toast
+                            s.Sr.color = new Color(1f, 0.95f, 0.75f, 0.8f);
+                            s.Sr.enabled = false;
+                        }
+                }
             }
 
             // torch flicker: one curve, one peak per light
