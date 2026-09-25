@@ -119,7 +119,12 @@ namespace MoonThief
                 if (l == null || !l.gameObject.activeInHierarchy) continue;
                 var txt = l.Text;
                 if (string.IsNullOrEmpty(txt) || txt.Trim().Length == 0) continue;
-                float w = l.MeasureWidth(txt), h = l.MeasureHeight(txt);
+                // Measure uses the label's glyph Scale, but callers may also shrink the
+                // whole label transform to fit a slot (battle menu cells do) - fold that
+                // in or the box reads wider than the glyphs on screen
+                float ts = Mathf.Abs(l.transform.localScale.x);
+                if (ts < 0.001f) continue;
+                float w = l.MeasureWidth(txt) * ts, h = l.MeasureHeight(txt) * ts;
                 if (w <= 0.02f || h <= 0.02f) continue;
                 var p = l.transform.position;
                 float x0 = l.Align == TextAlign.Left ? p.x
