@@ -2911,7 +2911,14 @@ namespace MoonThief
                                                           : (Prefs.Hard ? 4.0f : Prefs.Story ? 2.6f : 3.2f));
                 // a chase runs at full field speed; the 0.55 gait is only for wandering -
                 // without this every hunter chases at a stroll the hero can simply outwalk
-                if (!m.Aggro && (dh < hearR || (dh < seeR && ClearLineOfSight(mpos, HeroPos)))) { m.Asleep = false; m.Aggro = true; m.AggroT = 0.85f; m.Speed = m.Spec.Speed; Sfx.Play("alert"); }
+                if (!m.Aggro && (dh < hearR || (dh < seeR && ClearLineOfSight(mpos, HeroPos))))
+                {
+                    m.Asleep = false; m.Aggro = true;
+                    // the "!" holds a beat before the chase: a dodge window, shorter
+                    // on the cruel telling when hesitation costs more
+                    m.AggroT = Prefs.Hard ? 0.55f : 0.85f;
+                    m.Speed = m.Spec.Speed; Sfx.Play("alert");
+                }
 
                 // a moonlit thing wears a star overhead: the night's prize should read
                 // from across the field, not only once the fight has started
