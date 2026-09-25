@@ -2703,6 +2703,9 @@ namespace MoonThief
             Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);
             yield return new WaitForSeconds(0.3f);
             Shot("10c-onboard-3");
+            Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);   // page 4: GEAR UP
+            yield return new WaitForSeconds(0.3f);
+            Shot("10c3-onboard-4");
             Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);   // BEGIN -> title
             yield return new WaitForSeconds(0.5f);
             Shot("10c2-menu");    // on a fresh boot shot 10 lands on onboarding, so re-take it here
