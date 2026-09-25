@@ -392,6 +392,7 @@ namespace MoonThief
         {
             _mainRoot = Root("main", 0);
             _hint = PixelLabelUtil.Make(_mainRoot, "hint", 1, new Color(0.72f, 0.74f, 0.9f), TextAlign.Center, 6008);
+            _hint.MaxWidthUnits = 14.8f;   // a hint wider than its card prints onto the world
             // seven rows stack to -14.7; the hint parks just under them, off the last row's panel
             _hint.transform.localPosition = new Vector3(0f, -15.1f, 0f);
             _hint.Set(Strings.Get("menu.hint"));
@@ -410,6 +411,7 @@ namespace MoonThief
             _setTitle = PixelLabelUtil.Make(_setCard, "setTitle", 3, new Color(1f, 0.95f, 0.78f), TextAlign.Center, 6006);
             _setTitle.Set(Strings.Get("set.title"));
             _setFoot = PixelLabelUtil.Make(_setCard, "setFoot", 1, new Color(0.6f, 0.64f, 0.86f), TextAlign.Center, 6007);
+            _setFoot.MaxWidthUnits = 15f;
             _setFoot.Set(Strings.Get("set.hint"));
             _setRows = BuildRows(_setCard);
         }
@@ -493,6 +495,7 @@ namespace MoonThief
             _pauseTitle.transform.localPosition = new Vector3(0f, 5.8f, 0f);
             _pauseTitle.Set(Strings.Get("pause.title"));
             _pauseSub = PixelLabelUtil.Make(_pauseCard, "pauseSub", 1, new Color(0.72f, 0.74f, 0.9f), TextAlign.Center, 6006);
+            _pauseSub.MaxWidthUnits = 15f;
             _pauseSub.transform.localPosition = new Vector3(0f, -7.2f, 0f);
             _pauseSub.Set("");
             _pauseRows = BuildRows(_pauseCard);
@@ -571,6 +574,7 @@ namespace MoonThief
             _jrTitle.Set(Strings.Get("jr.title"));
             _jrSub = PixelLabelUtil.Make(_jrRoot, "jrSub", 1, new Color(0.72f, 0.76f, 0.92f), TextAlign.Center, 6007);
             _jrFoot = PixelLabelUtil.Make(_jrRoot, "jrFoot", 1, new Color(0.6f, 0.64f, 0.86f), TextAlign.Center, 6007);
+            _jrFoot.MaxWidthUnits = 15f;
             _jrRows = BuildRows(_jrRoot);
         }
 
@@ -586,6 +590,7 @@ namespace MoonThief
             _pageSub = PixelLabelUtil.Make(_pageRoot, "pgSub", 1, new Color(0.72f, 0.76f, 0.92f), TextAlign.Center, 6007);
             _pageSub.MaxWidthUnits = 15f;
             _pageFoot = PixelLabelUtil.Make(_pageRoot, "pgFoot", 1, new Color(0.6f, 0.64f, 0.86f), TextAlign.Center, 6007);
+            _pageFoot.MaxWidthUnits = 15f;   // the medal tip is 45 glyphs - wider than the card
             _pageRows = BuildRows(_pageRoot);
 
             // the world-map page's chrome: a real pixel minimap of the night's ground
@@ -655,6 +660,7 @@ namespace MoonThief
             _shopTitle.Set(Strings.Get("shop.title"));
             _shopSub = PixelLabelUtil.Make(_shopCard, "shopSub", 1, new Color(0.9f, 0.9f, 0.6f), TextAlign.Center, 6006);
             _shopFoot = PixelLabelUtil.Make(_shopCard, "shopFoot", 1, new Color(0.6f, 0.64f, 0.86f), TextAlign.Center, 6007);
+            _shopFoot.MaxWidthUnits = 15f;
             _shopFoot.Set(Strings.Get("shop.hint"));
             _shopRows = BuildRows(_shopCard);
         }
