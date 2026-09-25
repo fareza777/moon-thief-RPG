@@ -632,7 +632,7 @@ namespace MoonThief
         /// that still exists to find - three named lands and six hearths make nine, so a
         /// walker who found every one before asking has already done the deed whole.
         /// Without the cap the rhyme quest could never be handed in.</summary>
-        static int EffectiveNeed(QuestDef q)
+        public static int EffectiveNeed(QuestDef q)
         {
             if (q == null) return 0;
             if (q.Kind == QuestKind.Zones)

@@ -1541,11 +1541,14 @@ namespace MoonThief
                         int step = Quests.Step(q.Id);
                         if (!q.Main && step == 0) continue;   // side quests list only once taken on
                         labels.Add(Strings.Get(q.TitleKey));
-                        // every row says where it stands: mains used to print MAIN again and
-                        // again (the sub already counts them); an active side errand still
-                        // shows its count - the state word reads better than a kind marker
-                        vals.Add(q.Main || step != 1 ? Quests.StateWord(step)
-                            : Strings.Get("jr.prog", Mathf.Min(Quests.Progress(q), q.Need), q.Need));
+                        // every row says where it stands: talk errands read as words (the
+                        // telling is the deed), every real count reads as a number - mains
+                        // included, since four shards and one guard are both countable. The
+                        // shown need is the capped ask, so a chest errand never promises
+                        // more caches than the night still holds.
+                        vals.Add(q.Kind == QuestKind.Talk || step != 1 ? Quests.StateWord(step)
+                            : Strings.Get("jr.prog", Mathf.Min(Quests.Progress(q), Quests.EffectiveNeed(q)),
+                                Quests.EffectiveNeed(q)));
                         icons.Add(step == 3 ? 26 : 20);
                         var quest = q;
                         acts.Add(() => ShowToast(Quests.Line(quest), 4.2f));
