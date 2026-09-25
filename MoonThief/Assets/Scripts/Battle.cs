@@ -1603,10 +1603,14 @@ namespace MoonThief
             {
                 var bRig = View.RigOf(f);
                 if (bRig != null)
+                    string who = f.Style == 0 ? "amber" : f.Style == 1 ? "sea" : "moss";
+                    // same voice never says the same line twice running - a repeat reads
+                    // as a stutter, not a personality
+                    int bi = UnityEngine.Random.Range(0, 3);
+                    if (who == _lastBarkWho && bi == _lastBarkIdx) bi = (bi + 1) % 3;
+                    _lastBarkWho = who; _lastBarkIdx = bi;
                     View.FloatNumber(bRig.Home + new Vector3(0f, 2.15f, 0f),
-                        Strings.Get("bk." + (f.Style == 0 ? "amber" : f.Style == 1 ? "sea" : "moss")
-                            + "." + UnityEngine.Random.Range(0, 3)),
-                        new Color(1f, 0.96f, 0.72f), 1);
+                        Strings.Get("bk." + who + "." + bi), new Color(1f, 0.96f, 0.72f), 1);
                 _partySpoke = true;
             }
             // a befriended beast acts on its own - no command menu, it just helps
@@ -1869,18 +1873,18 @@ namespace MoonThief
             }
             _ph = Ph.Acting;
             View.SetTurnRig(View.RigOf(e), true);
-            // a keeper growls mid-fight: one rare line over its own rig, so the boss
-            // reads as a thinking thing between the taunts, not a damage pump
             // every keeper opens its mouth once: the first turn always carries a line,
-            // after that a growl lands one time in three
+            // after that a growl lands one time in three - and never the same growl twice
             if (e.Boss && (!_bossSpoke || UnityEngine.Random.value < 0.3f))
             {
                 _bossSpoke = true;
                 var kRig = View.RigOf(e);
+                int bi = UnityEngine.Random.Range(0, 3);
+                if (bi == _lastBarkIdx && _lastBarkWho == "boss") bi = (bi + 1) % 3;
+                _lastBarkWho = "boss"; _lastBarkIdx = bi;
                 if (kRig != null)
                     View.FloatNumber(kRig.Home + new Vector3(0f, 2.3f, 0f),
-                        Strings.Get("bk.boss." + Mathf.Clamp(Game.State.Chapter, 1, 3)
-                            + "." + UnityEngine.Random.Range(0, 3)),
+                        Strings.Get("bk.boss." + Mathf.Clamp(Game.State.Chapter, 1, 3) + "." + bi),
                         new Color(1f, 0.75f, 0.7f), 1);
             }
             // a wasp on its last legs would rather live elsewhere: under a quarter of
@@ -2285,6 +2289,8 @@ namespace MoonThief
         bool _hasBoss;
         bool _bossSpoke;   // the keeper's guaranteed first line is spent
         bool _partySpoke;  // the party's opening line is spent
+        string _lastBarkWho = "";
+        int _lastBarkIdx = -1;   // bark memory: no voice repeats its own last line
 
         public void Confirm()
         {
