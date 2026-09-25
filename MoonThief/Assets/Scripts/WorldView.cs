@@ -31,6 +31,7 @@ namespace MoonThief
             public bool IsNpc;
             public string Art;          // the walk sheet this actor cycles (critters, see Strip)
             public SpriteRenderer Alert;   // "!" bubble shown while aggro-chasing
+            public SpriteRenderer Rare;    // star a moonlit wild thing wears overhead
             public SpriteRenderer NameChip;   // the tag behind the name; hidden with the name
             public float FadeIn;        // respawn materialise: alpha ramps in over ~0.9s
         }
@@ -2637,6 +2638,24 @@ namespace MoonThief
                 // a chase runs at full field speed; the 0.55 gait is only for wandering -
                 // without this every hunter chases at a stroll the hero can simply outwalk
                 if (!m.Aggro && dh < 3.2f && ClearLineOfSight(mpos, HeroPos)) { m.Aggro = true; m.AggroT = 0.85f; m.Speed = m.Spec.Speed; Sfx.Play("alert"); }
+
+                // a moonlit thing wears a star overhead: the night's prize should read
+                // from across the field, not only once the fight has started
+                if (m.Spec.Rare)
+                {
+                    if (m.Rare == null)
+                    {
+                        var rgo = new GameObject("rareMark");
+                        rgo.transform.SetParent(m.Root, false);
+                        rgo.transform.localScale = Vector3.one * 0.55f;
+                        m.Rare = rgo.AddComponent<SpriteRenderer>();
+                        m.Rare.sprite = TexArt.MenuIcon(21);
+                        m.Rare.color = new Color(0.8f, 0.9f, 1f, 0.9f);
+                        m.Rare.sortingOrder = 2100;
+                    }
+                    m.Rare.transform.localPosition = new Vector3(0f,
+                        1.55f + Mathf.Sin(_time * 3f + m.HomeCell.x) * 0.07f, 0f);
+                }
                 if (m.Aggro && dh > 6.5f) { m.Aggro = false; m.Speed = m.Spec.Speed * 0.55f; }
 
                 if (m.Aggro)
