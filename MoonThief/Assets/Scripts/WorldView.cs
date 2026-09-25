@@ -1890,7 +1890,20 @@ namespace MoonThief
                 f.Root.name = "friend" + _friends.Count;
                 f.Speed = 4.6f;
                 f.Spec = spec;
-                if (moonlit) f.Sr.color = new Color(0.72f, 0.84f, 1f);
+                if (moonlit)
+                {
+                    f.Sr.color = new Color(0.72f, 0.84f, 1f);
+                    // the star a wild moonlit wears follows it into the stable -
+                    // a rare catch should read rare on the trail too
+                    var rgo = new GameObject("rareMark");
+                    rgo.transform.SetParent(f.Root, false);
+                    rgo.transform.localPosition = new Vector3(0f, 1.55f, 0f);
+                    rgo.transform.localScale = Vector3.one * 0.55f;
+                    f.Rare = rgo.AddComponent<SpriteRenderer>();
+                    f.Rare.sprite = TexArt.MenuIcon(21);
+                    f.Rare.color = new Color(0.8f, 0.9f, 1f, 0.9f);
+                    f.Rare.sortingOrder = 2100;
+                }
                 // a warm tag tells it apart from the wild look-alikes roaming the same fields
                 MakeNamePlate(f, Strings.Get(spec.Name), FriendChip);
                 var spr = TexArt.MapMonster(s.Value.MapSheet, 1);
@@ -2189,6 +2202,9 @@ namespace MoonThief
                 }
                 if (f.Name != null)
                     f.Name.transform.localPosition = new Vector3(f.Root.localPosition.x, f.Root.localPosition.y + NameAnchorY, 0f);
+                if (f.Rare != null)
+                    f.Rare.transform.localPosition = new Vector3(0f,
+                        1.55f + Mathf.Sin(_time * 3f + i) * 0.07f, 0f);
             }
         }
 
