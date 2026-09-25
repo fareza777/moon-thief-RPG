@@ -120,7 +120,7 @@ hud.quest|NEXT: {0}
 quest.1|1. Talk to Mira.
 quest.sea|2. Find Sea at the village edge.
 quest.moss|3. Find Moss out in the fields.
-quest.2|4. Open {0} night chests.
+quest.2|4. Open {0} night {1}.
 quest.3|5. Follow the lamps.
 quest.4|6. Face the {0}.
 quest.5|7. Raise the moon at Mira's crystal.
@@ -478,7 +478,7 @@ jr.alone|ALONE
 jr.empty|Bag empty.
 jr.keyitem|A keepsake for somebody in the village.
 jr.usefight|Save it for a hard fight.
-jr.items.sub|{0} THINGS CARRIED
+jr.items.sub|{0} {1} CARRIED
 jr.equip.sub|Tap a slot to swap it.
 jr.equip.tip|Bonus applies to the party.
 jr.bestiary.sub|MET {0} OF {1}

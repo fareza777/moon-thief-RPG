@@ -1032,7 +1032,7 @@ namespace MoonThief
             // Counting ShardsNeeded-MoonShards here promised chests that hold nothing.
             int shardChests = Mathf.Max(0, 3 - State.ChestsOpened);
             if (World != null && World.ChestsLeft > 0 && shardChests > 0)
-                return Strings.Get("quest.2", shardChests);
+                return Strings.Get("quest.2", shardChests, shardChests == 1 ? "chest" : "chests");
             // the corner names the night's real gatekeeper, not the finale's - a walkthrough
             // line that reads "Face the Pale Guard" in night one is steering the hero wrong
             return Strings.Get("quest.4", Strings.Get(BattleData.BossNameKey(State.Chapter)));

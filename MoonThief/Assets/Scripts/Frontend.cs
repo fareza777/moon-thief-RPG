@@ -1466,7 +1466,8 @@ namespace MoonThief
 
                 case Page2.Items:
                     title = "jr.items";
-                    sub = Strings.Get("jr.items.sub", Game.State.Bag.Count);
+                    sub = Strings.Get("jr.items.sub", Game.State.Bag.Count,
+                        Game.State.Bag.Count == 1 ? "THING" : "THINGS");
                     foot = "jr.items.tip";
                     {
                         icons = new List<int>();
