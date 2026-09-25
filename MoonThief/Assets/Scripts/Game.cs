@@ -2065,9 +2065,14 @@ namespace MoonThief
                 // above the tap hint's band (position = the block's top edge)
                 {
                     float poemBottom = HalfH - 10f - _endLines.MeasureHeight(_endLines.Text);
+                    // the hint band is a FLOOR and the poem is a CEILING: the block's top
+                    // must sit at or above 'aboveHint' to keep its bottom out of the tap
+                    // hint, and as near under the poem as that allows - min() had it
+                    // backwards and dropped the ledger through the hint whenever the
+                    // company poem ran long
                     float aboveHint = -HalfH + 3.9f + _endStats.MeasureHeight(_endStats.Text) + 1.6f;
                     _endStats.transform.localPosition =
-                        new Vector3(0f, Fx.Snap(Mathf.Min(poemBottom - 0.8f, aboveHint)), 0f);
+                        new Vector3(0f, Fx.Snap(Mathf.Max(aboveHint, poemBottom - 0.8f)), 0f);
                 }
                 // the company walks home on the screen's edge: up to three friends stand
                 // as small silhouettes on the horizon line under the tap hint. Cleared
