@@ -1532,6 +1532,10 @@ namespace MoonThief
             // struck from the dark: a roster that never saw the thief opens the fight
             // reeling, every one of them - the stun stars land in the intro slide
             if (ambush) foreach (var e in View.Enemies) e.Dazed = true;
+            // and the reverse ambush: a box that bit first strikes before the thief's
+            // crew can blink - its opening turn jumps the whole order, then the
+            // element of surprise is spent and it fights at its own gait
+            if (fromMimic) { _mimicHaste = true; foreach (var e in View.Enemies) e.Speed += 20f; }
             View.HideCard();
             View.SetMenuVisible(false);
             Auto = Prefs.Auto;
@@ -1616,6 +1620,13 @@ namespace MoonThief
                 if (_qi >= _queue.Count)
                 {
                     _round++;
+                    // the mimic's jump was for the opening alone - from the second round
+                    // on it fights at the gait its species was born with
+                    if (_mimicHaste)
+                    {
+                        _mimicHaste = false;
+                        foreach (var e in View.Enemies) e.Speed -= 20f;
+                    }
                     RoundStart();
                     return;
                 }
@@ -2383,6 +2394,7 @@ namespace MoonThief
 
         bool _enraged;
         bool _fromMimic;   // this fight walked out of a chest - the scar's own medal waits at the end
+        bool _mimicHaste;  // the surprise's speed boost, spent after the opening round
         bool _hasBoss;
         bool _bossSpoke;   // the keeper's guaranteed first line is spent
         bool _partySpoke;  // the party's opening line is spent
