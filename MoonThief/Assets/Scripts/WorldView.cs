@@ -2228,7 +2228,11 @@ namespace MoonThief
                     SpawnDust((Vector2)Hero.Root.localPosition - input.normalized * 0.35f);
                     // a heavy foot within earshot peels a warning ring off the heel -
                     // the hearing band made visible exactly when it matters
-                    if (NearWild(HeroPos, 5.5f)) SpawnRipple(Hero.Root.localPosition);
+                    // the ring must tell the truth about the hearing band: it used to
+                    // warn at 5.5 paces while the wild only heard at 3.6 - rings for
+                    // footsteps nothing could hear taught the wrong lesson
+                    float warnR = Prefs.Hard ? 4.6f : Prefs.Story ? 3.0f : 3.6f;
+                    if (NearWild(HeroPos, warnR + 0.8f)) SpawnRipple(Hero.Root.localPosition);
                 }
                 _stepSfxT = sneak ? 0.34f : 0.24f;
             }
