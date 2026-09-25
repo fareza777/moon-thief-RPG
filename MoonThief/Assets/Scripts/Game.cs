@@ -1571,6 +1571,18 @@ namespace MoonThief
                 {
                     Quests.SetStep(q.Id, 2);
                     OpenDialog(npc, new[] { string.IsNullOrEmpty(q.MeetKey) ? "q.goal" : q.MeetKey });
+                    // he said he would go home - so he does, once the talk closes. Unless
+                    // some errand of his own still wants him on the road: a quest that
+                    // needs this soul cannot lose him to someone else's story
+                    var target = npc.NameKey;
+                    _dlgThen = () =>
+                    {
+                        foreach (var qq in Quests.All)
+                            if (qq.Giver == target && qq.Chapter <= Game.State.Chapter
+                                && Quests.Step(qq.Id) != 3) return;
+                        var a = World.FindNpc(target);
+                        if (a != null) World.RemoveNpc(a);
+                    };
                     SaveRun();
                     return;
                 }

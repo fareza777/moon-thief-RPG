@@ -1895,6 +1895,21 @@ namespace MoonThief
             for (int i = Npcs.Count - 1; i >= 0; i--)
                 if (Npcs[i].Npc.JoinKey != null && Game.State.Joined.Contains(Npcs[i].Npc.JoinKey))
                     RemoveNpc(Npcs[i]);
+            // a soul an errand sent home stays home across saves: the cast follows quest
+            // state, not the chapter's spawn list - unless some errand of his own still
+            // holds him to the road
+            foreach (var q in Quests.All)
+            {
+                if (q.Kind != QuestKind.Talk || string.IsNullOrEmpty(q.Target)
+                    || Quests.Step(q.Id) != 2) continue;
+                bool owed = false;
+                foreach (var qq in Quests.All)
+                    if (qq.Giver == q.Target && qq.Chapter <= Game.State.Chapter
+                        && Quests.Step(qq.Id) != 3) { owed = true; break; }
+                if (owed) continue;
+                var a = FindNpc(q.Target);
+                if (a != null) RemoveNpc(a);
+            }
         }
 
         /// <summary>Takes a villager off the street: plate, chip, sprite and the list entry.
