@@ -2913,6 +2913,16 @@ namespace MoonThief
             {
                 _flow++;
                 View.SetRound(_round, _flow);
+                // the first time the moon lends its weight, say so over the hero -
+                // afterwards the pulsing corner moon and the MOON- labels carry it
+                if (_flow == 4)
+                {
+                    var rig = View.RigOf(_queue[_qi]);
+                    if (rig != null)
+                        View.FloatNumber(rig.Home + new Vector3(0f, 2.1f, 0f),
+                            Strings.Get("menu.mstrike"), new Color(0.72f, 0.82f, 1f));
+                    Sfx.Play("shard");
+                }
             }
             if (AllEnemiesGone()) { Win(); return; }
             if (PartyWiped()) { Lose(); return; }
