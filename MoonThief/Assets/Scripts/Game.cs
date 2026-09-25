@@ -574,6 +574,10 @@ namespace MoonThief
             var curPos = cam + (Vector3)ScreenToStage(_joyCur);
             var d = Vector2.ClampMagnitude(curPos - basePos, 1.6f);
             _joyKnob.transform.localPosition = new Vector3(basePos.x + d.x, basePos.y + d.y, 0f);
+            // the knob itself teaches the gait: a half-push glows dusk-blue, a full push
+            // burns white - the creep band is something you feel through the thumb
+            _joyKnob.color = World.Sneaking
+                ? new Color(0.55f, 0.62f, 1f, 0.6f) : new Color(1f, 1f, 1f, 0.55f);
         }
 
         public static float ComputeHalfHeight()
