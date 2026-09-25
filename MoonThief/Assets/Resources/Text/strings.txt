@@ -872,3 +872,4 @@ bk.boss.3.2|lanterns all go out
 md.ghost|SHADOW
 md.ghost.d|Three blades they never saw coming. The night keeps your secret.
 md.ghost.h|Unearned: creep close - strike from the dark three times.
+hint.sneak|The wild hears a heavy step - small tilts slip past, and an unseen strike stuns.

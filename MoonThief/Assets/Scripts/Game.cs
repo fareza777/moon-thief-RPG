@@ -358,7 +358,7 @@ namespace MoonThief
         /// every load and skipped the opening step).</summary>
         bool MetMira => Quests.Step("mq.1") == 3;
         readonly HashSet<string> _metNpcs = new HashSet<string>();
-        bool _hintTalk = true, _hintChest = true;
+        bool _hintTalk = true, _hintChest = true, _hintSneak = true;
         float _hintT;                                            // countdown for the deferred chapter toast
         string _hintKey;
         float _barkT = 30f;                                      // companion banter: first quip half a minute in
@@ -1546,6 +1546,14 @@ namespace MoonThief
                 // rare ambient encounter while walking in the wild
                 StartBattle(BattleData.Roll(State.Chapter, new System.Random()));
                 return;
+            }
+
+            // first step into the hunting grounds: one nudge about the quiet gait,
+            // then never again - the prowl earns its own medals from there
+            if (_hintSneak && World.HeroPos.y > 26f && World.Monsters.Count > 0 && !World.BannerUp)
+            {
+                _hintSneak = false;
+                Menus.ShowToast(Strings.Get("hint.sneak"), 4.5f);
             }
 
             // first chest in reach: one nudge, then never again. The hint waits out the
