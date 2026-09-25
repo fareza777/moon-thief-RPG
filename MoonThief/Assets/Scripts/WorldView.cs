@@ -2909,6 +2909,9 @@ namespace MoonThief
                 float hearR = Sneaking ? 0f : (Prefs.Hard ? 4.6f : Prefs.Story ? 3.0f : 3.6f);
                 float seeR = m.Asleep ? 0f : (Sneaking ? (Prefs.Hard ? 1.1f : 0.7f)
                                                           : (Prefs.Hard ? 4.0f : Prefs.Story ? 2.6f : 3.2f));
+                // the silver ones are keener still: moonlight in the blood means a
+                // moonlit wild thing senses the thief nearly a pace sooner
+                if (m.Spec.Rare) { hearR += 0.8f; seeR += 0.8f; }
                 // a chase runs at full field speed; the 0.55 gait is only for wandering -
                 // without this every hunter chases at a stroll the hero can simply outwalk
                 if (!m.Aggro && (dh < hearR || (dh < seeR && ClearLineOfSight(mpos, HeroPos))))
