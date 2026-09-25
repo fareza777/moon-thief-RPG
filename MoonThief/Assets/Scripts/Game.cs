@@ -2836,6 +2836,16 @@ namespace MoonThief
             Menus.EditorJournal(0);
             yield return new WaitForSecondsRealtime(0.5f);
             Shot("28c-character");
+            // page two and three of the stat sheet: the icon row that only shows on
+            // later pages has drifted before - photograph it now
+            for (int i = 0; i < 6; i++) Menus.Tick(0.1f, Vector2.zero, false, 1, false, false);
+            Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);
+            yield return new WaitForSecondsRealtime(0.4f);
+            Shot("28c2-character-p2");
+            for (int i = 0; i < 6; i++) Menus.Tick(0.1f, Vector2.zero, false, 1, false, false);
+            Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);
+            yield return new WaitForSecondsRealtime(0.4f);
+            Shot("28c3-character-p3");
             Menus.EditorJournal(1);
             yield return new WaitForSecondsRealtime(0.5f);
             Shot("28d-items");
