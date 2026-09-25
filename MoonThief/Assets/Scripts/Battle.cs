@@ -1583,7 +1583,11 @@ namespace MoonThief
             View.SetMessage(first);
             Sfx.Mus.Intensity = 1f;             // whatever the last fight left behind
             Sfx.Mus.Duck = 1f;                  // and the band comes back up for the fight
-            Sfx.Mus.Play(hasBoss ? "boss" : "battle");
+            // each night drums its own war: the folk pulse of the first field, the
+            // heavier beat of the long fields, the tightest one under the keep
+            Sfx.Mus.Play(hasBoss ? "boss"
+                : Game.State.Chapter >= 3 ? "battle3"
+                : Game.State.Chapter == 2 ? "battle2" : "battle");
             // a fight that walked out of a box plays a half-step sharper - the trap's
             // own edge on the same old tune
             if (fromMimic) Sfx.Mus.Intensity = 1.08f;

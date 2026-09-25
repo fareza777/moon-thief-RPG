@@ -411,6 +411,30 @@ namespace MoonThief
                             Lead = Seq(62, -1, -1, 62, -1, -1, 65, -1, 62, -1, -1, 69, -1, 67, -1, -1,
                                        62, -1, -1, 62, -1, -1, 65, -1, 70, -1, 69, -1, 67, -1, 65, -1)
                         });
+                    case "battle2":
+                        // the second night's drum: G minor, heavier - the long fields
+                        // make the same fight feel older and less forgiving
+                        return Render(new Song
+                        {
+                            Step = 0.135f, BassWave = Wave.Square, LeadWave = Wave.Saw,
+                            LeadVol = 0.14f, BassVol = 0.22f, HatVol = 0.06f, Pad = 0.07f,
+                            Bass = Seq(43, -1, 43, -1, 43, -1, 46, -1, 43, -1, 43, -1, 48, -1, 46, -1,
+                                       43, -1, 43, -1, 43, -1, 46, -1, 50, -1, 48, -1, 46, -1, 44, -1),
+                            Lead = Seq(67, -1, -1, 67, -1, -1, 70, -1, 67, -1, -1, 74, -1, 72, -1, -1,
+                                       67, -1, -1, 67, -1, -1, 70, -1, 75, -1, 74, -1, 72, -1, 70, -1)
+                        });
+                    case "battle3":
+                        // the last night's drum: F# minor, tightest - the deep wood
+                        // fights like it already knows how the song ends
+                        return Render(new Song
+                        {
+                            Step = 0.12f, BassWave = Wave.Saw, LeadWave = Wave.Square,
+                            LeadVol = 0.15f, BassVol = 0.22f, HatVol = 0.08f, Pad = 0.08f,
+                            Bass = Seq(42, -1, 42, -1, 42, -1, 42, -1, 45, -1, 42, -1, 42, -1, 47, -1,
+                                       42, -1, 42, -1, 42, -1, 42, -1, 45, -1, 49, -1, 47, -1, 45, -1),
+                            Lead = Seq(66, -1, -1, 66, -1, -1, 69, -1, 66, -1, -1, 73, -1, 71, -1, -1,
+                                       66, -1, -1, 66, -1, -1, 69, -1, 74, -1, 73, -1, 71, -1, 69, -1)
+                        });
                     case "boss":
                         // E minor, faster, chromatic drop at the end of every bar
                         return Render(new Song
