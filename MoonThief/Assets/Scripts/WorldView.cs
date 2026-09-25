@@ -81,7 +81,6 @@ namespace MoonThief
         // exists, so actors of the same kind share sprites and no walk cycle is built twice.
         readonly Dictionary<string, Sprite[]> _clipCache = new Dictionary<string, Sprite[]>();
         SpriteRenderer _bossProp;
-        bool _bossHidden;
         SpriteRenderer _dimmer, _moonIcon, _cristalSr;
         Anim _cristalAnim;
         SpriteRenderer _cristalGlow;
@@ -1040,7 +1039,6 @@ namespace MoonThief
         /// <summary>The guard is gone: clear its sprite so the road north reads as open.</summary>
         public void RemoveBoss()
         {
-            _bossHidden = true;
             if (_bossProp != null) _bossProp.enabled = false;
         }
 
@@ -1627,7 +1625,7 @@ namespace MoonThief
             Monsters.Clear(); Npcs.Clear(); _props.Clear(); _glows.Clear(); _glowAmp.Clear(); _flies.Clear(); _flySprites.Clear(); _eventSpots.Clear();
             _water.Clear(); _critters.Clear(); _respawns.Clear();
             _friends.Clear(); _crumbs.Clear(); _dust.Clear();
-            _bossProp = null; _bossHidden = false;
+            _bossProp = null;
             Hero = null; Map = null; HudRoot = null; _vignette = null; _objArrow = null;
             _touchCue = null;
         }

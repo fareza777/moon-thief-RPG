@@ -40,13 +40,13 @@ namespace MoonThief
 
         public static void Report(string tag, float halfH, Vector3 cam)
         {
-            var labels = Object.FindObjectsOfType<PixelLabel>(true);
+            var labels = Object.FindObjectsByType<PixelLabel>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             var panels = new List<Plate>();
             var covers = new List<Plate>();          // every opaque sprite, whatever layer it is on
             var actors = new List<(Rect box, int order, string desc)>();
             _props.Clear();
 
-            foreach (var sr in Object.FindObjectsOfType<SpriteRenderer>(true))
+            foreach (var sr in Object.FindObjectsByType<SpriteRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
                 if (sr == null || !sr.enabled || !sr.gameObject.activeInHierarchy || sr.sprite == null) continue;
                 if (sr.color.a <= 0.02f) continue;

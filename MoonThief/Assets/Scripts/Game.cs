@@ -301,7 +301,6 @@ namespace MoonThief
         Vector2 _joyCenter;
         bool _joyTouch;
         int _joyFinger = -1;
-        float _joyRadius = 1.6f;
         Vector2 _joyVec;
         // a deliberate tap on the world: pressed and released without dragging
         bool _tapPending;
@@ -310,7 +309,7 @@ namespace MoonThief
         Vector2 _tapStart;
         float _tapTime;
         bool _tapMoved;
-        PixelLabel _dlgText, _dlgName, _dlgNext, _hudZone, _hudShards;
+        PixelLabel _dlgText, _dlgName, _dlgNext, _hudZone;
         Transform _dlgSheet;           // the box's contents: rises into place when a talk opens
         int _dlgChars;
         SpriteRenderer _dlgPanel, _dlgPanelName, _dlgPortrait, _dlgPortPlate;
@@ -340,8 +339,6 @@ namespace MoonThief
         Vector2 _doorReturn;          // where to stand when the door closes behind you
         float _doorCooldown;
         string _questLineRaw;         // the last objective line, kept while indoors
-
-        int _selDialog = 0;   // 0 = talk, 1 = close
 
         // ------------------------------------------------------------ lifecycle
 
@@ -2393,7 +2390,7 @@ namespace MoonThief
         /// the previews would show text that is half a pixel off while the game is not.</summary>
         void SnapTextLayer()
         {
-            var labels = Object.FindObjectsOfType<PixelLabel>(true);
+            var labels = Object.FindObjectsByType<PixelLabel>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             foreach (var l in labels)
             {
                 if (l == null || !l.gameObject.activeInHierarchy || !l.SnapToPixelGrid) continue;

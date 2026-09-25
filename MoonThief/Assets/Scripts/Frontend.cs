@@ -271,11 +271,8 @@ namespace MoonThief
         Sprite[] _pageIconSprites;
         Action[] _pageActs = new Action[0];
         float _cardTop;                 // the card laid out last: cards are centred on the origin
-        string _pageTitleKey;
-        string _pageSubKey;
         int _pageIndex;
         const int PageRowsPerView = 6;
-        Sc _pageBack = Sc.Journal;
         int _sel;
         readonly List<SpriteRenderer> _stars = new List<SpriteRenderer>();
 
