@@ -1238,7 +1238,7 @@ namespace MoonThief
                 new NpcDef{ Chara=1, Pos=new Vector2(27.5f,7.5f), NameKey="npc.elder",
                     Lines=new[]{ "dl.elder." + c + ".1", "dl.elder." + c + ".2", "dl.elder." + c + ".3" } },
                 new NpcDef{ Chara=2, Pos=new Vector2(33.5f,5.5f), NameKey="npc.kid",
-                    Lines=new[]{ "dl.kid.1", "dl.kid.2" } },
+                    Lines=new[]{ "dl.kid.1", "dl.kid.2", "dl.kid.3" } },
                 new NpcDef{ Chara=3, Pos=new Vector2(35.5f,11.5f), NameKey="npc.smith",
                     Lines=new[]{ "dl.smith.1", "dl.smith.2" } },
                 // The pack's 32 villager sheets are 14 silhouettes in several palettes, so a

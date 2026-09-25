@@ -885,3 +885,4 @@ md.bitten.h|Unearned: a shimmer that runs cold means teeth - spring one anyway.
 bark.spot.0|It's caught our scent!
 bark.spot.1|Eyes on us - run or fight!
 bark.spot.2|It knows we're here - move!
+dl.kid.3|I saw a chest out there that breathed. It shimmered cold, like winter. Don't open the cold ones, okay?
