@@ -1871,6 +1871,7 @@ namespace MoonThief
             {
                 // the guard wore the last shard; the way to the cristal is open
                 State.MoonShards = Mathf.Max(State.MoonShards, ShardsNeeded);
+                CheckMains();   // four shards + the guard's fall finish their quests together
                 ShowZoneBanner(Strings.Get("zone.bossdown"));
                 RefreshHud();
                 SaveRun();

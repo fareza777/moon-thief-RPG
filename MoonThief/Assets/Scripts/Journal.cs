@@ -371,7 +371,7 @@ namespace MoonThief
 
     // ------------------------------------------------------------------ quests
 
-    public enum QuestKind { Talk, Chests, Defeats, Item, Pay, Zones }
+    public enum QuestKind { Talk, Chests, Defeats, Item, Pay, Zones, Shards }
 
     public class QuestDef
     {
@@ -416,7 +416,7 @@ namespace MoonThief
             // ---- the main line: three nights, four shards, one thief ----
             new QuestDef{ Id="mq.1", Main=true, Chapter=1, Kind=QuestKind.Talk, Need=1, Giver="npc.elder",
                 TitleKey="q.mq1.title", StepKey="q.mq1.step", OfferKey="q.mq1.offer", DoneKey="q.mq1.done" },
-            new QuestDef{ Id="mq.2", Main=true, Chapter=1, Kind=QuestKind.Chests, Need=4, Giver="npc.elder",
+            new QuestDef{ Id="mq.2", Main=true, Chapter=1, Kind=QuestKind.Shards, Need=4, Giver="npc.elder",
                 TitleKey="q.mq2.title", StepKey="q.mq2.step", OfferKey="q.mq2.offer", DoneKey="q.mq2.done" },
             new QuestDef{ Id="mq.3", Main=true, Chapter=3, Kind=QuestKind.Defeats, Need=1, Giver="",
                 TitleKey="q.mq3.title", StepKey="q.mq3.step", OfferKey="q.mq3.offer", DoneKey="q.mq3.done" },
@@ -496,6 +496,7 @@ namespace MoonThief
                 case QuestKind.Defeats: return Game.State.Defeats;
                 case QuestKind.Zones: return Game.State.Zones.Count;
                 case QuestKind.Pay: return Game.State.Gold;
+                case QuestKind.Shards: return Game.State.MoonShards;
                 default: return 0;
             }
         }
@@ -518,6 +519,9 @@ namespace MoonThief
             // a toll counts the purse, not the earnings: a hunter who accepts the errand
             // already holding the gold should read "0 left", not be sent out to earn more
             if (q.Kind == QuestKind.Pay) return Mathf.Min(q.Need, Game.State.Gold);
+            // the shard quest counts moonlight held, not chests cracked since it was
+            // taken - a thief who loots early still reads the count right
+            if (q.Kind == QuestKind.Shards) return Mathf.Min(q.Need, Game.State.MoonShards);
             int b = Base.TryGetValue(q.Id, out var v) ? v : 0;
             return Mathf.Max(0, Counter(q.Kind) - b);
         }
