@@ -159,6 +159,7 @@ bt.fam.genius|A {0} floats down, lantern-bright.
 bt.fam.worm|A {0} bursts from under the furrows!
 bt.fam.zombi|A {0} drags itself out of the grave-dirt!
 bt.fam.slimesword|A {0} levels a rusty edge!
+bt.fam.succubus|A {0} swoops down, thirsty!
 bt.fam.lamia|A {0} uncoils from the reeds!
 bt.fam.blackmagus|A {0} raises its hollow hand.
 bt.fam.skeletonwarrior|A {0} lowers its plated helm.
@@ -257,12 +258,20 @@ mon.lamia|COIL SISTER
 mon.worm|TUNNEL WORM
 mon.zombi|GRAVEROT
 mon.sword|BLADE PUDDING
+mon.worm2|DEEP BURROWER
+mon.zombi2|BARROW LORD
+mon.sword2|DUEL PUDDING
+mon.thirst|THIRSTLING
 mon.swarrior|BONE WARDEN
 mon.magus.d|Traded its face for one more spell. Its mark saps the arm it lands on.
 mon.lamia.d|Half the dark, half the river. It holds its mark past a turn or two.
 mon.worm.d|The field's own hunger. Its bite rusts the arm it takes.
 mon.zombi.d|Walks out of every grave it ever filled. Feeds on whatever falls.
 mon.sword.d|Ate the swordsman, kept the sword. Turns steel aside with steel.
+mon.worm2.d|It outgrew the furrows. The rot in its bite never did.
+mon.zombi2.d|The grave's own landlord. Every fall is rent paid.
+mon.sword2.d|Kept the swordsman too, this time. Two edges answer one.
+mon.thirst.d|It kisses with teeth. Whatever it takes, it keeps.
 mon.swarrior.d|A knight out of the bone pile. Its plate drinks part of every blow.
 
 # ---- result cards

@@ -1677,12 +1677,22 @@ namespace MoonThief
             if (f.Weaken > 0) { dmg = Mathf.Max(1, dmg - 4); f.Weaken--; }
             // a worm's rot keeps rusting the arm it bit: each stack stays until the fight ends
             if (f.Corrode > 0) dmg = Mathf.Max(1, dmg - f.Corrode);
+            var fFam = f.Species != null && BattleData.Species(f.Species).HasValue
+                ? BattleData.FamilyOf(BattleData.Species(f.Species).Value) : "";
+            int hpBefore = target.Hp;
             HitFoe(target, dmg, crit, weakHit, f);
+            // a tame thirstling drinks for you too: whatever the blow actually landed,
+            // half of it comes home to the drinker
+            if (fFam == "succubus" && f.Alive && target.Hp < hpBefore)
+            {
+                int sip = Mathf.Max(1, (hpBefore - target.Hp) / 2);
+                f.Hp = Mathf.Min(f.MaxHp, f.Hp + sip);
+                View.FloatNumber(fRig.Home + new Vector3(0f, 1.7f, 0f),
+                    "+" + sip, new Color(0.55f, 1f, 0.6f));
+            }
             View.Refresh();
             // a scorpion friend carries its sting over to your side: its bite
             // can leave the same venom the wild ones leave in you
-            var fFam = f.Species != null && BattleData.Species(f.Species).HasValue
-                ? BattleData.FamilyOf(BattleData.Species(f.Species).Value) : "";
             if (fFam == "scorpion" && target.Alive && UnityEngine.Random.value < 0.4f)
             {
                 target.Poison = 3;
@@ -1957,6 +1967,14 @@ namespace MoonThief
                     Strings.Get("bt.plated"), new Color(0.8f, 0.85f, 0.9f));
             }
             target.Hp = Mathf.Max(0, target.Hp - dmg);
+            // a thirstling keeps half of whatever it takes: the kiss closes its own wounds
+            if (fam == "succubus" && dmg > 0 && e.Alive)
+            {
+                int sip = Mathf.Max(1, dmg / 2);
+                e.Hp = Mathf.Min(e.MaxHp, e.Hp + sip);
+                if (eRig != null) View.FloatNumber(eRig.Home + new Vector3(0f, 1.7f, 0f),
+                    "+" + sip, new Color(0.55f, 1f, 0.6f));
+            }
             if (_flow != 0) { _flow = 0; View.SetRound(_round); }   // momentum breaks on a hit taken
             // hero bodies carry a hit clip; befriended monsters don't - they flash instead
             var stagger = target.ColorDir != null

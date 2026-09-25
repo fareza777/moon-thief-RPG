@@ -1017,6 +1017,10 @@ namespace MoonThief
             new MonsterSpec{ Name="mon.worm",    Battler="Art/Battlers/WormA",     MapSheet="Pack/Monsters/Monsters_04_6", Tier=2, Chapter=2, Hp=26, AtkMin=4, AtkMax=7, Speed=4.0f },
             new MonsterSpec{ Name="mon.zombi",   Battler="Art/Battlers/ZombiA",    MapSheet="Pack/Monsters/Monsters_05_1", Tier=3, Chapter=3, Hp=50, AtkMin=6, AtkMax=9, Speed=2.6f },
             new MonsterSpec{ Name="mon.sword",   Battler="Art/Battlers/SlimeswordA", MapSheet="Pack/Monsters/Monsters_03_1", Tier=3, Chapter=3, Hp=44, AtkMin=8, AtkMax=12, Speed=4.2f },
+            new MonsterSpec{ Name="mon.worm2",   Battler="Art/Battlers/WormB",       MapSheet="Pack/Monsters/Monsters_04_2", Tier=3, Chapter=3, Hp=38, AtkMin=6, AtkMax=10, Speed=4.4f },
+            new MonsterSpec{ Name="mon.zombi2",  Battler="Art/Battlers/ZombiB",      MapSheet="Pack/Monsters/Monsters_05_3", Tier=4, Chapter=3, Hp=64, AtkMin=8, AtkMax=11, Speed=2.4f },
+            new MonsterSpec{ Name="mon.sword2",  Battler="Art/Battlers/SlimeswordB", MapSheet="Pack/Monsters/Monsters_03_3", Tier=4, Chapter=3, Hp=56, AtkMin=9, AtkMax=13, Speed=4.6f },
+            new MonsterSpec{ Name="mon.thirst",  Battler="Art/Battlers/SuccubusA",   MapSheet="Pack/Monsters/Monsters_02_7", Tier=3, Chapter=3, Hp=42, AtkMin=7, AtkMax=11, Speed=5.0f },
             new MonsterSpec{ Name="mon.magus",   Battler="Art/Battlers/BlackMagusA", MapSheet="Pack/Monsters/Monsters_02_6", Tier=3, Chapter=3, Hp=38, AtkMin=7, AtkMax=12, Speed=4.4f },
             new MonsterSpec{ Name="mon.swarrior",Battler="Art/Battlers/SkeletonwarriorA", MapSheet="Pack/Monsters/Monsters_05_4", Tier=3, Chapter=3, Hp=48, AtkMin=7, AtkMax=10, Speed=3.0f },
             // the gatekeepers live in the bestiary so the journal can picture them, but they
@@ -1072,6 +1076,7 @@ namespace MoonThief
                 case "ghost":
                 case "skeleton":
                 case "skeletonwarrior":
+                case "succubus":
                 case "blackmagus": return style == 2;   // the dark's own fold to the moon
                 default: return false;   // genius and minotaur have no soft seam
             }
