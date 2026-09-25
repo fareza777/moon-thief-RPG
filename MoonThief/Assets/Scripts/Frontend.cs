@@ -1316,12 +1316,12 @@ namespace MoonThief
         /// <summary>A yes/no card over the pause furniture, for choices that should not be
         /// one tap away from a save (START OVER rewrites the night). The yes action is left
         /// as a delegate so the same card can ask other questions later.</summary>
-        public void ShowConfirm(Action yes) => ShowConfirm(yes, null, null, null, null);
+        public void ShowConfirm(Action yes) => ShowConfirm(yes, null, null, null, null, null);
 
         /// <summary>The one-tap-away card: wording and the no-path vary with what is being
         /// asked - a save overwrite, a friend set free - but the safe answer always
         /// selects first.</summary>
-        public void ShowConfirm(Action yes, string title, string sub, string yesLabel, Action no)
+        public void ShowConfirm(Action yes, string title, string sub, string yesLabel, Action no, string noLabel = null)
         {
             HideAll();
             _sc = Sc.Confirm;
@@ -1335,7 +1335,7 @@ namespace MoonThief
             float rowsTop = LayoutCard(_pausePanel, 16.4f, 2, true);
             _pauseTitle.transform.localPosition = new Vector3(0f, _cardTop - 2.15f, 0f);
             float bottom = LayRows(_pauseRows,
-                new[] { yesLabel ?? Strings.Get("conf.yes"), Strings.Get("conf.no") },
+                new[] { yesLabel ?? Strings.Get("conf.yes"), noLabel ?? Strings.Get("conf.no") },
                 acts, new[] { "", "" }, rowsTop, 2, new[] { 26, 27 });
             _pauseSub.transform.localPosition = new Vector3(0f, FootY(bottom), 0f);
             Select(1);   // the safe answer is selected first
@@ -2401,6 +2401,16 @@ namespace MoonThief
                 if (_sc == Sc.Page) { Sfx.Play("ui"); ShowJournal(); return; }
                 if (_sc == Sc.Shop) { Sfx.Play("ui"); OnShopClosed?.Invoke(); return; }
                 if (_sc == Sc.Onboard) { NextOnboard(); return; }
+                // the door out of the title is asked for, not stepped through: a pocketed
+                // back-press must not be the last thing the night hears
+                if (_sc == Sc.Main)
+                {
+                    Sfx.Play("ui");
+                    ShowConfirm(() => Application.Quit(),
+                        Strings.Get("conf.quittitle"), Strings.Get("conf.quitsub"),
+                        Strings.Get("conf.quityes"), null, Strings.Get("conf.quitstay"));
+                    return;
+                }
             }
             if (confirm) { Activate(); return; }
             if (!tap) return;

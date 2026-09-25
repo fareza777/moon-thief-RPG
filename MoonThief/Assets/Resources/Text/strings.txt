@@ -314,6 +314,10 @@ conf.no|KEEP MY SAVE
 conf.reltitle|SET FREE?
 conf.relsub|The {0} returns to the night.
 conf.rel|SET FREE
+conf.quittitle|LEAVE THE NIGHT?
+conf.quitsub|The saved night waits where it is.
+conf.quityes|LEAVE
+conf.quitstay|STAY
 
 # ---- world zones. Two lines: the night in the big face, the place in the small one.
 zone.arrive.1|NIGHT ONE\nquiet hollow
