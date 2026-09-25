@@ -3076,14 +3076,17 @@ namespace MoonThief
                 var mon = World.Monsters[0];
                 EditorSneak = true;
                 World.PlaceHero((Vector2)mon.Root.localPosition + new Vector2(2.4f, 0f));
-                yield return new WaitForSeconds(1.1f);
+                mon.Aggro = false;   // anything it already caught resets - we time our own
+                yield return new WaitForSeconds(0.5f);
                 bool hid = !mon.Aggro;
+                float dhHid = Vector2.Distance((Vector2)mon.Root.localPosition, World.HeroPos);
                 Shot("11e-sneak");
                 EditorSneak = false;
                 yield return new WaitForSeconds(0.6f);
                 bool seen = mon.Aggro;
-                Debug.Log("[selftest] sneak hid=" + hid + " seen=" + seen);
+                Debug.Log("[selftest] sneak hid=" + hid + " dh=" + dhHid.ToString("0.0") + " seen=" + seen);
                 World.PlaceHero(World.Map.VillageCenter + new Vector2(1.5f, 1.5f));
+                mon.Aggro = false;
                 yield return new WaitForSeconds(0.4f);
             }
 
