@@ -62,6 +62,30 @@ namespace MoonThief
             return gear[rng.Next(gear.Length)];
         }
 
+        /// <summary>Some beasts leave what they are: a blade pudding the sword it kept,
+        /// a graverot its grave goods, a worm the fat of the field. Rolled before the
+        /// wild table - a miss falls through to the everyday roll.</summary>
+        public static string SpeciesDrop(string fam, System.Random rng)
+        {
+            if (rng.Next(100) >= 30) return null;
+            string[] pool;
+            switch (fam)
+            {
+                case "slimesword":      pool = new[] { "item.saber", "item.glaive", "item.moonedge", "item.sickle" }; break;
+                case "zombi":           pool = new[] { "item.charm.rune", "item.charm.coin", "item.charm.owl", "item.mead" }; break;
+                case "worm":            pool = new[] { "item.stew", "item.roast", "item.pudding", "item.chowder" }; break;
+                case "ghost":           pool = new[] { "item.charm.thread", "item.charm.star", "item.nightsilk" }; break;
+                case "wisp":            pool = new[] { "item.charm.lantern", "item.charm.bell", "item.honey" }; break;
+                case "scorpion":        pool = new[] { "item.cider", "item.jam", "item.charm.feather" }; break;
+                case "skeleton":        pool = new[] { "item.charm.bead", "item.charm.coin", "item.bread" }; break;
+                case "skeletonwarrior": pool = new[] { "item.hauberk", "item.brigandine", "item.pike" }; break;
+                case "lamia":           pool = new[] { "item.charm.thread", "item.fish", "item.scale" }; break;
+                case "blackmagus":      pool = new[] { "item.charm.rune", "item.charm.star", "item.moonpie" }; break;
+                default: return null;
+            }
+            return pool[rng.Next(pool.Length)];
+        }
+
         /// <summary>The night's gatekeeper always drops real gear - a fight that big owes you
         /// something worth more than the stall's everyday shelf.</summary>
         public static string BossDrop(System.Random rng)

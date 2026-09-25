@@ -2823,7 +2823,10 @@ namespace MoonThief
             var drops = new List<string>();
             foreach (var s in _specs)
             {
-                var key = s.Boss || s.Rare ? Items.BossDrop(rng) : Items.RollDrop(Game.State.Chapter, rng);
+                // a beast may leave what it is - the pudding's kept sword, the graverot's
+                // grave goods - before the wild table ever gets its say
+                var key = s.Boss || s.Rare ? Items.BossDrop(rng)
+                    : Items.SpeciesDrop(BattleData.FamilyOf(s), rng) ?? Items.RollDrop(Game.State.Chapter, rng);
                 if (key == null) continue;
                 Game.State.AddBag(key);
                 drops.Add(key);
