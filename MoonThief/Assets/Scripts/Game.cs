@@ -1041,7 +1041,12 @@ namespace MoonThief
                 // must not close the last rung early
                 if (q.Main && q.Kind != QuestKind.Talk && q.Id != "mq.3"
                     && Quests.Step(q.Id) == 1 && Quests.Progress(q) >= q.Need)
+                {
                     Quests.Complete(q);
+                    // a main rung deserves the same ceremony a side errand gets
+                    Menus.ShowToast(Strings.Get("jr.questdone", Strings.Get(q.TitleKey)), 3.6f);
+                    Sfx.Play("questdone");
+                }
         }
 
         /// <summary>Where the compass arrow points tonight. It follows the same ladder the HUD's
@@ -1612,7 +1617,7 @@ namespace MoonThief
                         "q.goal",
                     });
                     Menus.ShowToast(Strings.Get("jr.newquest", Strings.Get(quest.TitleKey)), 3.6f);
-                    Sfx.Play("chest");
+                    Sfx.Play("quest");
                     SaveRun();
                     return;
                 }
@@ -1621,7 +1626,7 @@ namespace MoonThief
                     Quests.Complete(quest);
                     OpenDialog(npc, new[] { quest.DoneKey, "q.reward" });
                     Menus.ShowToast(Strings.Get("jr.questdone", Strings.Get(quest.TitleKey)), 3.6f);
-                    Sfx.Play("coin");
+                    Sfx.Play("questdone");
                     RefreshHud();
                     SaveRun();
                     return;

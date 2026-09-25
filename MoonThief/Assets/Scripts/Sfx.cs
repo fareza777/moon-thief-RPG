@@ -84,6 +84,8 @@ namespace MoonThief
                 case "venom":    return Slide(300f, 90f, 0.16f, Wave.Tri, 0.26f);
                 case "alert":    return Segs(new[] { (1175f, 0.045f), (1568f, 0.07f) }, Wave.Square, 0.3f);
                 case "buy":      return Arp(new[] { 784f, 988f, 1175f }, 0.06f, Wave.Square, 0.32f);
+                case "quest":    return Arp(new[] { 587f, 880f, 1175f }, 0.07f, Wave.Tri, 0.34f);
+                case "questdone": return Arp(new[] { 659f, 784f, 1047f, 1319f }, 0.06f, Wave.Tri, 0.4f);
                 case "autoon":   return Arp(new[] { 659f, 988f }, 0.06f, Wave.Square, 0.3f);
                 default:         return null;
             }
