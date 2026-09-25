@@ -1254,9 +1254,11 @@ namespace MoonThief
                 string zk = World.HeroPos.y > 58f ? "zone.wood"
                     : World.HeroPos.y > 26f ? "zone.fields" : "zone.village";
                 State.CurZone = zk.Substring(5);
-                // first time crossing a border the place announces itself, once, ever
+                // first time crossing a border the place announces itself, once, ever -
+                // a soft chime with the banner so the crossing lands on two senses
                 if (State.NoteZone(zk))
                 {
+                    Sfx.Play("zone");
                     ShowZoneBanner(Strings.Get("zone.name." + zk.Substring(5))
                         + "\n" + Strings.Get("hud.nightshort", State.Chapter)
                         + (State.NgPlus > 0 ? "+" : ""));

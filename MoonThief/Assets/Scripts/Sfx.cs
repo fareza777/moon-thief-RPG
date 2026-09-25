@@ -87,6 +87,7 @@ namespace MoonThief
                 case "quest":    return Arp(new[] { 587f, 880f, 1175f }, 0.07f, Wave.Tri, 0.34f);
                 case "questdone": return Arp(new[] { 659f, 784f, 1047f, 1319f }, 0.06f, Wave.Tri, 0.4f);
                 case "autoon":   return Arp(new[] { 659f, 988f }, 0.06f, Wave.Square, 0.3f);
+                case "zone":     return Arp(new[] { 523f, 784f }, 0.09f, Wave.Tri, 0.22f);
                 default:         return null;
             }
         }
