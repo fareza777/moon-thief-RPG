@@ -277,7 +277,7 @@ namespace MoonThief
         PixelLabel _credTitle, _credSub, _credText, _credThanks;
         PixelLabel _ciText, _ciSkip, _ciCount, _ccNight, _ccPlace, _ccGoal;
         PixelLabel _onbTitle, _onbBody, _shopTitle, _shopSub, _shopFoot;
-        SpriteRenderer _onbPanel, _shopPanel;
+        SpriteRenderer _onbPanel, _shopPanel, _onbEmblem;
         readonly List<SpriteRenderer> _onbDots = new List<SpriteRenderer>();
         const int OnbPages = 4;
         int _onbPage;
@@ -623,9 +623,9 @@ namespace MoonThief
             _onbCard = new GameObject("card").transform;
             _onbCard.SetParent(_onbRoot, false);
             _onbPanel = Panel(_onbCard, "onbPanel", 6002, 15.6f, 13.6f, 0.4f);
-            var moon = SpriteRendererUtil.Make(_onbCard, "onbMoon", TexArt.MoonFull(), 6004);
-            moon.transform.localPosition = new Vector3(0f, 6.4f, 0f);
-            moon.transform.localScale = Vector3.one * 2.4f;
+            _onbEmblem = SpriteRendererUtil.Make(_onbCard, "onbMoon", TexArt.MoonFull(), 6004);
+            _onbEmblem.transform.localPosition = new Vector3(0f, 6.4f, 0f);
+            _onbEmblem.transform.localScale = Vector3.one * 2.4f;
             _onbTitle = PixelLabelUtil.Make(_onbCard, "onbTitle", 3, new Color(1f, 0.95f, 0.78f), TextAlign.Center, 6006);
             _onbTitle.transform.localPosition = new Vector3(0f, 4.3f, 0f);
             _onbTitle.MaxWidthUnits = 14.2f;   // FIGHT & BEFRIEND stacks to two lines rather than clip
@@ -971,10 +971,22 @@ namespace MoonThief
             Select(0);
         }
 
+        /// <summary>What each onboarding page wears over its title: paw steps for walking,
+        /// a blade for the fight talk, a star for the quest, a pack for Marn's wares.
+        /// The same row-icon art the journal uses, so the tutorial speaks the game's
+        /// one visual language before a single fight has happened.</summary>
+        static readonly int[] OnbEmblems = { 19, 0, 21, 17 };
+
         void RefreshOnboard()
         {
             _onbTitle.Set(Strings.Get("onb.title." + (_onbPage + 1)));
             _onbBody.Set(Strings.Get("onb.body." + (_onbPage + 1)));
+            if (_onbEmblem != null)
+            {
+                _onbEmblem.sprite = _onbPage == 0 ? TexArt.MoonFull()
+                    : TexArt.MenuIcon(OnbEmblems[Mathf.Clamp(_onbPage, 0, OnbEmblems.Length - 1)]);
+                _onbEmblem.transform.localScale = Vector3.one * (_onbPage == 0 ? 2.4f : 3f);
+            }
             for (int i = 0; i < _onbDots.Count; i++)
                 _onbDots[i].color = i == _onbPage
                     ? new Color(1f, 0.93f, 0.55f)
