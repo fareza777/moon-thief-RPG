@@ -2347,11 +2347,14 @@ namespace MoonThief
                 var op = o.Name.transform.localPosition;
                 if (Mathf.Abs(op.y - y) > 1.1f) continue;
                 float ow = o.NameChip != null ? o.NameChip.transform.localScale.x : 2.2f;
-                float overlap = (_barkW + ow) * 0.5f + 0.1f - Mathf.Abs(bxf - op.x);
+                // compare chip to chip, not text to plate: the bark's dark back rides
+                // 0.55 wider than its glyphs, and a plate that only abuts it still
+                // reads as glued on ("PRUNEwatch the treeline")
+                float overlap = (_barkW + 0.55f + ow) * 0.5f + 0.25f - Mathf.Abs(bxf - op.x);
                 if (overlap > 0.05f)
                 {
                     float dir = bxf <= op.x ? -1f : 1f;
-                    bxf = BarkX(bxf + dir * (overlap + 0.2f));
+                    bxf = BarkX(bxf + dir * (overlap + 0.55f));
                 }
             }
             return bxf;
