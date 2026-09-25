@@ -114,6 +114,7 @@ namespace MoonThief
         public string[] joined;   // the company: hero keys whose recruiting talks ran
         public string[] quests;
         public string[] chests;
+        public string[] met;      // folk already greeted once - a face the hero knows
     }
 
     /// <summary>JSON save file in the platform's persistent data folder.</summary>

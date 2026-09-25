@@ -2426,7 +2426,11 @@ namespace MoonThief
                 // little room's coordinates - those mean somewhere else outdoors
                 if (_inHouse) { hx = _doorReturn.x; hy = _doorReturn.y; }
             }
-            SaveSystem.Write(State.Capture(hx, hy, _bossDown));
+            var data = State.Capture(hx, hy, _bossDown);
+            // the folk the hero already knows ride the save too, or a reload would have
+            // every villager introducing themselves all over again
+            data.met = new List<string>(_metNpcs).ToArray();
+            SaveSystem.Write(data);
         }
 
         public void ContinueRun()
@@ -2434,6 +2438,8 @@ namespace MoonThief
             var d = SaveSystem.Read();
             if (d == null) { BeginRun(); return; }
             State.Apply(d);
+            _metNpcs.Clear();
+            if (d.met != null) foreach (var m in d.met) _metNpcs.Add(m);
             _hintTalk = false;
             _hintChest = false;
             _ending = false;
