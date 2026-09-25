@@ -1537,6 +1537,17 @@ namespace MoonThief
             }
             // a shopkeeper's dialogue IS his stall: no small talk, straight to the wares
             if (npc.Shop) { OpenShop(); return; }
+            // an errand that names another soul advances when that soul is found and told -
+            // the target's own line runs first; his own errands wait a talk
+            foreach (var q in Quests.All)
+                if (q.Kind == QuestKind.Talk && !string.IsNullOrEmpty(q.Target)
+                    && q.Target == npc.NameKey && Quests.Step(q.Id) == 1)
+                {
+                    Quests.SetStep(q.Id, 2);
+                    OpenDialog(npc, new[] { string.IsNullOrEmpty(q.MeetKey) ? "q.goal" : q.MeetKey });
+                    SaveRun();
+                    return;
+                }
             var quest = Quests.ForGiver(npc.NameKey, out bool ready);
             if (quest != null)
             {

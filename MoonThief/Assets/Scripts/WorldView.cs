@@ -1466,6 +1466,14 @@ namespace MoonThief
                     var q = Quests.ForGiver(n.Npc.NameKey, out ready);
                     wants = q != null && (Quests.Step(q.Id) == 0 || ready);
                 }
+                if (!wants)
+                {
+                    // a soul an errand sends you to wears the cool mark too: the
+                    // "find Wren" kind of errand only travels by word of mark
+                    foreach (var tq in Quests.All)
+                        if (tq.Kind == QuestKind.Talk && tq.Target == n.Npc.NameKey
+                            && Quests.Step(tq.Id) == 1) { wants = true; break; }
+                }
                 if (n.Alert == null)
                 {
                     var ago = new GameObject("questAlert");

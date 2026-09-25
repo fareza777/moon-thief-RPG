@@ -387,6 +387,8 @@ namespace MoonThief
         public int Need;
         public int Reward;          // gold
         public string Gift;         // item key handed over on completion ("" = none)
+        public string Target;       // a soul the errand sends you to first ("" = the giver is enough)
+        public string MeetKey;      // the line the target says when the errand finds them
     }
 
     /// <summary>A one-shot thing that happens on the road: a position, a line, and what it does.
@@ -437,6 +439,7 @@ namespace MoonThief
             new QuestDef{ Id="sq.nightwatch", Chapter=2, Kind=QuestKind.Defeats, Need=5, Giver="npc.house.4", Reward=30, Gift="item.sickle",
                 TitleKey="q.watch.title", StepKey="q.watch.step", OfferKey="q.watch.offer", DoneKey="q.watch.done" },
             new QuestDef{ Id="sq.grave", Chapter=3, Kind=QuestKind.Talk, Need=1, Giver="npc.house.2", Reward=26, Gift="item.keepsake",
+                Target="npc.hunter", MeetKey="q.grave.meet",
                 TitleKey="q.grave.title", StepKey="q.grave.step", OfferKey="q.grave.offer", DoneKey="q.grave.done" },
             new QuestDef{ Id="sq.ledger", Chapter=3, Kind=QuestKind.Chests, Need=5, Giver="npc.house.1", Reward=40, Gift="item.blade",
                 TitleKey="q.ledger.title", StepKey="q.ledger.step", OfferKey="q.ledger.offer", DoneKey="q.ledger.done" },
@@ -509,7 +512,9 @@ namespace MoonThief
         {
             if (q == null) return 0;
             if (q.Kind == QuestKind.Item) return Game.State.BagCount(GoalItem(q));
-            if (q.Kind == QuestKind.Talk) return 1;
+            // a talk errand that names another soul is only half done until that soul
+            // has been found and told - step 2 is the found-and-told mark
+            if (q.Kind == QuestKind.Talk) return string.IsNullOrEmpty(q.Target) ? 1 : (Step(q.Id) >= 2 ? 1 : 0);
             int b = Base.TryGetValue(q.Id, out var v) ? v : 0;
             return Mathf.Max(0, Counter(q.Kind) - b);
         }
@@ -569,9 +574,9 @@ namespace MoonThief
             {
                 if (q.Giver != nameKey || q.Main) continue;
                 if (Step(q.Id) == 0 && q.Chapter <= Game.State.Chapter) return q;
-                if (Step(q.Id) == 1)
+                if (Step(q.Id) == 1 || Step(q.Id) == 2)
                 {
-                    ready = ReadyToHand(q);
+                    ready = Step(q.Id) == 2 || ReadyToHand(q);
                     return q;
                 }
             }

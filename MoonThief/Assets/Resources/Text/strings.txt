@@ -741,6 +741,7 @@ q.grave.title|EMPTY CHAIR
 q.grave.step|Find Wren and speak about the chair. {0} left.
 q.grave.offer|My brother's chair is still set for supper. If you meet a hunter called Wren, tell him.
 q.grave.done|He came home. He does not remember me. Take this - he would have wanted it given away.
+q.grave.meet|A chair? Set for supper? ...I should go home. Tell her I am coming.
 q.ledger.title|THE LEDGER
 q.ledger.step|Open night chests for the ledger. {0} left.
 q.ledger.offer|My father kept a ledger of everything the dark was owed. Six lines are still unpaid.
