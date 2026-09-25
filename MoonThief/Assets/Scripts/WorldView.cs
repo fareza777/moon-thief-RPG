@@ -1464,6 +1464,9 @@ namespace MoonThief
                 // within earshot, so a stomping thief wakes them into the chase anyway.
                 // Deeper nights stay more awake: the wild learned the thief's gait too.
                 int doze = MapChapter == 1 ? 20 : MapChapter == 2 ? 13 : 7;
+                // on the cruel telling the wild naps with one eye open: half the
+                // dozers a gentler night would have granted simply never settle
+                if (Prefs.Hard) doze /= 2;
                 a.Asleep = rng.Next(100) < doze;
                 a.Sleeps = a.Asleep;
                 a.Name = null;
