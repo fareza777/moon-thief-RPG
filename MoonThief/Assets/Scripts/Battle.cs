@@ -1543,7 +1543,8 @@ namespace MoonThief
             // and the reverse ambush: a box that bit first strikes before the thief's
             // crew can blink - its opening turn jumps the whole order, then the
             // element of surprise is spent and it fights at its own gait
-            if (fromMimic) { _mimicHaste = true; foreach (var e in View.Enemies) e.Speed += 20f; }
+            _mimicHaste = fromMimic;
+            if (fromMimic) foreach (var e in View.Enemies) e.Speed += 20f;
             View.HideCard();
             View.SetMenuVisible(false);
             Auto = Prefs.Auto;
