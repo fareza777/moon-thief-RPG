@@ -1729,6 +1729,7 @@ namespace MoonThief
             Monsters.Clear(); Npcs.Clear(); _props.Clear(); _glows.Clear(); _glowAmp.Clear(); _flies.Clear(); _flySprites.Clear(); _eventSpots.Clear();
             _water.Clear(); _critters.Clear(); _respawns.Clear();
             _friends.Clear(); _crumbs.Clear(); _dust.Clear();
+            _ripples.Clear();   // the rings' sprites died with the root - the pool starts fresh
             _bossProp = null;
             Hero = null; Map = null; HudRoot = null; _vignette = null; _objArrow = null;
             _touchCue = null;
