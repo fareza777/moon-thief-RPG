@@ -89,6 +89,7 @@ namespace MoonThief
                 case "autoon":   return Arp(new[] { 659f, 988f }, 0.06f, Wave.Square, 0.3f);
                 case "zone":     return Arp(new[] { 523f, 784f }, 0.09f, Wave.Tri, 0.22f);
                 case "owl":      return Segs(new[] { (330f, 0.14f), (270f, 0.22f) }, Wave.Tri, 0.09f);   // two soft hoots, far off
+                case "fire":     return Segs(new[] { (95f, 0.02f), (70f, 0.025f), (120f, 0.015f) }, Wave.Square, 0.05f);   // a hearth's small crackle
                 default:         return null;
             }
         }

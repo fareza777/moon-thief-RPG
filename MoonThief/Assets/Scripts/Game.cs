@@ -278,6 +278,7 @@ namespace MoonThief
         string _hintKey;
         float _barkT = 30f;                                      // companion banter: first quip half a minute in
         float _owlT = 16f;                                       // the far-off owl: first hoot quarter a minute in
+        float _fireT = 2f;                                       // the hearth's crackle, for rooms that keep one
         bool _barkSwap;
         int _barkLine;
         PixelLabel _hudQuest;
@@ -1304,14 +1305,27 @@ namespace MoonThief
             }
 
             // the night keeps its own voice too: an owl somewhere past the lamps,
-            // sparse enough to stay a gift - never indoors and not over someone's words
-            if (!_inHouse && !_dlgOpen)
+            // sparse enough to stay a gift - never indoors and not over someone's words;
+            // indoors, the hearth takes over with its small crackle
+            if (!_dlgOpen)
             {
-                _owlT -= Time.deltaTime;
-                if (_owlT <= 0f)
+                if (_inHouse)
                 {
-                    _owlT = 22f + Random.value * 16f;
-                    Sfx.Play("owl", 0.9f + Random.value * 0.25f);
+                    _fireT -= Time.deltaTime;
+                    if (_fireT <= 0f)
+                    {
+                        _fireT = 2.5f + Random.value * 3.5f;
+                        Sfx.Play("fire", 0.8f + Random.value * 0.4f);
+                    }
+                }
+                else
+                {
+                    _owlT -= Time.deltaTime;
+                    if (_owlT <= 0f)
+                    {
+                        _owlT = 22f + Random.value * 16f;
+                        Sfx.Play("owl", 0.9f + Random.value * 0.25f);
+                    }
                 }
             }
 
