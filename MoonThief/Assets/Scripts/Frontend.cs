@@ -449,6 +449,10 @@ namespace MoonThief
 
             _credThanks = PixelLabelUtil.Make(_credCard, "credThanks", 2, new Color(0.88f, 0.96f, 0.86f), TextAlign.Center, 6006);
             _credThanks.Set(Strings.Get("cred.thanks"));
+            // the thanks line must sit inside the card: at scale 2 it ran 15.75 units
+            // against a 15.2 inner and clipped both borders - step down like the body does
+            if (_credThanks.MeasureWidth(Strings.Get("cred.thanks")) > 14.6f)
+                _credThanks.Scale = 1;
 
             // the lower hairline sits above the thanks line, in the body band's tail space -
             // any lower and it crosses the thanks line's cap row
