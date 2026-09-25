@@ -1442,8 +1442,8 @@ namespace MoonThief
             var vals = new[]
             {
                 "L" + Game.State.Level, Game.State.Bag.Count.ToString(), WornCount() + "/3",
-                Game.State.Seen.Count + "/" + (BattleData.Bestiary.Length + 1)
-                    + (Game.State.Seen.Count > Prefs.BeastsSeen ? " *" : ""),
+                Game.State.EverCount + "/" + (BattleData.Bestiary.Length + 1)
+                    + (Game.State.EverCount > Prefs.BeastsSeen ? " *" : ""),
                 Quests.DoneCount + "/" + Quests.All.Length + (QuestReady() ? " *" : ""),
                 Strings.Get("zone.short." + Game.State.CurZone),
                 Medals.Count + "/" + Medals.All.Length + (Medals.Count > Prefs.MedalsSeen ? " *" : ""), "",
@@ -1657,11 +1657,11 @@ namespace MoonThief
                     title = "jr.bestiary";
                     foot = "jr.bestiary.tip";
                     // opening the book counts as seeing what it holds - same * rule as medals
-                    Prefs.BeastsSeen = Game.State.Seen.Count;
+                    Prefs.BeastsSeen = Game.State.EverCount;
                     Prefs.Store();
                     // an empty stable doesn't get counted: '0 FRIENDS KEPT' reads like a
                     // warning, so the kept clause only joins the sub once there is one
-                    sub = Strings.Get("jr.bestiary.sub", Game.State.Seen.Count,
+                    sub = Strings.Get("jr.bestiary.sub", Game.State.EverCount,
                         BattleData.Bestiary.Length + 1)
                         + (Game.State.Friends.Count > 0
                             ? "    " + Strings.Get("jr.bestiary.kept", Game.State.Friends.Count,
@@ -1671,11 +1671,11 @@ namespace MoonThief
                     foreach (var spec in BattleData.Bestiary)
                     {
                         AddBeast(labels, vals, acts, spec);
-                        sprites.Add(Game.State.Seen.ContainsKey(spec.Name)
+                        sprites.Add(Game.State.EverSeen(spec.Name)
                             ? TexArt.MapMonster(spec.MapSheet, 1) : null);
                     }
                     AddBeast(labels, vals, acts, BattleData.Boss);
-                    sprites.Add(Game.State.Seen.ContainsKey(BattleData.Boss.Name)
+                    sprites.Add(Game.State.EverSeen(BattleData.Boss.Name)
                         ? TexArt.MapMonster(BattleData.Boss.MapSheet, 1) : null);
                     break;
 
@@ -1868,7 +1868,7 @@ namespace MoonThief
 
         void AddBeast(List<string> labels, List<string> vals, List<Action> acts, MonsterSpec spec)
         {
-            bool known = Game.State.Seen.ContainsKey(spec.Name);
+            bool known = Game.State.EverSeen(spec.Name);
             // a species that walks with the party carries its mark on the page
             bool tamed = Game.State.Friends.Contains(spec.Name) || Game.State.Friends.Contains("moon." + spec.Name);
             labels.Add(known ? Strings.Get(spec.Name) : Strings.Get("jr.unknown"));

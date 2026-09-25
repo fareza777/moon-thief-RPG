@@ -126,13 +126,60 @@ namespace MoonThief
                 return best;
             }
 
-            /// <summary>Records a species in the book - true only the first time it is met.</summary>
+            /// <summary>Records a species in the book - true only the first time it is met this
+            /// telling. The guide itself is a lifelong book: every species it has ever named is
+            /// kept beside the medals, so a beast met in an earlier night is never a stranger
+            /// again. Seen still counts only this run's sightings - the card's "first" stays
+            /// honest per telling, and the book's * counts species never named before.</summary>
             public static bool MarkSeen(string monKey)
             {
                 if (string.IsNullOrEmpty(monKey)) return false;
+                LoadBeastHist();
+                if (_beastHist.Add(monKey))
+                {
+                    PlayerPrefs.SetString("mt.beasts", JoinedHist());
+                    PlayerPrefs.Save();
+                }
                 bool first = !Seen.ContainsKey(monKey);
                 Seen[monKey] = first ? 1 : Seen[monKey] + 1;
                 return first;
+            }
+
+            static readonly HashSet<string> _beastHist = new HashSet<string>();
+            static bool _beastHistLoaded;
+
+            static void LoadBeastHist()
+            {
+                if (_beastHistLoaded) return;
+                _beastHistLoaded = true;
+                foreach (var s in PlayerPrefs.GetString("mt.beasts", "").Split(','))
+                    if (s.Length > 0) _beastHist.Add(s);
+            }
+
+            static string JoinedHist()
+            {
+                var s = "";
+                foreach (var m in _beastHist) s += (s.Length == 0 ? "" : ",") + m;
+                return s;
+            }
+
+            /// <summary>Has the guide ever named this species - this telling or any before?</summary>
+            public static bool EverSeen(string monKey)
+            {
+                LoadBeastHist();
+                return _beastHist.Contains(monKey) || Seen.ContainsKey(monKey);
+            }
+
+            /// <summary>How many species the guide holds, all tellings counted once each.</summary>
+            public static int EverCount
+            {
+                get
+                {
+                    LoadBeastHist();
+                    int n = _beastHist.Count;
+                    foreach (var k in Seen.Keys) if (!_beastHist.Contains(k)) n++;
+                    return n;
+                }
             }
 
             /// <summary>Equipment bonuses, read by the battle so the journal is not decoration.</summary>
