@@ -164,6 +164,7 @@ namespace MoonThief
         int _visible;
 
         public bool IsRevealing => RevealSpeed > 0f && _visible < _shown.Length;
+        public int VisibleChars => _visible;
 
         public void Set(string text, bool instant = false)
         {
@@ -178,7 +179,9 @@ namespace MoonThief
         public void SetColor(Color c)
         {
             Tint = c;
-            for (int i = 0; i < _pool.Count; i++) _pool[i].color = c;
+            // a glyph child can be torn down out from under the pool (deferred Destroy on a
+            // view rebuild): skip the dead slot instead of faulting mid-fade
+            for (int i = 0; i < _pool.Count; i++) if (_pool[i] != null) _pool[i].color = c;
         }
 
         // ---- measurement ----
@@ -251,6 +254,9 @@ namespace MoonThief
 
         public void Rebuild()
         {
+            // Unity-null: a coroutine can still touch the label in the frame it was destroyed
+            // (deferred Destroy) - taking its transform then is a hard fault, so it steps off
+            if (this == null) return;
             EnsureRoot();
 
             string text = _shown;
@@ -311,9 +317,9 @@ namespace MoonThief
                 }
             }
 
-            for (int i = used; i < _pool.Count; i++) _pool[i].enabled = false;
+            for (int i = used; i < _pool.Count; i++) if (_pool[i] != null) _pool[i].enabled = false;
             if (Shadow)
-                for (int i = used; i < _shadowPool.Count; i++) _shadowPool[i].enabled = false;
+                for (int i = used; i < _shadowPool.Count; i++) if (_shadowPool[i] != null) _shadowPool[i].enabled = false;
         }
 
         SpriteRenderer Get(int index)
@@ -326,7 +332,16 @@ namespace MoonThief
                 sr.sortingOrder = SortingOrder;
                 _pool.Add(sr);
             }
-            return _pool[index];
+            var existing = _pool[index];
+            if (existing == null)
+            {
+                var go = new GameObject("c" + index);
+                go.transform.SetParent(_root, false);
+                existing = go.AddComponent<SpriteRenderer>();
+                existing.sortingOrder = SortingOrder;
+                _pool[index] = existing;
+            }
+            return existing;
         }
 
         SpriteRenderer ShadowGet(int index)

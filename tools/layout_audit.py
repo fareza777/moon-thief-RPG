@@ -53,7 +53,11 @@ def family(name):
     return re.sub(r"_+", "_", re.sub(r"\d+", "", leaf)).strip("_")
 
 # labels that are supposed to float over a fighter or a chest: not a layout defect
-FLOATERS = ("dmg", "Float", "pop", "spark")
+FLOATERS = ("dmg", "Float", "pop", "spark", "puff", "bark")
+# Screen-fixed chrome can never "land on" a character: the HUD strip rides its own plate at
+# the top of the frame and world actors wander under it by design. The OFF/CLIP/EDGE rules
+# still measure these labels - only the actor check stops pretending they are world names.
+CHROME = ("hudroot/", "npcname", "toast/")
 
 # every glyph of every label is its own sprite, so a sprite walk sees thousands of them. They are
 # the text, not the cast: a name plate landing on a letter of another label is already a CLASH.
@@ -140,6 +144,11 @@ def audit_frame(f, rows):
 
     for i in range(len(texts)):
         for j in range(i + 1, len(texts)):
+            # a floater's whole job is to hover over the world for a moment: a bark over a
+            # name, a pop over a sprite. Text-on-text still counts when neither floats.
+            if any(k in texts[i]["name"].lower() for k in FLOATERS) \
+                    or any(k in texts[j]["name"].lower() for k in FLOATERS):
+                continue
             if overlaps(texts[i]["box"], texts[j]["box"]):
                 out.append(("CLASH", texts[i]["name"], "<> " + texts[j]["name"] + " [" + texts[i]["text"][:20] + "]"))
 
@@ -167,6 +176,8 @@ def audit_frame(f, rows):
 
     for t in texts:
         if any(k.lower() in t["name"].lower() for k in FLOATERS):
+            continue
+        if any(k in t["name"].lower() for k in CHROME):
             continue
         for a in actors:
             if GLYPH in a["name"]:
@@ -199,10 +210,14 @@ def audit_frame(f, rows):
                 # Only a prop drawn OVER the chest counts: everything in the world sorts by its
                 # own row, so a barrel one row behind the chest is a barrel behind a chest, which
                 # is depth. A crown on the row below covers the lid, which is the defect.
-                if other["order"] > chest["order"] and ov / small > LOOT_RATIO:
+                if other["order"] > chest["order"] and ov / small > LOOT_RATIO \
+                        and not any(k in other["name"] for k in FLOATERS):
                     out.append(("LOOT", chest["name"], "<covered by> " + other["name"]))
                 continue
             if family(a["name"]) != family(b["name"]):
+                continue
+            # particles crowd a cell by design: heel dust and loot flecks pool under one family
+            if any(k in a["name"] for k in FLOATERS) or any(k in b["name"] for k in FLOATERS):
                 continue
             # One sprite hidden inside another's box is a wasted prop whatever the depth is: the
             # slab drawn over the pebble means the pebble was never drawn. Two sprites that overlap

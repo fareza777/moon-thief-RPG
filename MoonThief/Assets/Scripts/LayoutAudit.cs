@@ -40,13 +40,13 @@ namespace MoonThief
 
         public static void Report(string tag, float halfH, Vector3 cam)
         {
-            var labels = Object.FindObjectsOfType<PixelLabel>(true);
+            var labels = Object.FindObjectsByType<PixelLabel>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             var panels = new List<Plate>();
             var covers = new List<Plate>();          // every opaque sprite, whatever layer it is on
             var actors = new List<(Rect box, int order, string desc)>();
             _props.Clear();
 
-            foreach (var sr in Object.FindObjectsOfType<SpriteRenderer>(true))
+            foreach (var sr in Object.FindObjectsByType<SpriteRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
                 if (sr == null || !sr.enabled || !sr.gameObject.activeInHierarchy || sr.sprite == null) continue;
                 if (sr.color.a <= 0.02f) continue;
@@ -119,7 +119,12 @@ namespace MoonThief
                 if (l == null || !l.gameObject.activeInHierarchy) continue;
                 var txt = l.Text;
                 if (string.IsNullOrEmpty(txt) || txt.Trim().Length == 0) continue;
-                float w = l.MeasureWidth(txt), h = l.MeasureHeight(txt);
+                // Measure uses the label's glyph Scale, but callers may also shrink the
+                // whole label transform to fit a slot (battle menu cells do) - fold that
+                // in or the box reads wider than the glyphs on screen
+                float ts = Mathf.Abs(l.transform.localScale.x);
+                if (ts < 0.001f) continue;
+                float w = l.MeasureWidth(txt) * ts, h = l.MeasureHeight(txt) * ts;
                 if (w <= 0.02f || h <= 0.02f) continue;
                 var p = l.transform.position;
                 float x0 = l.Align == TextAlign.Left ? p.x

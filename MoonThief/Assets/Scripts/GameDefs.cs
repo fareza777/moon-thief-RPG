@@ -177,8 +177,49 @@ namespace MoonThief
 
         public Ground At(Vector2Int c) => InBounds(c) ? Grounds[c.y * W + c.x] : Ground.Block;
 
-        /// <summary>Overworld sheet of the chapter boss.</summary>
-        public static string BossMapSheet() => "Art/Mon/Monsters_04_0";
+        /// <summary>A 1px-per-cell picture of the night's ground for the journal's map page:
+        /// the whole route reads at a glance - village green, field rows, the dark wood.</summary>
+        public Texture2D MiniMapTex()
+        {
+            var t = new Texture2D(W, H, TextureFormat.RGBA32, false)
+            {
+                filterMode = FilterMode.Point,
+                wrapMode = TextureWrapMode.Clamp,
+            };
+            var px = new Color32[W * H];
+            for (int y = 0; y < H; y++)
+                for (int x = 0; x < W; x++)
+                    px[y * W + x] = MiniCol(At(new Vector2Int(x, y)));
+            t.SetPixels32(px);
+            t.Apply(false);
+            return t;
+        }
+
+        static Color32 MiniCol(Ground g)
+        {
+            switch (g)
+            {
+                case Ground.Grass: return new Color32(52, 98, 62, 255);
+                case Ground.Path:  return new Color32(138, 96, 60, 255);
+                case Ground.Water: return new Color32(52, 82, 148, 255);
+                case Ground.Tree:  return new Color32(28, 74, 46, 255);
+                case Ground.Rock:  return new Color32(122, 118, 132, 255);
+                case Ground.Wall:  return new Color32(64, 50, 70, 255);
+                case Ground.Floor: return new Color32(142, 100, 68, 255);
+                default:           return new Color32(14, 14, 24, 255);
+            }
+        }
+
+        /// <summary>Field chests a chapter's map places: two early nights, all six in the
+        /// last night's wood. The quest book needs the same number to cap chest errands at
+        /// what the night still holds shut.</summary>
+        public static int ChestsPlaced(int chapter) => chapter >= 3 ? 6 : Mathf.Clamp(1 + chapter, 2, 4);
+
+        /// <summary>Overworld sheet of the chapter's gatekeeper.</summary>
+        public static string BossMapSheet(int chapter)
+            => chapter <= 1 ? "Art/Mon/Monsters_03_0"
+                : chapter == 2 ? "Pack/Monsters/Monsters_04_5"
+                : "Art/Mon/Monsters_04_0";
         public int DecoAt(Vector2Int c) => InBounds(c) ? Deco[c.y * W + c.x] : -1;
         public bool InBounds(Vector2Int c) => c.x >= 0 && c.y >= 0 && c.x < W && c.y < H;
         public bool IsSolid(Vector2Int c) => InBounds(c) && Solid[c.y * W + c.x];
@@ -353,7 +394,8 @@ namespace MoonThief
                     m.AddRoomProp("Rug", "", 9, 12, 1f);
                     m.AddRoomProp("Shelf", "", 4, 21, 1f);
                     m.AddRoomProp("Bed", "", 13, 18, 1f);
-                    m.AddRoomProp("", "Crates/crate_0" + (5 + v), 4, 10, 1f);
+                    // the pack ships eight crates - the index wraps, never crate_09
+                    m.AddRoomProp("", "Crates/crate_0" + (1 + v % 8), 4, 10, 1f);
                     break;
                 default:  // grandma's: a crowded kitchen
                     m.AddRoomProp("Bed", "", 4, 12, 1f);
@@ -505,13 +547,22 @@ namespace MoonThief
                 new Vector2Int(9, 40), new Vector2Int(52, 36),
                 new Vector2Int(18, 66), new Vector2Int(44, 78)
             };
-            int chests = Mathf.Clamp(1 + chapter, 2, 4);
+            // the last night's dark wood holds every spot the map knows - two of the
+            // six were drawn but never stood, and the ledger quest below wants them
+            int chests = ChestsPlaced(chapter);
             for (int i = 0; i < chests; i++) m.Chests.Add(chestSpots[i]);
             // A chest stands on its own cell. It used to be scenery: nothing marked the cell, so
             // the dressers were free to plant a tree or a boulder on top of it (a chest cut in
             // half by a crown was the "clipping" in every field shot), and the hero could walk
             // straight through the lid.
-            foreach (var c in m.Chests) m.Blocked.Add(c);
+            foreach (var c in m.Chests)
+            {
+                m.Blocked.Add(c);
+                // a chest is small but its lid is at eye height - register it in the tree
+                // registry like a class-2 crown so no tree stands close enough for its own
+                // crown to hang over the lid (the chest-under-crown PILE the audit caught)
+                m.ClaimTree(c.x, c.y, 2);
+            }
 
             // the crystal of dawn sits in the village, west of the plaza
             m.CristalPos = new Vector2(11.5f, 7.5f);
@@ -867,12 +918,22 @@ namespace MoonThief
         public Side Side;
         public int MaxHp, Hp, AtkMin, AtkMax;
         public float Speed;
-        public bool Boss, Captured, Dead;
+        public bool Boss, Captured, Dead, Rare, Dazed;
+        public bool Risen;          // a skeleton stands back up once - this flags it spent
+        public bool Ward;           // a wisp's light: the next blow lands on nothing
+        public bool WardGiven;      // a befriended wisp's one gift of light, spent
+        public bool Announced;      // a friend's first turn already declared itself
+        public int Poison;          // rounds of venom left - scorpion stings leave it
+        public int Weaken;          // blows left at half strength - a magus's hex saps the arm
+        public int Snare;           // turns held fast - a lamia's coil does not let go quickly
+        public int Corrode;         // stacks of a worm's rot on the arm - each one dulls a blow
         public string BattlerPath;      // Resources path of the battler sprite
+        public string Species;          // monster string key - set on wild foes and befriended allies
         public string ColorDir;         // party only: "color_1"
         public int Look = -1;           // party only: which headwear this friend wears (-1 = none)
+        public int Style;               // party only: 0 strike (crit), 1 sweep (hits all), 2 mend (heals)
         public int Scale = 2;
-        public bool Alive => !Dead && Hp > 0;
+        public bool Alive => !Dead && !Captured && Hp > 0;
         public float Hp01 => MaxHp > 0 ? Mathf.Clamp01((float)Hp / MaxHp) : 0f;
     }
 
@@ -887,6 +948,7 @@ namespace MoonThief
         public int Hp, AtkMin, AtkMax;
         public float Speed;
         public bool Boss;
+        public bool Rare;          // moonlit variant: silver, tougher, always drops gear
     }
 
     public static class BattleData
@@ -900,14 +962,44 @@ namespace MoonThief
             public string NameKey, ColorDir;
             public int Hp, AtkMin, AtkMax, Look;
             public float Speed;
+            public int Style;   // the friend's fighting style: 0 strike, 1 sweep, 2 mend
         }
 
         public static readonly HeroSpec[] Party =
         {
-            new HeroSpec{ NameKey="hero.amber", ColorDir="color_1", Hp=34, AtkMin=4, AtkMax=7, Speed=5.0f, Look=0 },
-            new HeroSpec{ NameKey="hero.sea",   ColorDir="color_2", Hp=28, AtkMin=5, AtkMax=9, Speed=4.4f, Look=1 },
-            new HeroSpec{ NameKey="hero.moss",  ColorDir="color_3", Hp=31, AtkMin=3, AtkMax=6, Speed=4.8f, Look=2 },
+            // amber lunges and finds weak seams (crit), sea sweeps the whole field,
+            // moss keeps everyone standing: three buttons worth of tactics on one ATTACK row
+            new HeroSpec{ NameKey="hero.amber", ColorDir="color_1", Hp=34, AtkMin=4, AtkMax=7, Speed=5.0f, Look=0, Style=0 },
+            new HeroSpec{ NameKey="hero.sea",   ColorDir="color_2", Hp=28, AtkMin=5, AtkMax=9, Speed=4.4f, Look=1, Style=1 },
+            new HeroSpec{ NameKey="hero.moss",  ColorDir="color_3", Hp=31, AtkMin=3, AtkMax=6, Speed=4.8f, Look=2, Style=2 },
         };
+
+        /// <summary>The party actually in the fight: amber always, the others only after
+        /// their recruiting talks have run. Reads Game.State.Joined so a solo opening night
+        /// sends the thief in alone - the walkers still exist as world actors then, not
+        /// as battle rigs.</summary>
+        public static HeroSpec[] PartyActive
+        {
+            get
+            {
+                var list = new List<HeroSpec>();
+                foreach (var h in Party)
+                    if (h.NameKey == "hero.amber" || Game.State.Joined.Contains(h.NameKey))
+                        list.Add(h);
+                return list.ToArray();
+            }
+        }
+
+        /// <summary>A hero's raw stats at a level: levels used to move only the journal number,
+        /// now each one adds real health and edge, so grinding the fields actually pays.
+        /// Equipment bonuses are added on top of this by the caller.</summary>
+        public static void HeroStats(HeroSpec spec, int level, out int hp, out int atkMin, out int atkMax)
+        {
+            int lv = Mathf.Max(1, level) - 1;
+            hp = spec.Hp + lv * 3;
+            atkMin = spec.AtkMin + lv;
+            atkMax = spec.AtkMax + lv;
+        }
 
         public static string ClipPath(string colorDir, string clip) => "Art/Hero/hero/" + colorDir + "/" + clip;
 
@@ -928,29 +1020,167 @@ namespace MoonThief
             new MonsterSpec{ Name="mon.bones",   Battler="Art/Battlers/SkeletonA", MapSheet="Art/Mon/Monsters_05_0", Tier=3, Chapter=3, Hp=40, AtkMin=6, AtkMax=10, Speed=4.2f },
             new MonsterSpec{ Name="mon.hob",     Battler="Art/Battlers/ScorpionA", MapSheet="Art/Mon/Monsters_03_0", Tier=3, Chapter=3, Hp=46, AtkMin=7, AtkMax=11, Speed=3.6f },
             new MonsterSpec{ Name="mon.wisp",    Battler="Art/Battlers/GeniusA",  MapSheet="Art/Mon/Monsters_05_0", Tier=3, Chapter=3, Hp=38, AtkMin=8, AtkMax=12, Speed=4.8f },
+            new MonsterSpec{ Name="mon.revenant",Battler="Art/Battlers/SkeletonA", MapSheet="Pack/Monsters/Monsters_05_5", Tier=3, Chapter=3, Hp=44, AtkMin=7, AtkMax=10, Speed=3.4f },
+            // the deeper-cut species: same family silhouettes in the pack's other palettes,
+            // so the fields keep a face the player has not already befriended twice
+            new MonsterSpec{ Name="mon.palebell",Battler="Art/Battlers/GhostA",    MapSheet="Pack/Monsters/Monsters_02_5", Tier=3, Chapter=3, Hp=30, AtkMin=5, AtkMax=8, Speed=5.0f },
+            new MonsterSpec{ Name="mon.thick",   Battler="Art/Battlers/MushroomB", MapSheet="Pack/Monsters/Monsters_04_3", Tier=2, Chapter=2, Hp=36, AtkMin=6, AtkMax=9, Speed=3.4f },
+            // the later dark learns new shapes: a serpent that holds its mark fast, a
+            // worm whose bite rusts the arm it takes, and still stranger things in the
+            // last night - a dead thing that feeds on the fallen, a pudding that parries
+            new MonsterSpec{ Name="mon.lamia",   Battler="Art/Battlers/LamiaA",    MapSheet="Pack/Monsters/Monsters_03_6", Tier=2, Chapter=2, Hp=28, AtkMin=5, AtkMax=9, Speed=4.6f },
+            new MonsterSpec{ Name="mon.worm",    Battler="Art/Battlers/WormA",     MapSheet="Pack/Monsters/Monsters_04_6", Tier=2, Chapter=2, Hp=26, AtkMin=4, AtkMax=7, Speed=4.0f },
+            new MonsterSpec{ Name="mon.zombi",   Battler="Art/Battlers/ZombiA",    MapSheet="Pack/Monsters/Monsters_05_1", Tier=3, Chapter=3, Hp=50, AtkMin=6, AtkMax=9, Speed=2.6f },
+            new MonsterSpec{ Name="mon.sword",   Battler="Art/Battlers/SlimeswordA", MapSheet="Pack/Monsters/Monsters_03_1", Tier=3, Chapter=3, Hp=44, AtkMin=8, AtkMax=12, Speed=4.2f },
+            new MonsterSpec{ Name="mon.worm2",   Battler="Art/Battlers/WormB",       MapSheet="Pack/Monsters/Monsters_04_2", Tier=3, Chapter=3, Hp=38, AtkMin=6, AtkMax=10, Speed=4.4f },
+            new MonsterSpec{ Name="mon.zombi2",  Battler="Art/Battlers/ZombiB",      MapSheet="Pack/Monsters/Monsters_05_3", Tier=4, Chapter=3, Hp=64, AtkMin=8, AtkMax=11, Speed=2.4f },
+            new MonsterSpec{ Name="mon.sword2",  Battler="Art/Battlers/SlimeswordB", MapSheet="Pack/Monsters/Monsters_03_3", Tier=4, Chapter=3, Hp=56, AtkMin=9, AtkMax=13, Speed=4.6f },
+            new MonsterSpec{ Name="mon.thirst",  Battler="Art/Battlers/SuccubusA",   MapSheet="Pack/Monsters/Monsters_02_7", Tier=3, Chapter=3, Hp=42, AtkMin=7, AtkMax=11, Speed=5.0f },
+            new MonsterSpec{ Name="mon.magus",   Battler="Art/Battlers/BlackMagusA", MapSheet="Pack/Monsters/Monsters_02_6", Tier=3, Chapter=3, Hp=38, AtkMin=7, AtkMax=12, Speed=4.4f },
+            new MonsterSpec{ Name="mon.swarrior",Battler="Art/Battlers/SkeletonwarriorA", MapSheet="Pack/Monsters/Monsters_05_4", Tier=3, Chapter=3, Hp=48, AtkMin=7, AtkMax=10, Speed=3.0f },
+            // the gatekeepers live in the bestiary so the journal can picture them, but they
+            // are not field spawns - every one carries the boss flag and Roll never deals it
+            new MonsterSpec{ Name="mon.stalker", Battler="Art/Battlers/ScorpionA", MapSheet="Art/Mon/Monsters_03_0", Tier=2, Chapter=1, Hp=42, AtkMin=4, AtkMax=7, Speed=4.0f, Boss=true },
+            new MonsterSpec{ Name="mon.thane",   Battler="Art/Battlers/MinotaurB", MapSheet="Pack/Monsters/Monsters_04_5", Tier=4, Chapter=2, Hp=62, AtkMin=6, AtkMax=11, Speed=3.8f, Boss=true },
+            new MonsterSpec{ Name="mon.squire", Battler="Art/Battlers/GhostA",    MapSheet="Art/Mon/Monsters_02_0", Tier=2, Chapter=2, Hp=20, AtkMin=5, AtkMax=8, Speed=5.0f, Boss=true },
+            // the Guard's own lantern counts as a creature of the night too: kept out of
+            // the wild pool by the flag, but findable by Species() so the bell's fight can
+            // deal it and a kind word can carry one home - before it lived only inside
+            // BossFight(3), so the bell's promised fight found nothing and a tamed wisp
+            // could never be rebuilt into the party
+            new MonsterSpec{ Name="mon.wisp", Battler="Art/Battlers/GeniusA",   MapSheet="Art/Mon/Monsters_05_0", Tier=3, Chapter=3, Hp=28, AtkMin=6, AtkMax=10, Speed=5.2f, Boss=true },
         };
 
         public static readonly MonsterSpec Boss = new MonsterSpec
         {
             Name = "mon.minotaur", Battler = "Art/Battlers/MinotaurA", MapSheet = "Art/Mon/Monsters_04_0",
-            Tier = 5, Chapter = 3, Hp = 120, AtkMin = 8, AtkMax = 13, Speed = 4.4f, Boss = true
+            Tier = 5, Chapter = 3, Hp = 92, AtkMin = 8, AtkMax = 13, Speed = 4.4f, Boss = true
         };
+
+        /// <summary>Look a wild species up by its string key (befriended allies rebuild from it).</summary>
+        public static MonsterSpec? Species(string key)
+        {
+            foreach (var s in Bestiary) if (s.Name == key) return s;
+            return null;
+        }
+
+        /// <summary>The creature's family read off its battler file: SlimeA and SlimeD are the
+        /// same kind of thing whatever their tier. Weaknesses hang off this, so a recolour or a
+        /// named oddity (the palebell is a ghost) inherits the weakness its sprite promises.</summary>
+        public static string FamilyOf(MonsterSpec s)
+        {
+            var b = s.Battler ?? "";
+            var n = b.Substring(b.LastIndexOf('/') + 1);
+            // every battler file ends in a single tier letter - SlimeA, SlimeD, GhostC -
+            // so the family is the name with that last char dropped. Taking all leading
+            // letters instead kept the suffix ("slimea"), which quietly silenced every
+            // family-keyed trick and weakness in the game.
+            return n.Length > 1 ? n.Substring(0, n.Length - 1).ToLowerInvariant() : "";
+        }
+
+        /// <summary>Style vs species: every friend's trick has a family it was made for. Amber's
+        /// claws open fleshy beasts, sea's arc scatters swarm and sting, moss's moon-petals
+        /// banish the dead. A true answer is worth half again the damage, so picking the right
+        /// attacker matters more than picking the strongest.</summary>
+        public static bool StyleBeats(int style, MonsterSpec foe)
+        {
+            switch (FamilyOf(foe))
+            {
+                case "slime":
+                case "slimesword":
+                case "mushroom": return style == 0;
+                case "wasp":
+                case "scorpion":
+                case "lamia":
+                case "worm": return style == 1;          // the field's own hunger parts the same
+                case "zombi": return style == 2;         // dead flesh folds to the moon's fold
+                case "ghost":
+                case "skeleton":
+                case "skeletonwarrior":
+                case "succubus":
+                case "blackmagus": return style == 2;   // the dark's own fold to the moon
+                default: return false;   // genius and minotaur have no soft seam
+            }
+        }
+
+        /// <summary>The style a tamed beast fights in - the one that answers its own family.
+        /// A befriended ghost folds like moss, a befriended wasp arcs like sea; whatever
+        /// shares no soft seam (genius, minotaur) just claws like amber.
+        /// </summary>
+        public static int StyleForFamily(string fam)
+        {
+            switch (fam)
+            {
+                case "slime":
+                case "slimesword":
+                case "mushroom": return 0;
+                case "wasp":
+                case "scorpion":
+                case "lamia":
+                case "worm": return 1;
+                case "zombi":
+                case "ghost":
+                case "skeleton":
+                case "skeletonwarrior":
+                case "succubus":
+                case "blackmagus": return 2;
+                default: return 0;
+            }
+        }
 
         /// <summary>A random encounter for a chapter. Usually one foe, sometimes two.</summary>
         public static MonsterSpec[] Roll(int chapter, System.Random rng)
         {
             var pool = new List<MonsterSpec>();
-            foreach (var s in Bestiary) if (s.Chapter <= chapter) pool.Add(s);
+            foreach (var s in Bestiary) if (s.Chapter <= chapter && !s.Boss) pool.Add(s);
             var a = pool[rng.Next(pool.Count)];
+            if (rng.Next(100) < 10) a.Rare = true;
             if (chapter >= 2 && rng.Next(100) < 35)
             {
                 var b = pool[rng.Next(pool.Count)];
+                if (rng.Next(100) < 10) b.Rare = true;   // moonlit pairs happen too
+                // the last night's dark hunts in packs: now and then the field answers
+                // with three at once
+                if (chapter >= 3 && rng.Next(100) < 22)
+                    return new[] { a, b, pool[rng.Next(pool.Count)] };
                 return new[] { a, b };
             }
             return new[] { a };
         }
 
-        public static MonsterSpec[] BossFight() => new[] { Boss };
+        /// <summary>Each night's road ends in its own keeper. The first is a lone dusk
+        /// stalker - a teaching fight, one target, every command already matters. The second
+        /// is the Night Thane with a shade squire screening it: two targets, so MORSEL and
+        /// BEFRIEND have a use under pressure. The third is the Pale Guard proper, screened
+        /// by a lantern wisp - the night owes you a real wall before the cristal.</summary>
+        public static MonsterSpec[] BossFight(int chapter)
+        {
+            if (chapter <= 1) return new[] { Species("mon.stalker").Value };
+            if (chapter == 2)
+            {
+                // the squire screens the thane; it is not itself a boss, so a daze or a kind word
+                // still lands on it. The flag in the bestiary only keeps it out of the wild pool.
+                var squire = Species("mon.squire").Value;
+                squire.Boss = false;
+                return new[] { Species("mon.thane").Value, squire };
+            }
+            // the Pale Guard never walks alone: a lantern wisp screens it. The fight
+            // used to be one big health bar, which made MORSEL and BEFRIEND pointless at the
+            // climax - two targets keeps every command relevant to the last turn. The wisp
+            // is not itself a keeper, so the word and the morsel can still reach it.
+            var wisp = Species("mon.wisp").Value;
+            wisp.Boss = false;
+            return new[] { Boss, wisp };
+        }
+
+        /// <summary>Who the hero is talking to at the gate - name plate and taunt lines.</summary>
+        public static string BossNameKey(int chapter)
+            => chapter <= 1 ? "mon.stalker" : chapter == 2 ? "mon.thane" : "mon.minotaur";
+
+        public static string[] BossTaunts(int chapter)
+            => chapter <= 1 ? new[] { "boss1.t.1", "boss1.t.2" }
+                : chapter == 2 ? new[] { "boss2.t.1", "boss2.t.2" }
+                : new[] { "boss.taunt.1", "boss.taunt.2" };
     }
 
     // -------------------------------------------------------------------- npc + dialog
@@ -962,6 +1192,13 @@ namespace MoonThief
         public Vector2 Pos;    // world position (cell center)
         public string NameKey; // string key of the name
         public string[] Lines; // string keys spoken in order
+        public bool Shop;      // tapping opens the shop instead of a dialog
+        public bool Monster;   // portrait comes off a 48px monster cell, not a chara sheet
+        // walk-anim folk: a Resources path to an animation bank instead of a chara sheet
+        // (the companions are drawn by the same rigs that fight beside you)
+        public string Walk;
+        // folk who can join the walk: the battle-party key their recruiting talk turns on
+        public string JoinKey;
     }
 
     public static class Folks
@@ -974,18 +1211,46 @@ namespace MoonThief
         public static string Sheet(NpcDef def)
             => string.IsNullOrEmpty(def.Sheet) ? "Art/Char/chara_" + def.Chara : def.Sheet;
 
+        /// <summary>The two wanderers who can join the walk. Sea waits at the village's
+        /// north edge with her knives; Moss stands deeper in the fields where the wild is
+        /// thicker. Both are drawn by their own hero rigs, not a villager sheet, so the
+        /// one who talks is the one who fights beside you later. Their JoinKey gates the
+        /// recruiting talk into a join, and once joined their wandering selves leave the
+        /// map (the trail walkers take over). Positions sit inside the chest/boss ring so
+        /// the night route stays one line: Mira -> Sea -> Moss -> work.</summary>
+        public static NpcDef[] Companions()
+        {
+            return new[]
+            {
+                new NpcDef{ Chara = 0, Pos = new Vector2(27.5f, 16.5f),
+                    NameKey = "npc.sea",
+                    Lines = new[] { "dl.sea.1", "dl.sea.2" },
+                    Walk = "Art/Hero/hero/color_2/walk/hero_walk_DOWN",
+                    JoinKey = "hero.sea" },
+                new NpcDef{ Chara = 0, Pos = new Vector2(30.5f, 38.5f),
+                    NameKey = "npc.moss",
+                    Lines = new[] { "dl.moss.1", "dl.moss.2" },
+                    Walk = "Art/Hero/hero/color_3/walk/hero_walk_DOWN",
+                    JoinKey = "hero.moss" },
+            };
+        }
+
         /// <summary>Who is at home in each of the six village houses. One per room, so opening a
         /// door always leads to somebody with something to say.</summary>
         public static NpcDef[] House(int houseIndex, int chapter)
         {
             int h = Mathf.Abs(houseIndex) % 6;
-            var chroma = new[] { 1, 2, 3, 4, 5, 0 };
+            // each hearth gets its own face out of the pack's drawer - the old chroma table
+            // dressed the six residents in the same sheets the elder, the kid, the smith,
+            // the hunter and the bard already wear in the street
+            var sheets = new[] { "Pack/Chara/chara_0", "Pack/Chara/chara_9", "Pack/Chara/chara_13",
+                                 "Pack/Chara/chara_15", "Pack/Chara/chara_17", "Pack/Chara/chara_24" };
             var names = new[] { "npc.house.0", "npc.house.1", "npc.house.2", "npc.house.3", "npc.house.4", "npc.house.5" };
             return new[]
             {
                 new NpcDef
                 {
-                    Chara = chroma[h], Pos = new Vector2(9.5f, 12.5f), NameKey = names[h],
+                    Chara = 0, Sheet = sheets[h], Pos = new Vector2(9.5f, 12.5f), NameKey = names[h],
                     Lines = new[] { "dl.home." + h + ".1", "dl.home." + h + ".2" },
                 }
             };
@@ -1001,7 +1266,7 @@ namespace MoonThief
                 new NpcDef{ Chara=1, Pos=new Vector2(27.5f,7.5f), NameKey="npc.elder",
                     Lines=new[]{ "dl.elder." + c + ".1", "dl.elder." + c + ".2", "dl.elder." + c + ".3" } },
                 new NpcDef{ Chara=2, Pos=new Vector2(33.5f,5.5f), NameKey="npc.kid",
-                    Lines=new[]{ "dl.kid.1", "dl.kid.2" } },
+                    Lines=new[]{ "dl.kid.1", "dl.kid.2", "dl.kid.3" } },
                 new NpcDef{ Chara=3, Pos=new Vector2(35.5f,11.5f), NameKey="npc.smith",
                     Lines=new[]{ "dl.smith.1", "dl.smith.2" } },
                 // The pack's 32 villager sheets are 14 silhouettes in several palettes, so a
@@ -1014,20 +1279,29 @@ namespace MoonThief
                     Lines=new[]{ "dl.pip.1", "dl.pip.2" } },
                 new NpcDef{ Chara=0, Sheet="Pack/Chara/chara_21", Pos=new Vector2(28.5f,11.5f), NameKey="npc.prune",
                     Lines=new[]{ "dl.prune.1", "dl.prune.2" } },
+                // Marn keeps the stall: gold finally has somewhere to go
+                new NpcDef{ Chara=0, Sheet="Pack/Chara/chara_14", Pos=new Vector2(24.5f,9.5f), NameKey="npc.marn",
+                    Lines=new[]{ "dl.marn.1", "dl.marn.2", "dl.marn.3" }, Shop=true },
+                // the grandmother has always lived here - her mushroom errand is a first-night
+                // task, so she cannot wait for the third night to exist. The white bonnet is
+                // her own face: atlas slot 0 is the same sheet house five's resident wears,
+                // and two villagers sharing a face is the thing the night was asked to avoid
+                new NpcDef{ Chara=0, Sheet="Pack/Chara/chara_19", Pos=new Vector2(20.5f,6.5f), NameKey="npc.grandma",
+                    Lines=new[]{ "dl.grandma.1", "dl.grandma.2" } },
             };
             if (chapter >= 2)
             {
                 all.Add(new NpcDef{ Chara=4, Pos=new Vector2(24.5f,11.5f), NameKey="npc.hunter",
-                    Lines=new[]{ "dl.hunter.1", "dl.hunter.2" } });
+                    Lines=new[]{ "dl.hunter.1", "dl.hunter.2", "dl.hunter.3" } });
                 all.Add(new NpcDef{ Chara=0, Sheet="Pack/Chara/chara_10", Pos=new Vector2(26.5f,13.5f), NameKey="npc.oda",
                     Lines=new[]{ "dl.oda.1", "dl.oda.2" } });
+                // the bard walks out once the fields open - her rhyme errand is a second-night
+                // task, so she has to exist on the second night
+                all.Add(new NpcDef{ Chara=5, Pos=new Vector2(30.5f,12.5f), NameKey="npc.bard",
+                    Lines=new[]{ "dl.bard.1", "dl.bard.2" } });
             }
             if (chapter >= 3)
             {
-                all.Add(new NpcDef{ Chara=5, Pos=new Vector2(30.5f,12.5f), NameKey="npc.bard",
-                    Lines=new[]{ "dl.bard.1", "dl.bard.2" } });
-                all.Add(new NpcDef{ Chara=0, Pos=new Vector2(20.5f,6.5f), NameKey="npc.grandma",
-                    Lines=new[]{ "dl.grandma.1", "dl.grandma.2" } });
                 all.Add(new NpcDef{ Chara=0, Sheet="Pack/Chara/chara_20", Pos=new Vector2(34.5f,6.5f), NameKey="npc.nail",
                     Lines=new[]{ "dl.nail.1", "dl.nail.2" } });
             }

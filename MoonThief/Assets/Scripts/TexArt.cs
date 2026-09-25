@@ -329,6 +329,25 @@ namespace MoonThief
         public static Sprite MapMonster(string sheet, int frame)
             => Cell(sheet, 48, frame % 3, frame / 3);
 
+        /// <summary>The speaker's face: the head of the first Down frame of their own chara
+        /// sheet. A portrait is a person, not a weather vane - cropping the head means every
+        /// villager keeps the face the pack drew for them, and no two speakers look alike.</summary>
+        public static Sprite Face(string sheet)
+        {
+            string key = sheet + "@face";
+            if (_sprite.TryGetValue(key, out var s)) return s;
+            var t = Tex(sheet);
+            if (t == null) { _sprite[key] = null; return null; }
+            const int CellW = 16, CellH = 20, HeadH = 12;
+            // the Down strip is the bottom row of cells; the head is the top of that cell
+            float cellY = Mathf.Max(0, t.height - 4 * CellH);
+            s = Sprite.Create(t, new Rect(0, cellY + CellH - HeadH, CellW, HeadH),
+                new Vector2(0.5f, 0.45f), G.PPU, 0, SpriteMeshType.FullRect);
+            s.name = key;
+            _sprite[key] = s;
+            return s;
+        }
+
         /// <summary>The step in front of a house door: a worn mat lying flat on the trigger cell.
         /// The house art paints its own door in the facade, so this - not a second door sprite - is
         /// what marks the tile a house is entered from.</summary>
@@ -395,10 +414,10 @@ namespace MoonThief
 
         // ---------------------------------------------------------------- procedural UI
 
-        static Sprite _solid, _panel, _shadow, _glow, _moon, _spark, _chevron, _moonFull, _ring, _dot;
+        static Sprite _solid, _panel, _shadow, _glow, _moon, _spark, _chevron, _moonFull, _ring, _dot, _slash;
         static Sprite _mat;
         static Sprite[] _wear;
-        static Sprite _night, _vignette, _stars, _star, _alert;
+        static Sprite _night, _vignette, _stars, _star, _alert, _sleepZ;
 
         static Sprite Make(string name, int w, int h, System.Func<int, int, Color32> pixel, Vector4 border)
         {
@@ -464,6 +483,22 @@ namespace MoonThief
                 }, Vector4.zero);
             }
             return _glow;
+        }
+
+        /// <summary>A thin bright diagonal streak - the instant a hit lands.</summary>
+        public static Sprite Slash()
+        {
+            if (_slash == null)
+            {
+                _slash = Make("slash", 16, 16, (x, y) =>
+                {
+                    int d = Mathf.Abs(x + y - 15);   // distance off the hot diagonal
+                    if (d == 0) return new Color32(255, 255, 255, 235);
+                    if (d == 1) return new Color32(255, 238, 190, 140);
+                    return new Color32(0, 0, 0, 0);
+                }, Vector4.zero);
+            }
+            return _slash;
         }
 
         /// <summary>The empty-sky icon: dark disc, dashed rim.</summary>
@@ -540,6 +575,450 @@ namespace MoonThief
             }
             return _chevron;
         }
+
+        static Sprite _icoAtk, _icoFriend, _icoFood, _icoRun, _icoPlay, _icoBook, _icoSave, _icoGear, _icoDoor,
+            _icoText, _icoNote, _icoSpeaker, _icoShake, _icoAuto, _icoBack, _icoTrash,
+            _icoPerson, _icoBag, _icoShield, _icoPaw, _icoScroll,
+            _icoStar, _icoShare, _icoInfo, _icoMoon, _icoBell, _icoCheck, _icoX, _icoCoin, _icoPlus, _icoDrop,
+            _icoCoil, _icoHex, _icoRust;
+
+        /// <summary>Tiny pictogram beside each battle command so the four cells read at a
+        /// glance: sword for strike, heart for befriend, apple for morsel, boot for run —
+        /// then the pause rows: play, book, floppy, gear, door.</summary>
+        public static Sprite MenuIcon(int kind)
+        {
+            switch (kind)
+            {
+                case 0: return _icoAtk ??= MaskIcon("icoAtk", MaskSword);
+                case 1: return _icoFriend ??= MaskIcon("icoFriend", MaskHeart);
+                case 2: return _icoFood ??= MaskIcon("icoFood", MaskApple);
+                case 3: return _icoRun ??= MaskIcon("icoRun", MaskBoot);
+                case 4: return _icoPlay ??= MaskIcon("icoPlay", MaskPlay);
+                case 5: return _icoBook ??= MaskIcon("icoBook", MaskBook);
+                case 6: return _icoSave ??= MaskIcon("icoSave", MaskSave);
+                case 7: return _icoGear ??= MaskIcon("icoGear", MaskGear);
+                case 8: return _icoDoor ??= MaskIcon("icoDoor", MaskDoor);
+                case 9: return _icoText ??= MaskIcon("icoText", MaskText);
+                case 10: return _icoNote ??= MaskIcon("icoNote", MaskNote);
+                case 11: return _icoSpeaker ??= MaskIcon("icoSpeaker", MaskSpeaker);
+                case 12: return _icoShake ??= MaskIcon("icoShake", MaskShake);
+                case 13: return _icoAuto ??= MaskIcon("icoAuto", MaskAuto);
+                case 14: return _icoBack ??= MaskIcon("icoBack", MaskBack);
+                case 15: return _icoTrash ??= MaskIcon("icoTrash", MaskTrash);
+                case 16: return _icoPerson ??= MaskIcon("icoPerson", MaskPerson);
+                case 17: return _icoBag ??= MaskIcon("icoBag", MaskBag);
+                case 18: return _icoShield ??= MaskIcon("icoShield", MaskShield);
+                case 19: return _icoPaw ??= MaskIcon("icoPaw", MaskPaw);
+                case 20: return _icoScroll ??= MaskIcon("icoScroll", MaskScroll);
+                case 21: return _icoStar ??= MaskIcon("icoStar", MaskStar);
+                case 22: return _icoShare ??= MaskIcon("icoShare", MaskShare);
+                case 23: return _icoInfo ??= MaskIcon("icoInfo", MaskInfo);
+                case 24: return _icoMoon ??= MaskIcon("icoMoon", MaskMoon);
+                case 25: return _icoBell ??= MaskIcon("icoBell", MaskBell);
+                case 26: return _icoCheck ??= MaskIcon("icoCheck", MaskCheck);
+                case 27: return _icoX ??= MaskIcon("icoX", MaskX);
+                case 28: return _icoCoin ??= MaskIcon("icoCoin", MaskCoin);
+                case 29: return _icoDrop ??= MaskIcon("icoDrop", MaskDrop);
+                case 30: return _icoCoil ??= MaskIcon("icoCoil", MaskCoil);
+                case 31: return _icoHex ??= MaskIcon("icoHex", MaskHex);
+                case 32: return _icoRust ??= MaskIcon("icoRust", MaskRust);
+                default: return _icoPlus ??= MaskIcon("icoPlus", MaskPlus);
+            }
+        }
+
+        static Sprite MaskIcon(string name, string[] rows)
+        {
+            int h = rows.Length, w = rows[0].Length;
+            return Make(name, w, h, (x, y) =>
+            {
+                switch (rows[h - 1 - y][x])
+                {
+                    case 'w': return new Color32(235, 240, 250, 255);
+                    case 'g': return new Color32(255, 214, 120, 255);
+                    case 'r': return new Color32(240, 110, 110, 255);
+                    case 'p': return new Color32(255, 150, 170, 255);
+                    case 'b': return new Color32(150, 105, 70, 255);
+                    case 'd': return new Color32(90, 65, 45, 255);
+                    case 'n': return new Color32(130, 220, 150, 255);
+                    default: return new Color32(0, 0, 0, 0);
+                }
+            }, Vector4.zero);
+        }
+
+        static readonly string[] MaskSword = {
+            ".....w...",
+            "....ww...",
+            "...ww....",
+            "..ww.....",
+            ".ww......",
+            "gggw.....",
+            ".bb......",
+            ".bb......",
+            ".gg......",
+        };
+        static readonly string[] MaskHeart = {
+            ".........",
+            ".pp..pp..",
+            "pppppppp.",
+            "pppppppp.",
+            ".pppppp..",
+            "..pppp...",
+            "...pp....",
+            ".........",
+            ".........",
+        };
+        static readonly string[] MaskApple = {
+            "...n.....",
+            "..nn.....",
+            ".rrrrr...",
+            "rrrrrrr..",
+            "rrrrrrr..",
+            "rrrrrrr..",
+            ".rrrrr...",
+            "..rrr....",
+            ".........",
+        };
+        static readonly string[] MaskBoot = {
+            ".........",
+            ".bb......",
+            ".bb......",
+            ".bb......",
+            ".bbb.....",
+            ".bbbbbb..",
+            ".bbbbbb..",
+            ".dddddd..",
+            ".........",
+        };
+        static readonly string[] MaskPlay = {
+            ".........",
+            "..gg.....",
+            "..gggg...",
+            "..gggggg.",
+            "..gggg...",
+            "..gg.....",
+            ".........",
+            ".........",
+            ".........",
+        };
+        static readonly string[] MaskBook = {
+            ".........",
+            ".bwwww...",
+            ".bwwww...",
+            ".bwwww...",
+            ".bwwww...",
+            ".bwwww...",
+            ".bwwww...",
+            ".........",
+            ".........",
+        };
+        static readonly string[] MaskSave = {
+            ".........",
+            ".dddddd..",
+            ".dg..gd..",
+            ".dddddd..",
+            ".dddddd..",
+            ".dwwwwd..",
+            ".dddddd..",
+            ".........",
+            ".........",
+        };
+        static readonly string[] MaskGear = {
+            ".........",
+            "..w.w.w..",
+            ".wwwwwww.",
+            ".ww...ww.",
+            ".ww...ww.",
+            ".wwwwwww.",
+            "..w.w.w..",
+            ".........",
+            ".........",
+        };
+        static readonly string[] MaskDoor = {
+            ".........",
+            "..ddddd..",
+            "..d...d..",
+            "..d.gg...",
+            "..d..ggg.",
+            "..d.gg...",
+            "..d...d..",
+            "..ddddd..",
+            ".........",
+        };
+        static readonly string[] MaskText = {
+            ".........",
+            "...www...",
+            "..w...w..",
+            "..w...w..",
+            "..wwwww..",
+            "..w...w..",
+            "..w...w..",
+            ".........",
+            ".........",
+        };
+        static readonly string[] MaskNote = {
+            ".........",
+            ".....wwg.",
+            "....w..g.",
+            "....w...g",
+            "....w....",
+            "..www....",
+            ".www.....",
+            ".........",
+            ".........",
+        };
+        static readonly string[] MaskSpeaker = {
+            ".........",
+            "...w.....",
+            "..ww.....",
+            ".wwww..w.",
+            ".wwww.w..",
+            ".wwww..w.",
+            "..ww.....",
+            "...w.....",
+            ".........",
+        };
+        static readonly string[] MaskShake = {
+            ".........",
+            "w..www..w",
+            "...w.w...",
+            "...w.w...",
+            "...www...",
+            "w..www..w",
+            ".........",
+            ".........",
+            ".........",
+        };
+        static readonly string[] MaskAuto = {
+            ".........",
+            "....gg...",
+            "...gg....",
+            "..ggg....",
+            ".ggg.....",
+            "..ggg....",
+            "...gg....",
+            "...gg....",
+            ".........",
+        };
+        static readonly string[] MaskBack = {
+            ".........",
+            "...w.....",
+            "..ww.....",
+            ".wwwwww..",
+            "wwwwww...",
+            ".wwwwww..",
+            "..ww.....",
+            "...w.....",
+            ".........",
+        };
+        static readonly string[] MaskTrash = {
+            ".........",
+            "...ggg...",
+            ".ggggg...",
+            "..d.d....",
+            "..d.d....",
+            "..ddd....",
+            ".........",
+            ".........",
+            ".........",
+        };
+        static readonly string[] MaskPerson = {
+            ".........",
+            "...www...",
+            "..wwwww..",
+            "..wwwww..",
+            "...www...",
+            "..w...w..",
+            ".ww...ww.",
+            ".wwwwwww.",
+            ".........",
+        };
+        static readonly string[] MaskBag = {
+            ".........",
+            "...gg....",
+            "..g..g...",
+            "..gggg...",
+            ".bbbbbb..",
+            ".b.bb.b..",
+            ".bbbbbb..",
+            "..bbbb...",
+            ".........",
+        };
+        static readonly string[] MaskShield = {
+            ".........",
+            "..wwwww..",
+            "..w...w..",
+            "..w.w.w..",
+            "..w...w..",
+            "..w...w..",
+            "...www...",
+            "....w....",
+            ".........",
+        };
+        static readonly string[] MaskPaw = {
+            ".........",
+            ".w..w..w.",
+            ".w..w..w.",
+            ".........",
+            "..wwwww..",
+            ".wwwwwww.",
+            "..wwwww..",
+            ".........",
+            ".........",
+        };
+        static readonly string[] MaskScroll = {
+            ".........",
+            "..ggggg..",
+            ".g.g.g.g.",
+            ".g.....g.",
+            ".g.www.g.",
+            ".g.....g.",
+            "..ggggg..",
+            ".........",
+            ".........",
+        };
+        static readonly string[] MaskDrop = {
+            ".........",
+            "....n....",
+            "...nnn...",
+            "..nnnnn..",
+            ".nnnnnnn.",
+            ".nnnnnnn.",
+            "..nnnnn..",
+            "...nnn...",
+            ".........",
+        };
+        static readonly string[] MaskCoil = {
+            ".........",
+            "..bbbbb..",
+            ".b.....b.",
+            ".b..b..b.",
+            ".b..b..b.",
+            ".b...b.b.",
+            ".b.....b.",
+            "..bbbbb..",
+            ".........",
+        };
+        static readonly string[] MaskHex = {
+            ".........",
+            "....p....",
+            "....p....",
+            "....p....",
+            ".p..p..p.",
+            "..p.p.p..",
+            "...ppp...",
+            "....p....",
+            ".........",
+        };
+        static readonly string[] MaskRust = {
+            ".........",
+            "....b....",
+            "...bbb...",
+            "..bb.bb..",
+            ".bb.bbb..",
+            ".b..bb.b.",
+            "..bbb.b..",
+            "...bb....",
+            ".........",
+        };
+        static readonly string[] MaskStar = {
+            ".........",
+            "....w....",
+            "...www...",
+            ".wwwwwww.",
+            "..wwwww..",
+            "...w.w...",
+            "..w...w..",
+            ".........",
+            ".........",
+        };
+        static readonly string[] MaskShare = {
+            ".........",
+            "....ww...",
+            "...w.w...",
+            "..w..w...",
+            ".....w...",
+            "...www...",
+            "..w.w.w..",
+            "..wwwww..",
+            ".........",
+        };
+        static readonly string[] MaskInfo = {
+            ".........",
+            "...w.....",
+            "...w.....",
+            ".........",
+            "..www....",
+            "...w.....",
+            "...w.....",
+            "..www....",
+            ".........",
+        };
+        static readonly string[] MaskMoon = {
+            ".........",
+            "....gg...",
+            "...gg....",
+            "..gg.....",
+            "..gg.....",
+            "..gg.....",
+            "...gg....",
+            "....gg...",
+            ".........",
+        };
+        static readonly string[] MaskBell = {
+            ".........",
+            "...gg....",
+            "..gggg...",
+            "..gggg...",
+            ".gggggg..",
+            ".gggggg..",
+            "..gggg...",
+            "...gg....",
+            ".........",
+        };
+        static readonly string[] MaskCheck = {
+            ".........",
+            "......w..",
+            ".....ww..",
+            "w...ww...",
+            "ww.ww....",
+            ".www.....",
+            ".........",
+            ".........",
+            ".........",
+        };
+        static readonly string[] MaskX = {
+            ".........",
+            ".r...r...",
+            "..r.r....",
+            "...r.....",
+            "..r.r....",
+            ".r...r...",
+            ".........",
+            ".........",
+            ".........",
+        };
+        static readonly string[] MaskCoin = {
+            ".........",
+            "..gggg...",
+            ".gwwwdg..",
+            ".gwwddg..",
+            ".gwdddg..",
+            ".gddddg..",
+            "..gggg...",
+            ".........",
+            ".........",
+        };
+        static readonly string[] MaskPlus = {
+            ".........",
+            "...nn....",
+            "...nn....",
+            ".nnnnnn..",
+            ".nnnnnn..",
+            "...nn....",
+            "...nn....",
+            ".........",
+            ".........",
+        };
 
         /// <summary>Joystick base ring.</summary>
         public static Sprite Ring()
@@ -665,11 +1144,25 @@ namespace MoonThief
             return _alert;
         }
 
+        /// <summary>"z" drifted off a sleeping beast: top bar, diagonal, bottom bar (y=0 row).</summary>
+        public static Sprite SleepZ()
+        {
+            if (_sleepZ == null)
+            {
+                _sleepZ = Make("sleepz", 5, 5, (x, y) =>
+                {
+                    bool ink = y == 0 || y == 4 || x + y == 4;
+                    return ink ? new Color32(178, 196, 242, 255) : new Color32(0, 0, 0, 0);
+                }, Vector4.zero);
+            }
+            return _sleepZ;
+        }
+
         public static void ClearCache()
         {
             _tex.Clear(); _sprite.Clear(); _grid.Clear();
             _solid = _panel = _shadow = _glow = _moon = _spark = _chevron = _moonFull = _ring = _dot = null;
-            _night = _vignette = _stars = _star = _alert = null;
+            _night = _vignette = _stars = _star = _alert = _sleepZ = null;
         }
     }
 }

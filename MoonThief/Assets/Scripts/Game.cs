@@ -26,11 +26,24 @@ namespace MoonThief
             public static int Xp;
             public static int ChestsOpened;    // the first few drops are always shards
             public static int Defeats;         // wild beasts put down (drives the nightwatch quests)
+            public static int NgPlus;          // how many times the tale has been told: each retelling bites deeper
+            // fights settled on a kinder difficulty; IRON THIEF only honours a telling
+            // where every blade was drawn on hard, so the medal cannot be bought at the door
+            public static int EasyFights;
+            // fights opened from the dark - SHADOW honours a thief the wild never saw
+            public static int Ambushes;
 
             // ---- the journal: the bag, what is worn, what has been seen, what has been done ----
             public static readonly List<string> Bag = new List<string>();          // item keys, repeats allowed
+            public static readonly List<string> Friends = new List<string>();      // befriended species keys (max 2)
+            // the company: hero keys whose recruiting talks have run (amber is always in,
+            // so it is not stored). Drives both the battle party and the trail walkers.
+            public static readonly HashSet<string> Joined = new HashSet<string>();
             public static readonly string[] Worn = new string[3];                  // blade, cloth, charm
             public static readonly List<string> Zones = new List<string>();        // places walked into
+            public static string CurZone = "village";                              // the zone the hero stands in now
+            public static string ObjZone;                                          // the zone the compass points at
+            public static readonly List<string> ChestsDone = new List<string>();   // chests already opened
             public static readonly Dictionary<string, int> Seen = new Dictionary<string, int>();
 
             public static int Level => 1 + Xp / 40;
@@ -39,9 +52,11 @@ namespace MoonThief
             public static void NewRun()
             {
                 Chapter = 1; MoonShards = 0; Befriended = 0; HeldItems = 0; MorselsUsed = 0;
-                Gold = 0; Xp = 0; ChestsOpened = 0; Defeats = 0;
+                Gold = 0; Xp = 0; ChestsOpened = 0; Defeats = 0; NgPlus = 0; EasyFights = 0;
+                Ambushes = 0;
                 Bag.Clear(); Worn[0] = Worn[1] = Worn[2] = null;
-                Zones.Clear(); Seen.Clear();
+                Zones.Clear(); Seen.Clear(); ChestsDone.Clear(); Friends.Clear();
+                Joined.Clear();
                 Quests.Reset();
             }
 
@@ -71,10 +86,35 @@ namespace MoonThief
                 return n;
             }
 
-            /// <summary>Records a place the hero has walked into (drives the bard's quest).</summary>
-            public static void NoteZone(string key)
+            /// <summary>A chest's resting place names it: the chapter it stands in and its cell.
+            /// Chests stay open across a save, so the field cannot be farmed by reloading.</summary>
+            public static string ChestKey(int chapter, Vector2Int cell) => chapter + ":" + cell.x + "," + cell.y;
+            public static bool HasChest(int chapter, Vector2Int cell) => ChestsDone.Contains(ChestKey(chapter, cell));
+            public static void MarkChest(int chapter, Vector2Int cell)
             {
-                if (!string.IsNullOrEmpty(key) && !Zones.Contains(key)) Zones.Add(key);
+                var k = ChestKey(chapter, cell);
+                if (!ChestsDone.Contains(k)) ChestsDone.Add(k);
+            }
+            /// <summary>A house cache keys on its room, not the night: "h3:14,21". The shard
+            /// economy stays chapter-scoped; the larder stays where it lives.</summary>
+            public static bool HasChestKey(string key) => ChestsDone.Contains(key);
+            public static void MarkChestKey(string key) { if (!ChestsDone.Contains(key)) ChestsDone.Add(key); }
+
+            /// <summary>Field chests already spent inside one chapter (the "ch:x,y" keys - a
+            /// house cache's "hN:x,y" key never matches the chapter prefix).</summary>
+            public static int ChestsOpenedIn(int chapter)
+            {
+                string p = chapter + ":"; int n = 0;
+                foreach (var k in ChestsDone) if (k.StartsWith(p)) n++;
+                return n;
+            }
+
+            /// <summary>Records a place the hero has walked into (drives the bard's quest).
+            /// True only on the first visit, so a zone banner can fire once, ever.</summary>
+            public static bool NoteZone(string key)
+            {
+                if (!string.IsNullOrEmpty(key) && !Zones.Contains(key)) { Zones.Add(key); return true; }
+                return false;
             }
 
             /// <summary>The most filling food in the bag, or null. The battle's Morsel command eats
@@ -92,10 +132,86 @@ namespace MoonThief
                 return best;
             }
 
-            public static void MarkSeen(string monKey)
+            /// <summary>Which dish the table should pass around: the cure before the feast.
+            /// A stung company wants the honey that draws out venom, a dazed one the tea that
+            /// wakes it; a merely hungry one gets the smallest plate that covers the deepest
+            /// wound, so the pie is not spent on a scratch.</summary>
+            public static string FoodFor(bool poisoned, bool dazed, float missing)
             {
-                if (string.IsNullOrEmpty(monKey)) return;
-                Seen[monKey] = (Seen.TryGetValue(monKey, out var v) ? v : 0) + 1;
+                string best = null, small = null, soup = null;
+                int bestPow = 0, smallPow = int.MaxValue, soupPow = int.MaxValue;
+                foreach (var b in Bag)
+                {
+                    var d = Items.Get(b);
+                    if (d.Kind != ItemKind.Food) continue;
+                    if (poisoned && (b == "item.honey" || b == "item.starlight")) return b;
+                    if (dazed && (b == "item.tea" || b == "item.mead")) return b;
+                    if (d.Power > bestPow) { best = b; bestPow = d.Power; }
+                    if (d.Power < missing) continue;
+                    if (d.Power < smallPow) { small = b; smallPow = d.Power; }
+                    // a bowl that covers the wound AND feeds the moonflow beats plain fare at
+                    // the same table - the morsel's pick should play the whole kitchen
+                    if (Items.SoupKeys.Contains(b) && d.Power < soupPow) { soup = b; soupPow = d.Power; }
+                }
+                // the family pot only wins when it heals as well as the plain pick would have
+                if (soup != null && (small == null || soupPow <= smallPow)) return soup;
+                return small ?? best;
+            }
+
+            /// <summary>Records a species in the book - true only the first time it is met this
+            /// telling. The guide itself is a lifelong book: every species it has ever named is
+            /// kept beside the medals, so a beast met in an earlier night is never a stranger
+            /// again. Seen still counts only this run's sightings - the card's "first" stays
+            /// honest per telling, and the book's * counts species never named before.</summary>
+            public static bool MarkSeen(string monKey)
+            {
+                if (string.IsNullOrEmpty(monKey)) return false;
+                LoadBeastHist();
+                if (_beastHist.Add(monKey))
+                {
+                    PlayerPrefs.SetString("mt.beasts", JoinedHist());
+                    PlayerPrefs.Save();
+                }
+                bool first = !Seen.ContainsKey(monKey);
+                Seen[monKey] = first ? 1 : Seen[monKey] + 1;
+                return first;
+            }
+
+            static readonly HashSet<string> _beastHist = new HashSet<string>();
+            static bool _beastHistLoaded;
+
+            static void LoadBeastHist()
+            {
+                if (_beastHistLoaded) return;
+                _beastHistLoaded = true;
+                foreach (var s in PlayerPrefs.GetString("mt.beasts", "").Split(','))
+                    if (s.Length > 0) _beastHist.Add(s);
+            }
+
+            static string JoinedHist()
+            {
+                var s = "";
+                foreach (var m in _beastHist) s += (s.Length == 0 ? "" : ",") + m;
+                return s;
+            }
+
+            /// <summary>Has the guide ever named this species - this telling or any before?</summary>
+            public static bool EverSeen(string monKey)
+            {
+                LoadBeastHist();
+                return _beastHist.Contains(monKey) || Seen.ContainsKey(monKey);
+            }
+
+            /// <summary>How many species the guide holds, all tellings counted once each.</summary>
+            public static int EverCount
+            {
+                get
+                {
+                    LoadBeastHist();
+                    int n = _beastHist.Count;
+                    foreach (var k in Seen.Keys) if (!_beastHist.Contains(k)) n++;
+                    return n;
+                }
             }
 
             /// <summary>Equipment bonuses, read by the battle so the journal is not decoration.</summary>
@@ -131,15 +247,41 @@ namespace MoonThief
                 }
             }
 
-            public static SaveData Capture(float heroX, float heroY) => new SaveData
+            /// <summary>Charms quicken the wearer's hands a little — enough to matter at the turn queue.</summary>
+            public static float BonusSpd
+            {
+                get
+                {
+                    int n = 0;
+                    for (int i = 0; i < 3; i++)
+                    {
+                        if (string.IsNullOrEmpty(Worn[i])) continue;
+                        var d = Items.Get(Worn[i]);
+                        if (d.Kind == ItemKind.Charm) n += d.Power;
+                    }
+                    return n * 0.12f;
+                }
+            }
+
+            public static SaveData Capture(float heroX, float heroY, bool bossDown) => new SaveData
             {
                 chapter = Chapter, shards = MoonShards, befriended = Befriended,
                 gold = Gold, xp = Xp, morsels = MorselsUsed, items = HeldItems,
                 chestsOpened = ChestsOpened, heroX = heroX, heroY = heroY,
-                defeats = Defeats, bag = Bag.ToArray(), worn = (string[])Worn.Clone(),
+                defeats = Defeats, bossDown = bossDown, ngp = NgPlus,
+                easyFights = EasyFights, ambushes = Ambushes,
+                bag = Bag.ToArray(), worn = (string[])Worn.Clone(),
+                friends = Friends.ToArray(), joined = JoinedArray(),
                 zones = Zones.ToArray(), quests = Quests.Capture(),
-                seen = SeenKeys(),
+                seen = SeenKeys(), chests = ChestsDone.ToArray(),
             };
+
+            static string[] JoinedArray()
+            {
+                var list = new List<string>();
+                foreach (var j in Joined) list.Add(j);
+                return list.ToArray();
+            }
 
             static string[] SeenKeys()
             {
@@ -160,6 +302,9 @@ namespace MoonThief
                 HeldItems = Mathf.Max(0, d.items);
                 ChestsOpened = Mathf.Max(0, d.chestsOpened);
                 Defeats = Mathf.Max(0, d.defeats);
+                EasyFights = Mathf.Max(0, d.easyFights);
+                Ambushes = Mathf.Max(0, d.ambushes);
+                NgPlus = Mathf.Max(0, d.ngp);
 
                 Bag.Clear();
                 if (d.bag != null) foreach (var b in d.bag) if (!string.IsNullOrEmpty(b)) Bag.Add(b);
@@ -176,6 +321,14 @@ namespace MoonThief
                         int n;
                         if (p.Length == 2 && int.TryParse(p[1], out n)) Seen[p[0]] = n;
                     }
+                ChestsDone.Clear();
+                if (d.chests != null) foreach (var k in d.chests) if (!string.IsNullOrEmpty(k) && !ChestsDone.Contains(k)) ChestsDone.Add(k);
+                Friends.Clear();
+                if (d.friends != null) foreach (var f in d.friends)
+                    if (!string.IsNullOrEmpty(f) && Friends.Count < 2) Friends.Add(f);
+                Joined.Clear();
+                if (d.joined != null) foreach (var j in d.joined)
+                    if (!string.IsNullOrEmpty(j)) Joined.Add(j);
                 Quests.Apply(d.quests);
             }
         }
@@ -184,6 +337,9 @@ namespace MoonThief
 
         public St Phase { get; private set; } = St.Splash;
         public bool EditorMode;
+        /// <summary>A creep held down by script rather than by a finger, for passes that
+        /// need to prove the prowling sight radius without a real key on the board.</summary>
+        public bool EditorSneak;
         public static bool SelfTestMode;
         public static string SelfTestDir;
 
@@ -197,16 +353,32 @@ namespace MoonThief
         public float HalfH { get; private set; }
 
         bool _paused;
-        bool _metMira;
-        bool _hintTalk = true, _hintChest = true;
+        /// <summary>Whether Mira's first talk has happened - read off the quest itself, so a
+        /// save loaded mid-rung-one still shows rung one (the old flag was forced true on
+        /// every load and skipped the opening step).</summary>
+        bool MetMira => Quests.Step("mq.1") == 3;
+        readonly HashSet<string> _metNpcs = new HashSet<string>();
+        bool _hintTalk, _hintChest, _hintSneak, _hintDoor;   // one-off lessons - set from Prefs.Hints at run start
+        int _aggroWas;          // hunters with the scent last frame - the rising edge speaks
+        float _aggroBarkT;      // the company's nerves take a breath between warnings
+        float _dozeBarkT;       // a hush over a sleeping one is whispered once per approach
+        float _sneakDuck = 1f;  // the band's volume while the thief holds his breath
+        float _hintT;                                            // countdown for the deferred chapter toast
+        string _hintKey;
+        float _barkT = 30f;                                      // companion banter: first quip half a minute in
+        float _owlT = 16f;                                       // the far-off owl: first hoot quarter a minute in
+        float _fireT = 2f;                                       // the hearth's crackle, for rooms that keep one
+        bool _barkSwap;
         PixelLabel _hudQuest;
+        SpriteRenderer _hudQuestChip;
         Vector2? _resumePos;
         System.Action _afterScreen;
 
         Transform _titleRoot, _endRoot;
-        PixelLabel _titleName, _titleTag, _titleTap, _titleEnd, _endLines, _tapHint;
+        PixelLabel _titleName, _titleTag, _titleTap, _titleEnd, _endLines, _endStats, _tapHint;
         Transform _titleMoon, _endMoon;
-        SpriteRenderer _endGlow;
+        SpriteRenderer _endGlow, _endSky;
+        float _endRise;      // 1 once the moon has climbed and the bob can take over
         Transform _fadeRoot;
         SpriteRenderer _fade;
         Transform _joyRoot;
@@ -217,23 +389,29 @@ namespace MoonThief
         Vector2 _joyCenter;
         bool _joyTouch;
         int _joyFinger = -1;
-        float _joyRadius = 1.6f;
         Vector2 _joyVec;
         // a deliberate tap on the world: pressed and released without dragging
         bool _tapPending;
-        Vector2 _tapStage;
         int _tapFinger = -1;
         Vector2 _tapStart;
         float _tapTime;
         bool _tapMoved;
-        PixelLabel _dlgText, _dlgName, _hudZone, _hudShards;
-        SpriteRenderer _dlgPanel, _dlgPanelName, _dlgPortrait;
-        bool _dlgOpen;
+        PixelLabel _dlgText, _dlgName, _dlgNext, _hudZone;
+        Transform _dlgSheet;           // the box's contents: rises into place when a talk opens
+        int _dlgChars;
+        SpriteRenderer _dlgPanel, _dlgPanelName, _dlgPortrait, _dlgPortPlate;
+        /// <summary>While the talk box is up the wild holds its breath too - a beast that
+        /// walked up mid-conversation used to be waiting at your heels the moment the last
+        /// line closed. Read by the world, set with the talk box.</summary>
+        public static bool DialogOpen;
+        bool _dlgOpen { get => DialogOpen; set => DialogOpen = value; }
         string[] _dlgLines;
         int _dlgIndex;
+        System.Action _dlgThen;   // queued by a scripted talk (the boss taunt) to fire when it closes
         NpcDef _dlgNpc;
         float _encounterCooldown = 3f;
         bool _bossDown;
+        bool _bossFocus;          // the gatekeeper talk pulls the camera toward it
         bool _ending;
 
         // ---- houses: a second WorldView for the room, kept alive while the street waits ----
@@ -241,12 +419,17 @@ namespace MoonThief
         Transform _houseRoot;
         GameMap _houseMap;
         bool _inHouse;
+        // selftest only: boss walks must not be diverted through a front door - a hero who
+        // ducks inside a house keeps steering for a BossPos that lives on the other map
+        bool _testNoDoors;
+        Vector2 _prevHero;      // selftest steering: where the hero stood last frame
+        int _stuck;             // ...and how many frames it has gone nowhere
+        readonly HashSet<int> _shotFight = new HashSet<int>();   // nights already photographed mid-fight
+        bool _shotMoon;                                          // moonlit-label shot already taken
         int _houseIndex = -1;
         Vector2 _doorReturn;          // where to stand when the door closes behind you
         float _doorCooldown;
         string _questLineRaw;         // the last objective line, kept while indoors
-
-        int _selDialog = 0;   // 0 = talk, 1 = close
 
         // ------------------------------------------------------------ lifecycle
 
@@ -266,6 +449,12 @@ namespace MoonThief
         void Start()
         {
             if (EditorMode) return;
+            // a phone's Unity default is 30fps - everything here reads sluggish at 30.
+            // 60 is the target every animation is timed for.
+            Application.targetFrameRate = 60;
+            // a fight can play itself while hands are off the glass; the dark dimming
+            // mid-battle reads as the game stalling, so the display stays awake
+            Screen.sleepTimeout = SleepTimeout.NeverSleep;
             if (!Application.isMobilePlatform && !Application.isEditor)
                 Screen.SetResolution(576, 1024, false);
             BuildAll(Application.isMobilePlatform ? ComputeHalfHeight() : 16f);
@@ -312,18 +501,33 @@ namespace MoonThief
             if (!toBlack) _fadeRoot.gameObject.SetActive(false);
         }
 
-        /// <summary>Dip to black, run the scene switch, dissolve back in.</summary>
+        /// <summary>Dip to black, run the scene switch, dissolve back in. Transitions are
+        /// serialized: two overlapping ones used to drive the same fade quad from two
+        /// coroutines at once - black ramps fighting ramps reads as a strobe, and both
+        /// middles still ran (which is how a queued battle's setup survived under a
+        /// teardown fade). Callers keep their order; each waits for the one ahead.</summary>
         void DoTransition(System.Action middle, float outDur = 0.25f, float inDur = 0.35f)
         {
             if (!Application.isPlaying || _fadeRoot == null) { middle?.Invoke(); return; }
-            StartCoroutine(CoTransition(middle, outDur, inDur));
+            _transQueue.Enqueue(new TransReq{ Middle = middle, Out = outDur, In = inDur });
+            if (!_transRunning) StartCoroutine(CoPumpTransitions());
         }
 
-        IEnumerator CoTransition(System.Action middle, float outDur, float inDur)
+        struct TransReq { public System.Action Middle; public float Out; public float In; }
+        readonly Queue<TransReq> _transQueue = new Queue<TransReq>();
+        bool _transRunning;
+
+        IEnumerator CoPumpTransitions()
         {
-            yield return CoFade(true, outDur);
-            middle?.Invoke();
-            yield return CoFade(false, inDur);
+            _transRunning = true;
+            while (_transQueue.Count > 0)
+            {
+                var req = _transQueue.Dequeue();
+                yield return CoFade(true, req.Out);
+                req.Middle?.Invoke();
+                yield return CoFade(false, req.In);
+            }
+            _transRunning = false;
         }
 
         /// <summary>Individual 3x3 stars at 1:1 pixel scale (a stretched star sheet renders
@@ -381,6 +585,10 @@ namespace MoonThief
             var curPos = cam + (Vector3)ScreenToStage(_joyCur);
             var d = Vector2.ClampMagnitude(curPos - basePos, 1.6f);
             _joyKnob.transform.localPosition = new Vector3(basePos.x + d.x, basePos.y + d.y, 0f);
+            // the knob itself teaches the gait: a half-push glows dusk-blue, a full push
+            // burns white - the creep band is something you feel through the thumb
+            _joyKnob.color = World.Sneaking
+                ? new Color(0.55f, 0.62f, 1f, 0.6f) : new Color(1f, 1f, 1f, 0.55f);
         }
 
         public static float ComputeHalfHeight()
@@ -443,8 +651,10 @@ namespace MoonThief
             Director.OnBattleWon = OnEncounterWon;
             Director.OnBossWon = OnBossDefeated;
             Director.OnDefeat = OnRunLost;
+            Director.OnFled = OnEncounterWon;   // same way back: the wild things settle again
 
             Sfx.Init(transform);
+            Sfx.Mus.Init(transform);
             BuildFade();
             BuildJoy();
             BuildTitle();
@@ -459,8 +669,18 @@ namespace MoonThief
             Menus.OnResume = ClosePause;
             Menus.OnSaveGame = SaveRun;
             Menus.OnLeaveToTitle = LeaveToTitle;
-            Menus.OnSplashDone = ShowTitle;
+            Menus.OnSplashDone = SplashDone;
             Menus.OnIntroDone = OnScreenDone;
+            Menus.OnOnboardDone = OnboardDone;
+            Menus.OnShopClosed = ClosePause;
+            Menus.OnStory = ReplayStory;
+            Menus.OnReleaseFriend = key => { if (World != null) World.ReleaseFriend(key); Medals.Grant("fleet"); SaveRun(); };
+            // the journal's world map reads the live overworld through these three hooks;
+            // indoors they hand back nothing and the card falls back to its last picture
+            Menus.GetMap = () => World != null && World.Map != null && !World.Map.Interior ? World.Map : null;
+            Menus.GetHeroPos = () => World != null && World.Map != null && !World.Map.Interior ? (Vector2?)World.HeroPos : null;
+            Menus.GetObjectivePos = () => ObjectivePos();
+            Menus.GetChests = () => World != null && World.Map != null && !World.Map.Interior ? World.ShutChestPos() : null;
         }
 
         void BuildTitle()
@@ -517,6 +737,7 @@ namespace MoonThief
             sky.transform.localPosition = new Vector3(0f, 0f, 0f);
             sky.transform.localScale = new Vector3(18f * 16f, (HalfH * 2f + 2f) * 16f, 1f);
             sky.color = new Color(0.09f, 0.09f, 0.2f, 1f);
+            _endSky = sky;
 
             var moon = SpriteRendererUtil.Make(_endRoot, "moonFull", TexArt.MoonFull(), 98);
             moon.transform.localPosition = new Vector3(0f, HalfH - 4.2f, 0f);
@@ -535,9 +756,15 @@ namespace MoonThief
             _endLines.transform.localPosition = new Vector3(0f, HalfH - 10f, 0f);
             _endLines.MaxWidthUnits = 15.5f;
 
+            // the run's ledger, set small under the epilogue: level, friends made, gold kept
+            _endStats = PixelLabelUtil.Make(_endRoot, "endStats", 1, new Color(0.78f, 0.8f, 0.95f), TextAlign.Center, 100);
+            // three lines now: stats + the "night dreams again" promise - kept above the tap hint
+            _endStats.transform.localPosition = new Vector3(0f, -HalfH + 6.6f, 0f);
+
             _tapHint = PixelLabelUtil.Make(_endRoot, "endTap", 2, new Color(1f, 0.88f, 0.5f), TextAlign.Center, 100);
-            _tapHint.transform.localPosition = new Vector3(0f, -HalfH + 4.2f, 0f);
-            _tapHint.Set(Strings.Get("title.tap"));
+            _tapHint.MaxWidthUnits = 16f;   // an unbounded wrap box reads as text at the frame edge
+            _tapHint.transform.localPosition = new Vector3(0f, -HalfH + 3.9f, 0f);
+            _tapHint.Set(Strings.Get("end.tap"));
             _endRoot.gameObject.SetActive(false);
         }
 
@@ -545,13 +772,17 @@ namespace MoonThief
         {
             var root = new GameObject("Dialog").transform;
             root.SetParent(StageRoot, false);
-            _dlgPanel = SpriteRendererUtil.Make(root, "dlgPanel", TexArt.Panel(), 3000);
+            // the box rides the camera on the root; the sheet under it is what rises into
+            // place when a talk opens, so the cam write never fights the entrance
+            _dlgSheet = new GameObject("sheet").transform;
+            _dlgSheet.SetParent(root, false);
+            _dlgPanel = SpriteRendererUtil.Make(_dlgSheet, "dlgPanel", TexArt.Panel(), 3000);
             _dlgPanel.drawMode = SpriteDrawMode.Sliced;
             _dlgPanel.transform.localScale = Vector3.one;
             _dlgPanel.size = new Vector2(17.4f, DialogMinH);
 
-            _dlgName = PixelLabelUtil.Make(root, "dlgName", 1, new Color(1f, 0.9f, 0.6f), TextAlign.Left, 3002);
-            _dlgText = PixelLabelUtil.Make(root, "dlgText", 2, new Color(1f, 0.97f, 0.88f), TextAlign.Left, 3002);
+            _dlgName = PixelLabelUtil.Make(_dlgSheet, "dlgName", 1, new Color(1f, 0.9f, 0.6f), TextAlign.Left, 3002);
+            _dlgText = PixelLabelUtil.Make(_dlgSheet, "dlgText", 2, new Color(1f, 0.97f, 0.88f), TextAlign.Left, 3002);
             // 14.4 units of body: 19 characters per line at scale 2, and no line ever reaches the
             // box edge. The old 13.2 packed 17 characters into every row and the box was a fixed
             // 5.6 units tall, so a four-line line of dialog ended exactly on the bottom border and
@@ -559,11 +790,23 @@ namespace MoonThief
             _dlgText.MaxWidthUnits = 14.4f;
             _dlgText.RevealSpeed = 55f;
 
-            // speaker portrait: the NPC's own overworld sheet, scaled up inside the box
-            _dlgPortrait = SpriteRendererUtil.Make(root, "dlgPortrait", null, 3001);
+            // speaker portrait: the NPC's own overworld sheet, scaled up inside the box,
+            // framed by its own small plate and name tag instead of floating on the panel
+            _dlgPortPlate = SpriteRendererUtil.Make(_dlgSheet, "dlgPortPlate", TexArt.Panel(), 3000);
+            _dlgPortPlate.drawMode = SpriteDrawMode.Sliced;
+            _dlgPortPlate.color = new Color(0.92f, 0.88f, 1f);
+            _dlgPanelName = SpriteRendererUtil.Make(_dlgSheet, "dlgPanelName", TexArt.Panel(), 3001);
+            _dlgPanelName.drawMode = SpriteDrawMode.Sliced;
+            _dlgPanelName.color = new Color(0.78f, 0.72f, 0.95f);
+            _dlgPortrait = SpriteRendererUtil.Make(_dlgSheet, "dlgPortrait", null, 3001);
             // 3.0, not 3.4: the pack's chara cell is 16 px wide, so 3.4 grew the portrait to 54 px
             // and its right edge landed 3 px *past* the first letter of the line it introduces.
             _dlgPortrait.transform.localScale = Vector3.one * 3f;
+
+            // the "there is more" tick at the box's bottom corner - lit once a line is done
+            // spelling itself out, blink-bobbing so a waiting tap is obvious
+            _dlgNext = PixelLabelUtil.Make(_dlgSheet, "dlgNext", 1, new Color(1f, 0.85f, 0.5f), TextAlign.Right, 3002);
+            _dlgNext.Set("v");
 
             LayoutDialogBox("");
             root.gameObject.SetActive(false);
@@ -585,9 +828,16 @@ namespace MoonThief
             _dlgPanel.transform.localPosition = new Vector3(0f, bottom + h * 0.5f, 0f);
             // the portrait owns the left column (G.Left+0.3 .. G.Left+3.3) and the text starts
             // 0.2 units clear of its edge, whatever NPC is speaking
-            _dlgName.transform.localPosition = new Vector3(G.Left + 3.5f, top - 0.5f, 0f);
+            _dlgName.transform.localPosition = new Vector3(G.Left + 3.9f, top - 0.5f, 0f);
+            _dlgPanelName.size = new Vector2(_dlgName.MeasureWidth(_dlgName.Text) + 0.4f, 1.35f);
+            _dlgPanelName.transform.localPosition = new Vector3(G.Left + 3.7f + _dlgPanelName.size.x * 0.5f, top - 0.5f, 0f);
             _dlgText.transform.localPosition = new Vector3(G.Left + 3.5f, top - 1.15f, 0f);
-            _dlgPortrait.transform.localPosition = new Vector3(G.Left + 1.75f, bottom + 2.1f, 0f);
+            _dlgPortrait.transform.localPosition = new Vector3(G.Left + 1.85f, bottom + 2.1f, 0f);
+            _dlgPortPlate.size = new Vector2(3.0f, 3.6f);
+            _dlgPortPlate.transform.localPosition = new Vector3(G.Left + 1.85f, bottom + 2.1f, 0f);
+            // raised off the very bottom edge of the card: at +0.35 the blinking tip rode the
+            // last two pixels of the screen and the frame audit calls that an EDGE defect
+            _dlgNext.transform.localPosition = new Vector3(G.Right - 0.7f, bottom + 0.62f, 0f);
         }
 
         Transform DialogRoot { get; set; }
@@ -609,6 +859,33 @@ namespace MoonThief
             Menus.ShowSplash();
         }
 
+        /// <summary>Splash is done. The three onboarding cards play exactly once ever -
+        /// after that, the title screen is the door in.</summary>
+        void SplashDone()
+        {
+            if (!Prefs.OnbSeen) Menus.ShowOnboard();
+            else ShowTitle();
+        }
+
+        void OnboardDone()
+        {
+            Prefs.OnbSeen = true;
+            Prefs.Store();
+            // a replay asked for from the settings card hands the player back to
+            // that card; the once-ever run lands on the title as always
+            if (Menus.OnboardReturn != null) { var r = Menus.OnboardReturn; Menus.OnboardReturn = null; r(); }
+            else ShowTitle();
+        }
+
+        /// <summary>STORY on the main menu replays the intro reel and returns to the menu.</summary>
+        void ReplayStory()
+        {
+            Phase = St.Cinema;
+            _afterScreen = ShowTitle;
+            Sfx.Mus.Play("cinema");
+            Menus.ShowCinema(0);
+        }
+
         /// <summary>The main menu (title art + the row list).</summary>
         public void ShowTitle()
         {
@@ -621,7 +898,10 @@ namespace MoonThief
             DialogRoot.gameObject.SetActive(false);
             _dlgOpen = false;
             _paused = false;
+            Time.timeScale = 1f;   // belt and suspenders: title is the universal unwind
             _titleTap.gameObject.SetActive(false);   // the menu rows replace the old tap hint
+            _titleEnd.gameObject.SetActive(false);   // and the footer: the last row shears it
+            Sfx.Mus.Play("title");
             Menus.ShowMain();
         }
 
@@ -646,11 +926,30 @@ namespace MoonThief
 
         float _camEx, _camEy;
 
+        // a banner and a toast draw in the same top strip. holdNotice is only refreshed in
+        // Update, so a toast fired in the same frame as the banner would see the stale flag
+        // and land under the rising card - raise the hold right here, in the same call.
+        void ShowZoneBanner(string text)
+        {
+            World.ShowBanner(text);
+            if (Menus != null) Menus.HoldToasts = true;
+        }
+
         void FollowHero()
         {
-            if (World?.Map == null) return;
+            // plain == on purpose: WorldView is a UnityEngine.Object, and ?. would ride
+            // straight into members of a Destroy()'ed view instead of seeing it as null
+            if (World == null || World.Map == null) return;
             float tx = Mathf.Clamp(World.HeroPos.x, 9f, GameMap.W - 9f);
             float ty = Mathf.Clamp(World.HeroPos.y, HalfH - 2f, GameMap.H - HalfH + 2f);
+            if (_bossFocus && World.Map != null)
+            {
+                // while the gatekeeper speaks, the frame drifts to hold both of you -
+                // the slow push-in does the work a cutscene border would
+                var b = World.Map.BossPos;
+                tx = Mathf.Clamp((World.HeroPos.x + b.x) * 0.5f, 9f, GameMap.W - 9f);
+                ty = Mathf.Clamp((World.HeroPos.y + b.y) * 0.5f, HalfH - 2f, GameMap.H - HalfH + 2f);
+            }
             // The camera trails the hero instead of being welded to her. A hard follow turns every
             // step into a screen-wide snap (the whole village jumps one pixel with her), and the
             // ease is what makes a walk read as walking. SetCam still snaps the result to the
@@ -671,12 +970,39 @@ namespace MoonThief
             World.RefreshNamePlates();
         }
 
+        /// <summary>The medal case's pulse: any system can Grant() into the queue (battle,
+        /// chests, the ending); each frame drains one announcement into the toast lane so a
+        /// fight that earns three medals reads as three moments, not a stack. The count-led
+        /// medals (caches, coin, company, the full errand book) are judged here where the
+        /// numbers live.</summary>
+        void MedalTick()
+        {
+            string m;
+            while ((m = Medals.Dequeue()) != null)
+            {
+                Menus.ShowToast(Strings.Get("md.earn", Strings.Get("md." + m)), 4f);
+                Sfx.Play("questdone");
+            }
+            if (State.ChestsOpened >= 10) Medals.Grant("hoard");
+            if (State.Gold >= 300) Medals.Grant("rich");
+            if (State.Friends.Count >= 2) Medals.Grant("army");
+            if (Medals.Has("boss1") && Medals.Has("boss2") && Medals.Has("boss3")) Medals.Grant("keeper");
+            int sideLeft = 0;
+            foreach (var q in Quests.All) if (!q.Main && Quests.Step(q.Id) != 3) sideLeft++;
+            if (sideLeft == 0) Medals.Grant("warden");
+        }
+
         void BeginRun()
         {
             State.NewRun();
-            _metMira = false;
-            _hintTalk = true;
-            _hintChest = true;
+            Medals.EarnedThisRun = 0;
+
+            // each lesson whispers once per player, not once per night - a second
+            // run doesn't need telling what the first already taught
+            _hintTalk = (Prefs.Hints & 1) == 0;
+            _hintChest = (Prefs.Hints & 2) == 0;
+            _hintSneak = (Prefs.Hints & 4) == 0;
+            _hintDoor = (Prefs.Hints & 8) == 0;
             _bossDown = false;
             _ending = false;
             _resumePos = null;
@@ -690,7 +1016,8 @@ namespace MoonThief
             // a new run always opens with the story, even if it was seen before
             Phase = St.Cinema;
             _afterScreen = () => StartChapter(1);
-            Menus.ShowCinema(1);
+            Sfx.Mus.Play("cinema");
+            Menus.ShowCinema(0);
         }
 
         /// <summary>Chapter intro card, then the world. The card is skipped in the editor
@@ -700,6 +1027,11 @@ namespace MoonThief
             State.Chapter = chapter;
             _bossDown = false;
             _ending = false;
+
+            // the main line accepts itself - nobody hands you these errands, so nothing
+            // else ever set their step and the journal read NEW on all three all run long
+            if (Quests.Step("mq.1") == 0) Quests.Accept(Quests.Find("mq.1"));
+            if (chapter >= 3 && Quests.Step("mq.3") == 0) Quests.Accept(Quests.Find("mq.3"));
 
             if (SelfTestMode || EditorMode || !Application.isPlaying)
             {
@@ -713,6 +1045,7 @@ namespace MoonThief
             Phase = St.Cinema;
             SetCam(0f, 0f);
             _afterScreen = () => BuildChapterNow(chapter);
+            Sfx.Mus.Play("cinema");
             Menus.ShowChapterCard(chapter);
         }
 
@@ -720,6 +1053,27 @@ namespace MoonThief
         {
             // a clean shutdown must always be explainable; the stack says who asked for it
             Debug.Log("[game] quitting. phase=" + Phase + "\n" + System.Environment.StackTrace);
+            ParkProgress();
+        }
+
+        void OnApplicationPause(bool paused)
+        {
+            // a phone call or the home button should never cost a night of thieving
+            if (paused) ParkProgress();
+        }
+
+        void OnApplicationFocus(bool focused)
+        {
+            // alt-tab on a desktop loses the window the same way a call loses the phone
+            if (!focused) ParkProgress();
+        }
+
+        /// <summary>Park the run wherever it stands. Only the live play phases have a run
+        /// worth writing - menus, cinema and the ending have nothing to lose.</summary>
+        void ParkProgress()
+        {
+            if (Phase == St.Explore || Phase == St.Battle || _inHouse)
+                SaveRun();
         }
 
         void BuildChapterNow(int chapter)
@@ -746,10 +1100,22 @@ namespace MoonThief
                 World.MapChapter = chapter;
                 _overworld = World;
             }
+            // a card can leave world text hushed when it hands control back (pause ->
+            // leave to title -> continue reuses this same WorldView)
+            World.SetTextVisible(true);
             World.PlaceHero(_resumePos ?? World.Map.VillageCenter);
+            World.SyncFriends();
             _resumePos = null;
 
-            World.ShowBanner(Strings.Get("zone.arrive." + Mathf.Clamp(chapter, 1, 3)));
+            // the arrive card already names the ground beneath the hero's feet: note that
+            // zone quietly so the crossing banner does not repeat it a step later
+            string zk0 = World.HeroPos.y > 58f ? "zone.wood"
+                : World.HeroPos.y > 26f ? "zone.fields" : "zone.village";
+            State.CurZone = zk0.Substring(5);
+            State.NoteZone(zk0);
+
+            ShowZoneBanner(Strings.Get("zone.arrive." + Mathf.Clamp(chapter, 1, 3)));
+            Sfx.Mus.Duck = 1f; Sfx.Mus.Play("explore");
             MakeHud();
             RefreshHud();
 
@@ -757,14 +1123,19 @@ namespace MoonThief
             _encounterCooldown = 3.5f;
             SaveRun();
 
-            if (chapter == 1) Menus.ShowToast(Strings.Get("onb.move"), 4.5f);
-            else if (chapter == 3) Menus.ShowToast(Strings.Get("quest.4"), 4.0f);
+            // the banner owns the top band for its first couple of seconds - a toast
+            // landing on the same beat was one text printed through another
+            if (chapter == 1) { _hintT = 3.4f; _hintKey = "onb.move"; }
+            else if (chapter == 3) { _hintT = 3.4f; _hintKey = "quest.4"; }
         }
 
         void RefreshHud()
         {
             if (_hudZone != null)
-                _hudZone.Set(Strings.Get("hud.explore", State.Chapter, State.MoonShards, ShardsNeeded));
+                _hudZone.Set(Strings.Get("hud.explore",
+                    State.NgPlus > 0 ? State.Chapter + "+" : State.Chapter.ToString(),
+                    State.MoonShards, ShardsNeeded, State.Gold));
+            if (World != null) World.SetMoonFill(State.MoonShards, ShardsNeeded);
             RefreshQuest();
         }
 
@@ -780,6 +1151,16 @@ namespace MoonThief
             if (text == _questText) return;
             _questText = text;
             _hudQuest.Set(text);
+            if (_hudQuestChip != null)
+            {
+                // the chip hugs the measured note: a one-line goal gets a one-line slab,
+                // a wrapped one gets both lines covered
+                float w = _hudQuest.MeasureWidth(text), h = _hudQuest.MeasureHeight(text);
+                _hudQuestChip.size = new Vector2(w + 0.4f, h + 0.3f);
+                _hudQuestChip.transform.localPosition = new Vector3(
+                    _hudQuest.transform.localPosition.x + w * 0.5f,
+                    _hudQuest.transform.localPosition.y - h * 0.5f - 0.06f, 0f);
+            }
         }
 
         string QuestText()
@@ -790,21 +1171,168 @@ namespace MoonThief
             // go blank
             if (World != null && World.Map != null && World.Map.Interior && !string.IsNullOrEmpty(_questLineRaw))
                 return _questLineRaw;
-            if (!_metMira) return Strings.Get("quest.1");
+            if (!MetMira) return Strings.Get("quest.1");
+            // the company forms before the work: Sea at the village edge, then Moss deeper
+            // in the fields. The ladder reads one line - Mira -> Sea -> Moss -> the night's
+            // errand - instead of three strangers appearing at your heels unasked.
+            if (!State.Joined.Contains("hero.sea")) return Strings.Get("quest.sea");
+            if (!State.Joined.Contains("hero.moss")) return Strings.Get("quest.moss");
             if (_bossDown && State.MoonShards >= ShardsNeeded) return Strings.Get("quest.5");
             if (State.MoonShards >= ShardsNeeded) return Strings.Get("quest.3");
-            if (World != null && World.ChestsLeft > 0 && State.Chapter < 3)
-                return Strings.Get("quest.2", ShardsNeeded - State.MoonShards);
-            return Strings.Get("quest.4");
+            // only the first three caches hold shards - the fourth rides the Pale Guard.
+            // Counting ShardsNeeded-MoonShards here promised chests that hold nothing.
+            int shardChests = Mathf.Max(0, 3 - State.ChestsOpened);
+            if (World != null && World.ChestsLeft > 0 && shardChests > 0)
+                return Strings.Get("quest.2", shardChests, shardChests == 1 ? "chest" : "chests");
+            // the corner names the night's real gatekeeper, not the finale's - a walkthrough
+            // line that reads "Face the Pale Guard" in night one is steering the hero wrong
+            return Strings.Get("quest.4", Strings.Get(BattleData.BossNameKey(State.Chapter)));
         }
 
         string _questText;
+
+        /// <summary>Counter errands on the main line settle themselves the moment the count is
+        /// met - there is no giver to hand them to, so without this the journal would read
+        /// ACTIVE on them forever after the work was done.</summary>
+        void CheckMains()
+        {
+            foreach (var q in Quests.All)
+                // the Pale Guard settles its own account in OnBossDefeated - a field slime
+                // must not close the last rung early
+                if (q.Main && q.Kind != QuestKind.Talk && q.Id != "mq.3"
+                    && Quests.Step(q.Id) == 1 && Quests.Progress(q) >= q.Need)
+                {
+                    Quests.Complete(q);
+                    // a main rung deserves the same ceremony a side errand gets
+                    Menus.ShowToast(Strings.Get("jr.questdone", Strings.Get(q.TitleKey)), 3.6f);
+                    Sfx.Play("questdone");
+                }
+        }
+
+        /// <summary>Where the compass arrow points tonight. It follows the same ladder the HUD's
+        /// quest line does: find Mira, find the chests, find the boss, find the cristal.
+        /// Indoors it is parked - a room that fits on one screen needs no compass.</summary>
+        Vector2? ObjectivePos()
+        {
+            if (World == null || World.Map == null || World.Map.Interior) { State.ObjZone = null; return null; }
+            Vector2? p = ObjectivePosInner();
+            // the journal's map page reads the zone this falls in to mark the night's errand
+            if (p.HasValue)
+            {
+                float y = p.Value.y;
+                State.ObjZone = y >= GameMap.H - 8 ? "gate"
+                    : y > 58f ? "wood" : y > 26f ? "fields" : "village";
+            }
+            else State.ObjZone = null;
+            return p;
+        }
+
+        Vector2? ObjectivePosInner()
+        {
+            if (!MetMira)
+            {
+                var mira = World.FindNpc("npc.elder");
+                if (mira != null && mira.Root != null) return mira.Root.localPosition;
+            }
+            // the compass walks the company together before any chest or boss: first Sea on
+            // the road out, then Moss in the fields. Once joined their wandering selves are
+            // gone and the same ladder step just falls through.
+            if (!State.Joined.Contains("hero.sea"))
+            {
+                var sea = World.FindNpc("npc.sea");
+                if (sea != null && sea.Root != null) return sea.Root.localPosition;
+            }
+            if (!State.Joined.Contains("hero.moss"))
+            {
+                var moss = World.FindNpc("npc.moss");
+                if (moss != null && moss.Root != null) return moss.Root.localPosition;
+            }
+            // an errand already run to ground outranks every unopened chest: the arrow
+            // always walks a finished errand back to whoever waits to hear it done
+            var handIn = SideQuestPos(true);
+            if (handIn.HasValue) return handIn.Value;
+            bool atGate = State.MoonShards >= ShardsNeeded;
+            int shardChests = Mathf.Max(0, 3 - State.ChestsOpened);
+            if (atGate || shardChests <= 0)
+            {
+                // and before the arrow says 'go end the night', it sweeps the errands still
+                // open: an accepted side quest with a findable mark gets the point first
+                var side = SideQuestPos(false);
+                if (side.HasValue) return side.Value;
+            }
+            if (atGate)
+                return _bossDown ? (Vector2?)World.Map.CristalPos : World.Map.BossPos;
+            // chests only carry three of the four shards - once those are found, the night's
+            // gate is its boss, and pointing the compass at loot would walk the hero backwards
+            if (shardChests > 0)
+            {
+                int chestAt = World.NearestChest(World.HeroPos, 999f);
+                if (chestAt >= 0) return World.ChestPos(chestAt);
+            }
+            return World.Map.BossPos;
+        }
+
+        /// <summary>The nearest side-errand the road can still point at. handIn selects the
+        /// finished kind: step 2 (the mark told, the giver waiting) or ReadyToHand (the
+        /// thing found) - both walk back to whoever asked. The open kind walks to its mark:
+        /// a soul to tell or pay, a chest to open. Errands without a mark - zones to visit,
+        /// beasts to fell - keep the arrow for themselves.</summary>
+        Vector2? SideQuestPos(bool handIn)
+        {
+            Vector2? best = null;
+            float bestD = float.MaxValue;
+            foreach (var q in Quests.All)
+            {
+                if (q.Main || q.Chapter != State.Chapter || string.IsNullOrEmpty(q.Giver)) continue;
+                bool ready = Quests.Step(q.Id) == 2 || Quests.ReadyToHand(q);
+                if (ready != handIn) continue;
+                if (!ready && Quests.Step(q.Id) != 1) continue;
+                Vector2? p = null;
+                if (ready)
+                {
+                    p = NpcMark(q.Giver);
+                }
+                else if (q.Kind == QuestKind.Talk || q.Kind == QuestKind.Pay)
+                {
+                    p = NpcMark(string.IsNullOrEmpty(q.Target) ? q.Giver : q.Target);
+                }
+                else if (q.Kind == QuestKind.Item || q.Kind == QuestKind.Chests)
+                {
+                    int chestAt = World.NearestChest(World.HeroPos, 999f);
+                    if (chestAt >= 0) p = World.ChestPos(chestAt);
+                }
+                if (p.HasValue)
+                {
+                    float d = Vector2.Distance(World.HeroPos, p.Value);
+                    if (d < bestD) { bestD = d; best = p; }
+                }
+            }
+            return best;
+        }
+
+        /// <summary>Where a named soul can be found, from the street anyway: their spot in the
+        /// world, or - for "npc.house.N", who only ever waits behind their own door - that
+        /// house's doorstep. Walking onto the doorstep is what puts them in reach.</summary>
+        Vector2? NpcMark(string nameKey)
+        {
+            var npc = World.FindNpc(nameKey);
+            if (npc != null && npc.Root != null) return npc.Root.localPosition;
+            if (nameKey != null && nameKey.StartsWith("npc.house.")
+                && int.TryParse(nameKey.Substring(10), out int h)
+                && h >= 0 && h < World.Map.Doors.Count)
+            {
+                var c = World.Map.Doors[h];
+                return new Vector2(c.x + 0.5f, c.y + 0.5f);
+            }
+            return null;
+        }
 
         // ------------------------------------------------------------ main loop
 
         void Update()
         {
             if (EditorMode || !Application.isPlaying) return;
+            Sfx.Mus.Tick();
 
             // ---- front-end screens (splash, menu, settings, credits, story cards)
             if (Phase == St.Splash || Phase == St.Menu || Phase == St.Cinema)
@@ -820,7 +1348,7 @@ namespace MoonThief
             {
                 float a = 0.55f + 0.45f * Mathf.PingPong(Time.time * 0.9f, 1f);
                 _tapHint.SetColor(new Color(1f, 0.88f, 0.5f, a));
-                if (_endMoon != null)
+                if (_endMoon != null && _endRise >= 1f)
                     _endMoon.localPosition = new Vector3(0f, HalfH - 4.2f + Mathf.Sin(Time.time * 0.7f) * 0.3f, 0f);
                 if (_endGlow != null)
                 {
@@ -830,14 +1358,14 @@ namespace MoonThief
                 }
                 TwinkleStars();
                 UpdateJoyVisual(false);
-                if (TapPressed() || KeyConfirm()) DoTransition(() => ShowTitle());
+                if (_endRise >= 1f && (TapPressed() || KeyConfirm())) DoTransition(() => ShowTitle());
                 return;
             }
 
             // ---- the pause card freezes the world
             if (_paused)
             {
-                Menus.Tick(Time.deltaTime, StagePos(), TapPressed(), KeyStep(), KeyConfirm(), KeyCancel());
+                Menus.Tick(Time.unscaledDeltaTime, StagePos(), TapPressed(), KeyStep(), KeyConfirm(), KeyCancel());
                 Menus.SetAnchor(Cam.transform.localPosition);
                 UpdateJoyVisual(false);
                 return;
@@ -864,12 +1392,18 @@ namespace MoonThief
             // so a notice that arrives while the card is up waits for it - exactly like the one
             // that arrives during a conversation. The runtime audit caught the pair printing over
             // each other on the first village frame, which no editor frame ever showed.
-            bool holdNotice = _dlgOpen || (World != null && World.BannerUp);
+            // the held toast is a world notice: away from the street (a fight, the dawn,
+            // the title) the world's own flag falls but the notice must keep waiting, or it
+            // flushes onto a screen it does not belong to
+            bool holdNotice = _dlgOpen || (World != null && World.BannerUp) || Phase != St.Explore;
             if (holdNotice != Menus.HoldToasts)
             {
                 Menus.HoldToasts = holdNotice;
                 if (!holdNotice) Menus.FlushToast();
             }
+            // a banner arriving over a live toast is covered too: raising HoldToasts parks
+            // the toast into the held slot the moment the flag flips, so nothing ever prints
+            // through the card - the notice just plays after it
             if (Phase != St.Explore)
             {
                 Menus.SetAnchor(Cam.transform.localPosition);
@@ -884,7 +1418,14 @@ namespace MoonThief
             if (TapPressed() && StagePos().x > G.Right - 2.6f && StagePos().y > HalfH - 2.2f) { OpenPause(); return; }
 
             var move = ReadMoveInput();
+            // a held Shift is the keyboard's creep: the stick needs no such key because
+            // a gentle push already walks softly - the view reads either one the same way
+            World.SneakHeld = EditorSneak || Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
             World.DriveHero(move, Time.deltaTime);
+            // the world goes quiet when the thief does: a held breath hushes the band
+            // to a whisper, then lets it swell back as the gait opens up again
+            _sneakDuck = Mathf.MoveTowards(_sneakDuck, World.Sneaking ? 0.7f : 1f, Time.deltaTime * 2.2f);
+            Sfx.Mus.Duck = _sneakDuck;
             UpdateJoyVisual(true);
             PollWorldTap();
 
@@ -907,17 +1448,96 @@ namespace MoonThief
             // where we are, and the one-off things that happen when you get there
             if (_inHouse)
             {
+                State.CurZone = "village";
                 State.NoteZone("zone.house." + World.Map.HouseIndex);
             }
             else
             {
-                State.NoteZone(World.HeroPos.y > 58f ? "zone.wood"
-                    : World.HeroPos.y > 26f ? "zone.fields" : "zone.village");
+                string zk = World.HeroPos.y > 58f ? "zone.wood"
+                    : World.HeroPos.y > 26f ? "zone.fields" : "zone.village";
+                State.CurZone = zk.Substring(5);
+                // first time crossing a border the place announces itself, once, ever -
+                // a soft chime with the banner so the crossing lands on two senses
+                if (State.NoteZone(zk))
+                {
+                    Sfx.Play("zone");
+                    ShowZoneBanner(Strings.Get("zone.name." + zk.Substring(5))
+                        + "\n" + Strings.Get("hud.nightshort", State.Chapter)
+                        + (State.NgPlus > 0 ? "+" : ""));
+                    // a company member reads the land too - the party talks, not just walks
+                    string bark = State.Joined.Contains("hero.sea")
+                        ? Strings.Get("bark.sea." + zk.Substring(5))
+                        : State.Joined.Contains("hero.moss")
+                            ? Strings.Get("bark.moss." + zk.Substring(5)) : "";
+                    if (!string.IsNullOrEmpty(bark)) Menus.ShowToast(bark, 3.4f);
+                }
                 if (TryWorldEvent()) return;
             }
 
+            // the tune follows the zone: warm hearth music inside the village wall and its
+            // houses, a sparser watchful line under the old trees, the folk pulse in between
+            Sfx.Mus.Play(_inHouse || World.HeroPos.y <= 26f ? "village"
+                : World.HeroPos.y > 58f ? "wood" : "explore");
+            // the village tune plays inside houses too, but the night bed does not
+            Sfx.Mus.Ambient = !_inHouse;
+
             // camera follows the hero on both axes, clamped to the map; the HUD layer follows too
             FollowHero();
+            World.SetObjective(ObjectivePos());
+            MedalTick();
+
+            // company banter: the people you walk with occasionally say what they see -
+            // slow enough to stay flavor, never in a house and never while you are talking
+            if (State.Joined.Count > 0 && !_inHouse && !_dlgOpen)
+            {
+                _barkT -= Time.deltaTime;
+                if (_barkT <= 0f)
+                {
+                    _barkT = 26f + Random.value * 14f;
+                    string who = State.Joined.Contains("hero.moss")
+                        && (!State.Joined.Contains("hero.sea") || _barkSwap) ? "moss" : "sea";
+                    _barkSwap = !_barkSwap;
+                    // eight quips each now, picked blind - the old fixed four-loop had the
+                    // company reciting the same verse on every long walk
+                    Menus.ShowToast(Strings.Get("bark." + who + ".idle." + Random.Range(0, 8)), 3.2f);
+                }
+            }
+
+            // the night keeps its own voice too: an owl somewhere past the lamps,
+            // sparse enough to stay a gift - never indoors and not over someone's words;
+            // indoors, the hearth takes over with its small crackle
+            if (!_dlgOpen)
+            {
+                if (_inHouse)
+                {
+                    _fireT -= Time.deltaTime;
+                    if (_fireT <= 0f)
+                    {
+                        _fireT = 2.5f + Random.value * 3.5f;
+                        Sfx.Play("fire", 0.8f + Random.value * 0.4f);
+                    }
+                }
+                else
+                {
+                    _owlT -= Time.deltaTime;
+                    if (_owlT <= 0f)
+                    {
+                        _owlT = 22f + Random.value * 16f;
+                        Sfx.Play("owl", 0.9f + Random.value * 0.25f);
+                    }
+                }
+            }
+
+            // the deferred chapter toast fires once the banner has had its beat
+            if (_hintT > 0f)
+            {
+                _hintT -= Time.deltaTime;
+                if (_hintT <= 0f && _hintKey != null)
+                {
+                    Menus.ShowToast(Strings.Get(_hintKey), 4.2f);
+                    _hintKey = null;
+                }
+            }
 
             // encounters
             _encounterCooldown -= Time.deltaTime;
@@ -925,8 +1545,17 @@ namespace MoonThief
             if (touched != null && _encounterCooldown <= 0f)
             {
                 var spec = touched.Spec;
+                // a beast that never saw you is struck flat-footed: the whole roster
+                // opens the fight reeling - the prowl's payoff, not a free pass
+                bool ambush = !touched.Aggro;
+                bool fromSleep = touched.Asleep;   // a dozing beast names its own intro
                 World.RemoveMonster(touched);
-                StartBattle(new[] { spec });
+                if (ambush)
+                {
+                    State.Ambushes++;
+                    if (State.Ambushes >= 3) Medals.Grant("ghost");
+                }
+                StartBattle(new[] { spec }, ambush, fromSleep);
                 return;
             }
             if (_encounterCooldown <= 0f && move.sqrMagnitude > 0.01f && World.HeroPos.y > 20f
@@ -937,24 +1566,67 @@ namespace MoonThief
                 return;
             }
 
-            // first chest in reach: one nudge, then never again
-            if (_hintChest && World.ChestsLeft > 0 && World.NearestChest(World.HeroPos, 3f).HasValue)
+            // a hush over the sleeping ones: creep close and somebody whispers it -
+            // solo the thief breathes it to himself, once per approach
+            _dozeBarkT -= Time.deltaTime;
+            if (World.Sneaking && _dozeBarkT <= 0f && !World.BannerUp)
+            {
+                foreach (var m in World.Monsters)
+                    if (m.Asleep && m.Root != null
+                        && ((Vector2)m.Root.position - World.HeroPos).sqrMagnitude < 10.2f)
+                    {
+                        _dozeBarkT = 14f;
+                        Menus.ShowToast(Strings.Get(State.Joined.Count > 0
+                            ? "bark.doze." + Random.Range(0, 3) : "bark.doze.solo"), 3f);
+                        break;
+                    }
+            }
+
+            // the company's nerves: a fresh set of eyes on the party earns one quip,
+            // then quiet again until the scent is lost and found anew
+            int ac = World.AggroCount;
+            if (ac > _aggroWas && _aggroBarkT <= 0f && !World.BannerUp)
+            {
+                _aggroBarkT = 14f;
+                // solo the thief mutters to himself; with company the warning is spoken
+                Menus.ShowToast(Strings.Get(State.Joined.Count > 0
+                    ? "bark.spot." + Random.Range(0, 3) : "bark.spot.solo"), 3.2f);
+            }
+            _aggroWas = ac;
+            _aggroBarkT -= Time.deltaTime;
+
+            // first step into the hunting grounds: one nudge about the quiet gait,
+            // then never again - the prowl earns its own medals from there
+            if (_hintSneak && World.HeroPos.y > 26f && World.Monsters.Count > 0 && !World.BannerUp)
+            {
+                _hintSneak = false;
+                Prefs.Hints |= 4; Prefs.Store();
+                Menus.ShowToast(Strings.Get("hint.sneak"), 4.5f);
+            }
+
+            // first chest in reach: one nudge, then never again. The hint waits out the
+            // zone banner - "Walk up to a villager" over "NIGHT ONE" was one text on another
+            if (_hintChest && World.ChestsLeft > 0 && !World.BannerUp && World.NearestChest(World.HeroPos, 3f) >= 0)
             {
                 _hintChest = false;
+                Prefs.Hints |= 2; Prefs.Store();
                 Menus.ShowToast(Strings.Get("onb.chest"), 3.6f);
             }
-            if (_hintTalk && !_metMira && World.Npcs.Count > 0)
+            if (_hintTalk && !MetMira && !World.BannerUp && World.Npcs.Count > 0)
             {
                 var npc = World.NearestNpc(World.HeroPos, 4f);
                 if (npc.NameKey != null)
                 {
                     _hintTalk = false;
+                    Prefs.Hints |= 1; Prefs.Store();
                     Menus.ShowToast(Strings.Get("onb.talk"), 3.6f);
                 }
             }
 
-            // interactions: a deliberate short tap, never a joystick drag
+            // interactions: a deliberate short tap, never a joystick drag; on desktop the
+            // confirm key does the same thing so the whole game can be played without a mouse
             if (_tapPending) { _tapPending = false; TryInteract(); }
+            else if (KeyConfirm()) TryInteract();
         }
 
         /// <summary>One-off encounters on the road, from Quests.Events. Each fires once per run at
@@ -970,7 +1642,7 @@ namespace MoonThief
                 Quests.MarkFired(ev.Id);
                 if (ev.Gold > 0) State.Gold += ev.Gold;
                 if (!string.IsNullOrEmpty(ev.Gift)) State.AddBag(ev.Gift);
-                Sfx.Play(ev.Tragic ? "faint" : "chest");
+                Sfx.Play(ev.Tragic ? "faint" : ev.Gold > 0 ? "coin" : "chest");
                 Menus.ShowToast(Strings.Get(ev.TextKey), ev.Tragic ? 5.4f : 4.4f);
                 _encounterCooldown = Mathf.Max(_encounterCooldown, 2.5f);
                 RefreshHud();
@@ -978,7 +1650,10 @@ namespace MoonThief
                 if (!string.IsNullOrEmpty(ev.Fight))
                 {
                     foreach (var m in BattleData.Bestiary)
-                        if (m.Name == ev.Fight) { StartBattle(new[] { m }); break; }
+                        // a wild happening is not a gate: the bestiary keeps the flag for
+                        // the pool's sake, but an event fight must allow the slip and the
+                        // word, or a road-side bell could only end one way
+                        if (m.Name == ev.Fight) { var v = m; v.Boss = false; StartBattle(new[] { v }); break; }
                 }
                 return true;
             }
@@ -991,6 +1666,9 @@ namespace MoonThief
             // dialog box, not a name plate, not the banner
             if (_dlgOpen) CloseDialog();
             _paused = true;
+            // a real freeze: coroutines, wander, and the battle clock all stop while the
+            // card is up - the menu still animates on unscaled time
+            Time.timeScale = 0f;
             _joyTouch = false;
             _tapPending = false;
             _tapFinger = -1;
@@ -1005,8 +1683,24 @@ namespace MoonThief
         {
             if (!_paused) return;
             _paused = false;
+            Time.timeScale = 1f;
             Menus.Hide();
             if (World != null && World.Ready) World.SetTextVisible(true);
+        }
+
+        /// <summary>Marn's card pauses the world exactly like the pause card does: same freeze,
+        /// same text hush, same way out through ClosePause.</summary>
+        void OpenShop()
+        {
+            if (_dlgOpen) CloseDialog();
+            _paused = true;
+            Time.timeScale = 0f;
+            _joyTouch = false;
+            _tapPending = false;
+            _tapFinger = -1;
+            Sfx.Play("ui");
+            if (World != null && World.Ready) World.SetTextVisible(false);
+            Menus.ShowShop();
         }
 
         void IdleTitle()
@@ -1024,6 +1718,10 @@ namespace MoonThief
         {
             if (Director == null || BattleViewRef == null) return;
 
+            // the pause card works mid-fight too - the clock freeze keeps the enemy
+            // from acting while the menu is up
+            if (KeyCancel()) { OpenPause(); return; }
+
             if (TapPressed())
             {
                 Sfx.Play("ui");
@@ -1032,13 +1730,15 @@ namespace MoonThief
             }
 
             int step = BattleStep();
-            if (step != 0 && Director.AwaitingInput) { Sfx.Play("ui"); Director.SelectCell(step); return; }
-            if (Input.GetKeyDown(KeyCode.Tab) && Director.AwaitingInput) { Sfx.Play("ui"); Director.CycleTarget(1); return; }
+            // a cursor step ticks; the confirm still clicks - same split the cards got
+            if (step != 0 && Director.AwaitingInput) { Sfx.Play("blip"); Director.SelectCell(step); return; }
+            if (Input.GetKeyDown(KeyCode.Tab) && Director.AwaitingInput) { Sfx.Play("blip"); Director.CycleTarget(1); return; }
             if (KeyConfirm())
             {
                 Sfx.Play("ui");
                 if (Director.AwaitingInput) Director.Confirm();
-                else if (BattleViewRef.OverlayButtonCount > 0) BattleViewRef.CardButtonAt(0)?.Invoke();
+                else if (BattleViewRef.OverlayButtonCount > 0 && BattleViewRef.CardArmed)
+                    BattleViewRef.CardButtonAt(0)?.Invoke();
             }
         }
 
@@ -1055,20 +1755,50 @@ namespace MoonThief
         void TryInteract()
         {
             var npc = World.NearestNpc(World.HeroPos);
-            var chest = World.NearestChest(World.HeroPos);
+            int chestAt = World.NearestChest(World.HeroPos);
+
+            // whoever is nearer wins the tap: the talk branch used to run first, so a
+            // villager leaning on a chest could keep it shut forever
+            if (npc.NameKey != null && chestAt >= 0 &&
+                Vector2.Distance(World.HeroPos, World.ChestPos(chestAt)) <
+                Vector2.Distance(World.HeroPos, World.NearestNpcPos(World.HeroPos)))
+                npc = default;
 
             if (npc.NameKey != null)
             {
-                if (npc.NameKey == "npc.elder") _metMira = true;   // the quest giver
+
                 TalkTo(npc);
+                // meeting Mira is the first rung itself - once the words pass, the chest
+                // errand is live without a second signature
+                if (npc.NameKey == "npc.elder" && Quests.Step("mq.1") == 1)
+                {
+                    Quests.Complete(Quests.Find("mq.1"));
+                    Quests.Accept(Quests.Find("mq.2"));
+                    // the tracker is live now - teach where it lives, once the talk settles
+                    _hintT = 4.5f; _hintKey = "onb.quest";
+                }
                 RefreshQuest();
                 return;
             }
-            if (chest.HasValue)
+            if (chestAt >= 0)
             {
-                World.OpenChest(chest.Value);
-                Sfx.Play("chest");
-                World.ShowBanner(World.LastLootText);
+                // teeth before treasure: a box that's really a beast unfolds on the touch
+                if (World.ChestIsMimic(chestAt))
+                {
+                    var ms = World.SpringMimic(chestAt);
+                    Sfx.Play("enemy");
+                    StartCoroutine(Fx.Shake(World.transform, 0.2f, 0.3f));   // the lid lunges
+                    Fx.Buzz();
+                    StartBattle(new[] { ms }, false, false, true);
+                    return;
+                }
+                int shardsBefore = State.MoonShards;
+                World.OpenChest(chestAt);
+                Sfx.Play(State.MoonShards > shardsBefore ? "shard" : "chest");
+                // a shard is the night's heartbeat: the hand should feel it land
+                if (State.MoonShards > shardsBefore) Fx.Buzz();
+                ShowZoneBanner(World.LastLootText);
+                CheckMains();
                 RefreshHud();
                 SaveRun();
                 return;
@@ -1088,13 +1818,22 @@ namespace MoonThief
             }
             if (World.NearBoss && !_bossDown)
             {
-                StartBattle(BattleData.BossFight());
+                // the keeper gets two lines before it swings: a taunt, then the fight
+                var boss = new NpcDef
+                {
+                    Sheet = GameMap.BossMapSheet(State.Chapter),
+                    NameKey = BattleData.BossNameKey(State.Chapter),
+                    Lines = BattleData.BossTaunts(State.Chapter), Monster = true,
+                };
+                _bossFocus = true;
+                OpenDialog(boss, boss.Lines);
+                _dlgThen = () => StartBattle(BattleData.BossFight(State.Chapter));
                 return;
             }
             if (Vector2.Distance(World.HeroPos, World.Map.CristalPos) < 2f)
             {
                 if (State.MoonShards >= ShardsNeeded) TriggerEnding();
-                else World.ShowBanner(Strings.Get("end.notyet", ShardsNeeded - State.MoonShards));
+                else ShowZoneBanner(Strings.Get("end.notyet", ShardsNeeded - State.MoonShards));
             }
         }
 
@@ -1105,12 +1844,12 @@ namespace MoonThief
         /// and stepping out again is instant.</summary>
         void EnterHouse(int houseIndex)
         {
-            if (_inHouse || _doorCooldown > 0f) return;
+            if (_inHouse || _doorCooldown > 0f || _testNoDoors) return;
             _houseIndex = houseIndex;
             _doorReturn = World.HeroPos + new Vector2(0f, -1.1f);
             _inHouse = true;
             _doorCooldown = 1.4f;
-            Sfx.Play("ui");
+            Sfx.Play("door");
             DoTransition(() =>
             {
                 World.gameObject.SetActive(false);
@@ -1129,9 +1868,14 @@ namespace MoonThief
                 MakeHud();
                 State.NoteZone("zone.house." + _houseMap.HouseIndex);
                 RefreshHud();
-                World.ShowBanner(Strings.Get(_houseMap.InteriorNameKey));
+                ShowZoneBanner(Strings.Get(_houseMap.InteriorNameKey));
                 FollowHero();
-                Menus.ShowToast(Strings.Get("onb.door"), 3.2f);
+                if (_hintDoor)
+                {
+                    _hintDoor = false;
+                    Prefs.Hints |= 8; Prefs.Store();
+                    Menus.ShowToast(Strings.Get("onb.door"), 3.2f);
+                }
             }, 0.2f, 0.3f);
         }
 
@@ -1140,7 +1884,10 @@ namespace MoonThief
             if (!_inHouse) return;
             _inHouse = false;
             _doorCooldown = 1.4f;
-            Sfx.Play("ui");
+            // stepping out must not be an ambush: a wild thing that followed you to the
+            // doormat would otherwise touch you the first frame back on the street
+            _encounterCooldown = Mathf.Max(_encounterCooldown, 1.5f);
+            Sfx.Play("door");
             DoTransition(() =>
             {
                 if (_houseView != null) Fx.Kill(_houseView.gameObject);
@@ -1170,6 +1917,38 @@ namespace MoonThief
         /// offer says so, an NPC whose errand is done hands it over, and everyone else just talks.</summary>
         void TalkTo(NpcDef npc)
         {
+            // the two of them turn to look at each other, like people would
+            if (World != null)
+            {
+                var talker = World.FindNpc(npc.NameKey);
+                World.FaceAt(talker, World.HeroPos);
+                if (talker != null && talker.Root != null) World.FaceHeroAt(talker.Root.localPosition);
+            }
+            // a shopkeeper's dialogue IS his stall: no small talk, straight to the wares
+            if (npc.Shop) { OpenShop(); return; }
+            // an errand that names another soul advances when that soul is found and told -
+            // the target's own line runs first; his own errands wait a talk
+            foreach (var q in Quests.All)
+                if (q.Kind == QuestKind.Talk && !string.IsNullOrEmpty(q.Target)
+                    && q.Target == npc.NameKey && Quests.Step(q.Id) == 1)
+                {
+                    Quests.SetStep(q.Id, 2);
+                    OpenDialog(npc, new[] { string.IsNullOrEmpty(q.MeetKey) ? "q.goal" : q.MeetKey });
+                    // he said he would go home - so he does, once the talk closes. Unless
+                    // some errand of his own still wants him on the road: a quest that
+                    // needs this soul cannot lose him to someone else's story
+                    var target = npc.NameKey;
+                    _dlgThen = () =>
+                    {
+                        foreach (var qq in Quests.All)
+                            if (qq.Giver == target && qq.Chapter <= Game.State.Chapter
+                                && Quests.Step(qq.Id) != 3) return;
+                        var a = World.FindNpc(target);
+                        if (a != null) World.RemoveNpc(a);
+                    };
+                    SaveRun();
+                    return;
+                }
             var quest = Quests.ForGiver(npc.NameKey, out bool ready);
             if (quest != null)
             {
@@ -1178,11 +1957,13 @@ namespace MoonThief
                     Quests.Accept(quest);
                     OpenDialog(npc, new[]
                     {
-                        quest.OfferKey,
+                        State.NgPlus > 0 && Strings.Has(quest.OfferKey + ".ng")
+                            ? quest.OfferKey + ".ng" : quest.OfferKey,
                         "q.goal",
                     });
                     Menus.ShowToast(Strings.Get("jr.newquest", Strings.Get(quest.TitleKey)), 3.6f);
-                    Sfx.Play("chest");
+                    Sfx.Play("quest");
+                    SaveRun();
                     return;
                 }
                 if (ready)
@@ -1190,11 +1971,18 @@ namespace MoonThief
                     Quests.Complete(quest);
                     OpenDialog(npc, new[] { quest.DoneKey, "q.reward" });
                     Menus.ShowToast(Strings.Get("jr.questdone", Strings.Get(quest.TitleKey)), 3.6f);
-                    Sfx.Play("chest");
+                    Sfx.Play("questdone");
+                    RefreshHud();
                     SaveRun();
                     return;
                 }
-                OpenDialog(npc, new[] { quest.OfferKey, Quests.Line(quest) });
+                {
+                    // on a retold night the givers greet the hero as someone who has done
+                    // this before - a .ng sibling of the offer that only ever speaks then
+                    string offer = quest.OfferKey;
+                    if (State.NgPlus > 0 && Strings.Has(offer + ".ng")) offer += ".ng";
+                    OpenDialog(npc, new[] { offer, Quests.Line(quest) });
+                }
                 return;
             }
             OpenDialog(npc);
@@ -1206,7 +1994,13 @@ namespace MoonThief
             _dlgLines = lines;
             _dlgIndex = 0;
             _dlgOpen = true;
+            _dlgThen = null;   // a fresh talk never runs whatever a previous close had queued
             DialogRoot.gameObject.SetActive(true);
+            if (_dlgSheet != null && Application.isPlaying)
+            {
+                _dlgSheet.localPosition = new Vector3(0f, -0.55f, 0f);
+                StartCoroutine(Fx.MoveLocal(_dlgSheet, Vector3.zero, 0.18f));
+            }
             _dlgText.RevealSpeed = Prefs.RevealSpeed;
             _dlgName.Set(Strings.Get(npc.NameKey));
             string body = FormatLine(lines[0]);
@@ -1214,9 +2008,27 @@ namespace MoonThief
             _dlgText.Set(body);
             if (_dlgPortrait != null)
             {
-                _dlgPortrait.sprite = TexArt.Chara(Folks.Sheet(npc), (int)Dir.Down, 1);
+                if (npc.Monster)
+                {
+                    _dlgPortrait.sprite = TexArt.MapMonster(npc.Sheet, 1);
+                    _dlgPortrait.transform.localScale = Vector3.one * 1.15f;
+                }
+                else if (!string.IsNullOrEmpty(npc.Walk))
+                {
+                    var frames = Bank.Frames(npc.Walk);
+                    _dlgPortrait.sprite = frames.Length > 0 ? frames[0] : null;
+                    _dlgPortrait.transform.localScale = Vector3.one * 3f;
+                }
+                else
+                {
+                    _dlgPortrait.sprite = TexArt.Chara(Folks.Sheet(npc), (int)Dir.Down, 1);
+                    _dlgPortrait.transform.localScale = Vector3.one * 3f;
+                }
                 _dlgPortrait.enabled = _dlgPortrait.sprite != null;
             }
+            if (!string.IsNullOrEmpty(npc.JoinKey) && !State.Joined.Contains(npc.JoinKey)
+                && _dlgThen == null)
+                _dlgThen = () => Join(npc);
             Sfx.Play("blip");
         }
 
@@ -1239,29 +2051,84 @@ namespace MoonThief
         {
             _dlgNpc = npc;
             _dlgLines = npc.Lines;
-            _dlgIndex = 0;
+            // someone the hero has already talked to opens on a different quip instead of
+            // reciting the same first line every tap
+            _dlgIndex = _metNpcs.Add(npc.NameKey) || _dlgLines.Length < 2
+                ? 0 : Random.Range(1, _dlgLines.Length);
             _dlgOpen = true;
+            _dlgThen = null;
             DialogRoot.gameObject.SetActive(true);
+            if (_dlgSheet != null && Application.isPlaying)
+            {
+                _dlgSheet.localPosition = new Vector3(0f, -0.55f, 0f);
+                StartCoroutine(Fx.MoveLocal(_dlgSheet, Vector3.zero, 0.18f));
+            }
             _dlgText.RevealSpeed = Prefs.RevealSpeed;
             _dlgName.Set(Strings.Get(npc.NameKey));
-            LayoutDialogBox(Strings.Get(_dlgLines[0]));
-            _dlgText.Set(Strings.Get(_dlgLines[0]));
+            LayoutDialogBox(Strings.Get(_dlgLines[_dlgIndex]));
+            _dlgText.Set(Strings.Get(_dlgLines[_dlgIndex]));
             if (_dlgPortrait != null)
             {
-                _dlgPortrait.sprite = TexArt.Chara(Folks.Sheet(npc), (int)Dir.Down, 1);
+                // walk-anim folk have no chara sheet to strip: the first frame of their own
+                // rig is their face, the same figure that fights beside you later
+                if (!string.IsNullOrEmpty(npc.Walk))
+                {
+                    var frames = Bank.Frames(npc.Walk);
+                    _dlgPortrait.sprite = frames.Length > 0 ? frames[0] : null;
+                }
+                else
+                    _dlgPortrait.sprite = TexArt.Face(Folks.Sheet(npc))
+                        ?? TexArt.Chara(Folks.Sheet(npc), (int)Dir.Down, 1);
+                _dlgPortrait.transform.localScale = Vector3.one * 3f;
                 _dlgPortrait.enabled = _dlgPortrait.sprite != null;
             }
+            // a recruiting talk ends in a yes: closing their dialog runs the join, which
+            // pulls their wandering self off the map and lights their walker on the trail
+            if (!string.IsNullOrEmpty(npc.JoinKey) && !State.Joined.Contains(npc.JoinKey))
+                _dlgThen = () => Join(npc);
             Sfx.Play("blip");
+        }
+
+        /// <summary>A companion says yes: their key joins the company, their wandering self
+        /// leaves the map, the trail gains a walker, and the whole thing is saved the same
+        /// moment so a join can never be lost.</summary>
+        void Join(NpcDef npc)
+        {
+            if (State.Joined.Contains(npc.JoinKey)) return;
+            State.Joined.Add(npc.JoinKey);
+            World.SyncParty();
+            // the welcome gets the same golden flecks a chest earns - a companion is a find
+            World.BurstLoot(npc.Pos);
+            Menus.ShowToast(Strings.Get("jr.join", Strings.Get(npc.NameKey)), 3.6f);
+            Sfx.Play("befriend");
+            RefreshQuest();
+            SaveRun();
         }
 
         void UpdateDialog()
         {
+            if (_dlgPortrait != null && _dlgPortrait.enabled)
+            {
+                var pp = _dlgPortrait.transform.localPosition;
+                pp.y = -HalfH + 0.4f + 2.1f + Mathf.Sin(Time.time * 2.2f) * 0.045f;
+                _dlgPortrait.transform.localPosition = pp;
+            }
+            if (_dlgNext != null)
+            {
+                // the tick is for "the line is done" - it stays dark while the typewriter
+                // runs (component.enabled can't hide its glyph pool, only alpha can)
+                float a = _dlgText.IsRevealing ? 0f : 0.55f + 0.45f * Mathf.Sin(Time.time * 6f);
+                _dlgNext.SetColor(new Color(1f, 0.85f, 0.5f, a));
+            }
             if (_dlgText.IsRevealing)
             {
-                if (TapPressed()) _dlgText.Set(_dlgText.Text, true);
+                // soft tick every few revealed characters, the typewriter chatter
+                int vc = _dlgText.VisibleChars;
+                if (vc < _dlgChars || vc - _dlgChars >= 4) { _dlgChars = vc; Sfx.Play("tick"); }
+                if (TapPressed() || KeyConfirm()) _dlgText.Set(_dlgText.Text, true);
                 return;
             }
-            if (TapPressed())
+            if (TapPressed() || KeyConfirm())
             {
                 _dlgIndex++;
                 if (_dlgIndex < _dlgLines.Length)
@@ -1277,30 +2144,51 @@ namespace MoonThief
         void CloseDialog()
         {
             _dlgOpen = false;
+            _bossFocus = false;   // hand the frame back to the hero
             // The notice lane is released by the frame's own pass in Update(): it holds while a
             // dialog box is open or while the zone card is up, and a notice that waited is shown
             // the moment neither is on screen.
             DialogRoot.gameObject.SetActive(false);
             _encounterCooldown = Mathf.Max(_encounterCooldown, 1.5f);
+            var then = _dlgThen;
+            _dlgThen = null;
+            then?.Invoke();
         }
 
         // ------------------------------------------------------------ battles
 
-        public void StartBattle(MonsterSpec[] specs)
+        public void StartBattle(MonsterSpec[] specs) => StartBattle(specs, false, false, false);
+        public void StartBattle(MonsterSpec[] specs, bool ambush) => StartBattle(specs, ambush, false, false);
+        public void StartBattle(MonsterSpec[] specs, bool ambush, bool fromSleep) => StartBattle(specs, ambush, fromSleep, false);
+
+        public void StartBattle(MonsterSpec[] specs, bool ambush, bool fromSleep, bool fromMimic)
         {
+            DialogOpen = false;   // a fight begun from inside a talk unwinds it for real
+            // a fight queued before the ending was called must not land after it: its
+            // transition middle re-activates the stage over the dawn - caught on film by
+            // the audit, party rigs standing under the ending prose
+            if (_ending || Phase == St.End) return;
             Phase = St.Battle;
-            _encounterCooldown = 4f;
-            SetCamY(0f);
+            // breathing room after a fight before the next wild touch can trigger
+            _encounterCooldown = 6f;
             Menus.Hide();
             _paused = false;
             _tapPending = false;
             _tapFinger = -1;
             _joyTouch = false;
-            World.gameObject.SetActive(false);
-            if (_hudZone != null) _hudZone.enabled = false;
-            if (_hudQuest != null) _hudQuest.enabled = false;
-            BattleViewRef.gameObject.SetActive(true);
-            Director.StartBattle(specs);
+            // the arena blinks in rather than snapping: a fast dark beat covers the swap
+            DoTransition(() =>
+            {
+                // the fade rides ahead of the middle: if the ending was called while this
+                // battle's blackout was still running, the stage must stay down
+                if (_ending || Phase == St.End) return;
+                SetCamY(0f);
+                World.gameObject.SetActive(false);
+                if (_hudZone != null) _hudZone.enabled = false;
+                SetHudQuestVisible(false);
+                BattleViewRef.gameObject.SetActive(true);
+                Director.StartBattle(specs, ambush, fromSleep, fromMimic);
+            }, 0.16f, 0.3f);
             bool boss = false;
             foreach (var s in specs) if (s.Boss) boss = true;
             Sfx.Play(boss ? "boss" : "blip");
@@ -1308,64 +2196,94 @@ namespace MoonThief
 
         void OnEncounterWon()
         {
-            BattleViewRef.gameObject.SetActive(false);
-            BattleViewRef.HideCard();
+            // a stale director finishing under the dawn must not pull the phase back
+            if (_ending || Phase == St.End) return;
+            Sfx.Mus.Duck = 1f; Sfx.Mus.Play("explore");
+            DoTransition(() =>
+            {
+                // the fade lands 0.22s after the phase flips: a fight that began inside
+                // that gap owns the stage now - tearing it down mid-setup starved every
+                // battle coroutine when the selftest staged its loss in exactly that window.
+                // the card still dies, though: its buttons must not ghost over the new fight
+                if (Phase == St.Battle) { BattleViewRef.HideCard(); return; }
+                BattleViewRef.gameObject.SetActive(false);
+                BattleViewRef.HideCard();
+                World.gameObject.SetActive(true);
+                FollowHero();
+            }, 0.22f, 0.3f);
             Phase = St.Explore;
-            World.gameObject.SetActive(true);
             if (_hudZone != null) _hudZone.enabled = true;
-            if (_hudQuest != null) _hudQuest.enabled = true;
+            SetHudQuestVisible(true);
             _paused = false;
-            FollowHero();
             World.ResetForChapter();
+            World.SyncFriends();
+            World.SetTextVisible(true);
             RefreshHud();
             SaveRun();
         }
 
         void OnBossDefeated()
         {
+            Sfx.Mus.Duck = 1f; Sfx.Mus.Play("explore");
             _bossDown = true;
+            // the last rung of the main line is this kill itself
+            if (State.Chapter >= 3 && Quests.Step("mq.3") == 1)
+                Quests.Complete(Quests.Find("mq.3"));
             if (World != null) World.RemoveBoss();
             BattleViewRef.gameObject.SetActive(false);
             BattleViewRef.HideCard();
             Phase = St.Explore;
             World.gameObject.SetActive(true);
             if (_hudZone != null) _hudZone.enabled = true;
-            if (_hudQuest != null) _hudQuest.enabled = true;
+            SetHudQuestVisible(true);
             FollowHero();
+            World.SetTextVisible(true);
 
             if (State.Chapter >= 3)
             {
                 // the guard wore the last shard; the way to the cristal is open
                 State.MoonShards = Mathf.Max(State.MoonShards, ShardsNeeded);
-                World.ShowBanner(Strings.Get("zone.bossdown"));
+                CheckMains();   // four shards + the guard's fall finish their quests together
+                ShowZoneBanner(Strings.Get("zone.bossdown"));
                 RefreshHud();
                 SaveRun();
             }
             else
             {
-                World.ShowBanner(Strings.Get("zone.chapdone"));
+                ShowZoneBanner(Strings.Get("zone.chapdone"));
                 int next = State.Chapter + 1;
-                SaveRun();
-                DoTransition(() => StartChapter(next), 2.2f, 0.4f);
+                // the save rides the chapter change, not the fall - a quit inside the
+                // dissolve resumes before the kill instead of half-advanced
+                DoTransition(() => { StartChapter(next); SaveRun(); }, 2.2f, 0.4f);
             }
         }
 
         void OnRunLost()
         {
+            if (_ending || Phase == St.End) return;
+            Sfx.Mus.Duck = 1f; Sfx.Mus.Play("explore");
+            // flip synchronously like the win path does: a new fight that begins inside the
+            // fade re-marks the phase in its own body, so the middle can tell a stale teardown
+            // (phase flipped back to Battle) from the defeat it belongs to
+            Phase = St.Explore;
             DoTransition(() =>
             {
+                // same window as a victory: a new fight inside the fade owns the stage -
+                // but its leftover card buttons still have to go or they ghost over it
+                if (Phase == St.Battle) { BattleViewRef.HideCard(); return; }
                 BattleViewRef.HideCard();
                 BattleViewRef.gameObject.SetActive(false);
-                Phase = St.Explore;
                 World.gameObject.SetActive(true);
                 if (_hudZone != null) _hudZone.enabled = true;
-                if (_hudQuest != null) _hudQuest.enabled = true;
+                SetHudQuestVisible(true);
                 _paused = false;
                 World.ResetForChapter();
                 World.PlaceHero(World.Map.VillageCenter);
                 FollowHero();
-                World.ShowBanner(Strings.Get("zone.retreat"));
+                World.SetTextVisible(true);   // the banner lives under HudRoot: no text, no banner
+                ShowZoneBanner(Strings.Get("zone.retreat"));
                 RefreshHud();
+                SaveRun();   // the retreat is where the night picks up again
             }, 0.3f, 0.4f);
         }
 
@@ -1374,15 +2292,148 @@ namespace MoonThief
             DoTransition(() =>
             {
                 _ending = true;
+                // the ledger is snapped before the dawn hangs its own medals on the wall -
+                // ENDER and NG+ belong to the retelling's count, not this one's farewell
+                int runMedals = Medals.EarnedThisRun;
+                Medals.Grant("ender");
+                // the cruel telling counts itself: hard the whole way through, not
+                // just for the last walk to the cristal
+                if (Prefs.Hard && State.EasyFights == 0) Medals.Grant("iron");
                 Phase = St.End;
                 SetCamY(0f);
                 World.gameObject.SetActive(false);
+                // the battle stage is its own root: if the ending fires while a fight is still
+                // up (a wild touch on the way to the cristal), its rigs outlive the tale
+                BattleViewRef.HideCard();
+                BattleViewRef.gameObject.SetActive(false);
                 if (_hudZone != null) _hudZone.enabled = false;
                 _endRoot.gameObject.SetActive(true);
+                Menus.HideToast();   // the last notice of the night does not ride into the dawn
+                // the payoff is a moon-rise, not a card: start it low and dim, the words
+                // and the tap wait until it has climbed. The bob write in Update is gated
+                // on _endRise so the two never fight over the same transform
+                _endRise = 0f;
+                _endSky.color = new Color(0.05f, 0.05f, 0.14f, 1f);
+                _endMoon.localScale = Vector3.one * 4.2f;
+                _endMoon.localPosition = new Vector3(0f, -HalfH + 3f, 0f);
+                _endGlow.color = new Color(1f, 0.95f, 0.75f, 0f);
+                _endLines.gameObject.SetActive(false);
+                _endStats.gameObject.SetActive(false);
+                _tapHint.gameObject.SetActive(false);
+                StartCoroutine(CoMoonRise());
+                Sfx.Mus.Duck = 1f; Sfx.Mus.Play("end");
                 _endLines.RevealSpeed = 0f;
-                _endLines.Set(Strings.Get("end.text", State.Befriended));
-                SaveSystem.Erase();          // the tale is told; the menu offers a fresh night
+                // three tellings of the same dawn: alone, one companion, or a company.
+                // Counted from the stable, not the run - a friend you let go does not
+                // walk home beside you, and the ending should not say it does
+                int company = State.Friends.Count;
+                string textKey = company == 0 ? "end.text.lone"
+                    : company == 1 ? "end.text.one" : "end.text";
+                _endLines.Set(Strings.Get(textKey));
+                _endStats.Set((company == 0
+                    ? Strings.Get("end.stats.lone", State.Level, State.Gold,
+                        State.Defeats, State.Defeats == 1 ? "BEAST" : "BEASTS")
+                    : Strings.Get("end.stats", State.Level, company,
+                        company == 1 ? "FRIEND" : "FRIENDS", State.Gold,
+                        State.Defeats, State.Defeats == 1 ? "BEAST" : "BEASTS"))
+                    + (runMedals > 0 ? "\n" + Strings.Get("end.medals", runMedals,
+                        runMedals == 1 ? "MEDAL" : "MEDALS") : "")
+                    + "\n" + Strings.Get("end.again"));
+                // the ledger lives between poem and hint - the hint is a FLOOR, the poem
+                // a CEILING (position = the block's top edge). A long telling can leave
+                // no room between them, so the ledger trims its tail lines - the
+                // farewell first, the medal count after - until the story fits
+                {
+                    float poemBottom = HalfH - 10f - _endLines.MeasureHeight(_endLines.Text);
+                    float hintTop = -HalfH + 3.9f;
+                    var statText = _endStats.Text;
+                    while (true)
+                    {
+                        float aboveHint = hintTop + _endStats.MeasureHeight(statText) + 0.7f;
+                        if (poemBottom - 0.3f >= aboveHint || !statText.Contains("\n")) break;
+                        statText = statText.Substring(0, statText.LastIndexOf('\n'));
+                    }
+                    if (statText != _endStats.Text) _endStats.Set(statText);
+                    float above = hintTop + _endStats.MeasureHeight(statText) + 0.7f;
+                    _endStats.transform.localPosition =
+                        new Vector3(0f, Fx.Snap(Mathf.Max(above, poemBottom - 0.3f)), 0f);
+                }
+                // the company walks home on the screen's edge: up to three friends stand
+                // as small silhouettes on the horizon line under the tap hint. Cleared
+                // first - the tale can end more than once and the hill would collect ghosts
+                for (int i = _endRoot.childCount - 1; i >= 0; i--)
+                    if (_endRoot.GetChild(i).name.StartsWith("endFriend"))
+                        Destroy(_endRoot.GetChild(i).gameObject);
+                {
+                    int shown = 0;
+                    foreach (var key in State.Friends)
+                    {
+                        if (shown >= 3) break;
+                        var sk = key.StartsWith("moon.") ? key.Substring(5) : key;
+                        var spec = BattleData.Species(sk);
+                        var spr = spec.HasValue ? TexArt.MapMonster(spec.Value.MapSheet, 1) : null;
+                        if (spr == null) continue;
+                        var fr = SpriteRendererUtil.Make(_endRoot, "endFriend" + shown, spr, 98);
+                        // one stands middle, a pair flanks it, three spread the width -
+                        // 3.4 apart so the widest monster sheet never piles its edges
+                        fr.transform.localPosition = new Vector3(
+                            (shown - (Mathf.Min(State.Friends.Count, 3) - 1f) / 2f) * 3.4f,
+                            -HalfH + 1.4f, 0f);
+                        fr.transform.localScale = Vector3.one * 1.5f;
+                        // the first light catches only their shape - not their faces;
+                        // a moonlit one still shines a little silver out of the dark
+                        fr.color = key.StartsWith("moon.")
+                            ? new Color(0.72f, 0.82f, 1f, 0.95f)
+                            : new Color(0.52f, 0.55f, 0.75f, 0.95f);
+                        shown++;
+                    }
+                }
+                // the tale ends but the night keeps you: CONTINUE walks it again with the
+                // company's strength kept, its beasts grown bolder, its caches shut again,
+                // its errands unwritten - every retelling of the night bites deeper
+                State.NgPlus++;
+                Medals.Grant("ngp");
+                Medals.EarnedThisRun = 0;   // the retelling keeps its own ledger
+                State.Chapter = 1; State.MoonShards = 0;
+                State.EasyFights = 0;
+                State.ChestsOpened = 0; State.ChestsDone.Clear();
+                State.Zones.Clear(); State.CurZone = "village"; State.ObjZone = null;
+                Quests.Reset();
+                // and the telling starts where every telling starts: the village square
+                if (World != null && World.Ready) World.PlaceHero(World.Map.VillageCenter);
+                _bossDown = false;
+                SaveRun();
             }, 0.4f, 0.6f);
+        }
+
+        /// <summary>The shards leave the cristal: the moon climbs out of the low sky and the
+        /// night remembers what colour it was. ~3.4s of rise, then the bob takes over and the
+        /// epilogue shows itself.</summary>
+        IEnumerator CoMoonRise()
+        {
+            var skyFrom = new Color(0.05f, 0.05f, 0.14f, 1f);
+            var skyTo = new Color(0.09f, 0.09f, 0.2f, 1f);
+            var posFrom = new Vector3(0f, -HalfH + 3f, 0f);
+            var posTo = new Vector3(0f, HalfH - 4.2f, 0f);
+            yield return Fx.Wait(0.35f);
+            Sfx.Play("shard");
+            float t = 0f;
+            while (t < 1f)
+            {
+                t += Time.unscaledDeltaTime / 3.4f;
+                float k = Mathf.Clamp01(t);
+                k = k * k * (3f - 2f * k);   // smoothstep: a rise, not a lift
+                _endMoon.localPosition = Vector3.LerpUnclamped(posFrom, posTo, k);
+                _endMoon.localScale = Vector3.one * Mathf.Lerp(4.2f, 6f, k);
+                _endSky.color = Color.Lerp(skyFrom, skyTo, k);
+                var gc = _endGlow.color; gc.a = Mathf.Lerp(0f, 0.5f, k); _endGlow.color = gc;
+                yield return null;
+            }
+            _endRise = 1f;
+            _endLines.gameObject.SetActive(true);
+            _endStats.gameObject.SetActive(true);
+            _tapHint.gameObject.SetActive(true);
+            Sfx.Play("win");
         }
 
         IEnumerator CoWait(float t, System.Action done)
@@ -1451,11 +2502,11 @@ namespace MoonThief
                         }
                         else if (t.phase == TouchPhase.Ended)
                         {
+                            // a clean tap anywhere is the interact press: which of the
+                            // neighbours answers is decided by who stands nearest the hero,
+                            // not by where the finger landed
                             if (!_tapMoved && Time.unscaledTime - _tapTime < 0.45f)
-                            {
-                                _tapStage = ScreenToStage(t.position);
                                 _tapPending = true;
-                            }
                             _tapFinger = -1;
                         }
                         else if (t.phase == TouchPhase.Canceled) _tapFinger = -1;
@@ -1468,7 +2519,6 @@ namespace MoonThief
                 // desktop helper: a plain left click taps (the mouse joystick needs Ctrl or RMB)
                 if (Input.GetMouseButtonDown(0) && !Input.GetKey(KeyCode.LeftControl))
                 {
-                    _tapStage = ScreenToStage(Input.mousePosition);
                     _tapPending = true;
                 }
             }
@@ -1476,13 +2526,21 @@ namespace MoonThief
 
         bool KeyDown(KeyCode a) => Input.GetKeyDown(a);
 
-        /// <summary>-1 / +1 for menu rows.</summary>
+        float _keyHeldT;      // hold-to-scroll: a kept key walks the list on its own
+        int _keyHeldDir;
+
+        /// <summary>-1 / +1 for menu rows. A held direction repeats after the usual
+        /// pause, so a long journal needs a thumb held down, not twenty taps.</summary>
         int KeyStep()
         {
-            if (KeyDown(KeyCode.UpArrow) || KeyDown(KeyCode.W)) return -1;
-            if (KeyDown(KeyCode.DownArrow) || KeyDown(KeyCode.S)) return 1;
-            if (KeyDown(KeyCode.LeftArrow) || KeyDown(KeyCode.A)) return -1;
-            if (KeyDown(KeyCode.RightArrow) || KeyDown(KeyCode.D)) return 1;
+            int dir = 0;
+            if (Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.W)) dir = -1;
+            else if (Input.GetKey(KeyCode.DownArrow) || Input.GetKey(KeyCode.S)) dir = 1;
+            else if (Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.A)) dir = -1;
+            else if (Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.D)) dir = 1;
+            if (dir == 0 || dir != _keyHeldDir) { _keyHeldT = 0f; _keyHeldDir = dir; return dir; }
+            _keyHeldT += Time.unscaledDeltaTime;
+            if (_keyHeldT >= 0.42f) { _keyHeldT = 0.28f; return dir; }
             return 0;
         }
 
@@ -1509,8 +2567,15 @@ namespace MoonThief
             {
                 hx = World.HeroPos.x;
                 hy = World.HeroPos.y;
+                // a night saved indoors resumes on the doorstep, not inside the
+                // little room's coordinates - those mean somewhere else outdoors
+                if (_inHouse) { hx = _doorReturn.x; hy = _doorReturn.y; }
             }
-            SaveSystem.Write(State.Capture(hx, hy));
+            var data = State.Capture(hx, hy, _bossDown);
+            // the folk the hero already knows ride the save too, or a reload would have
+            // every villager introducing themselves all over again
+            data.met = new List<string>(_metNpcs).ToArray();
+            SaveSystem.Write(data);
         }
 
         public void ContinueRun()
@@ -1518,21 +2583,30 @@ namespace MoonThief
             var d = SaveSystem.Read();
             if (d == null) { BeginRun(); return; }
             State.Apply(d);
-            _metMira = true;                       // the save is past the first conversation
+            _metNpcs.Clear();
+            if (d.met != null) foreach (var m in d.met) _metNpcs.Add(m);
             _hintTalk = false;
             _hintChest = false;
-            _bossDown = false;
             _ending = false;
             _resumePos = new Vector2(d.heroX, d.heroY);
             Menus.Hide();
             World.gameObject.SetActive(false);
-            DoTransition(() => StartChapter(State.Chapter), 0.25f, 0.45f);
+            bool keepBoss = d.bossDown;
+            DoTransition(() =>
+            {
+                StartChapter(State.Chapter);
+                // the keeper you already felled does not climb back out of the save
+                _bossDown = keepBoss;
+                if (_bossDown && World != null) World.RemoveBoss();
+            }, 0.25f, 0.45f);
         }
 
         public void LeaveToTitle()
         {
             Menus.Hide();
             _paused = false;
+            if (World != null && World.Ready) World.SetTextVisible(true);
+            SaveRun();   // leaving keeps the night where it stands - no lost walks
             DoTransition(() => ShowTitle(), 0.25f, 0.35f);
         }
 
@@ -1560,6 +2634,9 @@ namespace MoonThief
                         {
                             var d = (t.position - _joyCenter) / Mathf.Min(Screen.width, Screen.height) * 2.2f;
                             vec = Vector2.ClampMagnitude(d, 1f);
+                            // a resting thumb trembles in millimetres; the mouse path below has
+                            // always zeroed that jitter - the finger deserves the same floor
+                            if (vec.sqrMagnitude < 0.003f) vec = Vector2.zero;
                         }
                     }
                 }
@@ -1584,25 +2661,36 @@ namespace MoonThief
             return vec;
         }
 
+        /// <summary>The rectangle the whole stage draws into: the safe area, so a notch or
+        /// a rounded bezel never eats the night bar, the moon icon or the AUTO chip. The
+        /// render stretches into it, so on an un-notched phone this is the full screen.</summary>
+        static Rect DrawRect()
+        {
+            var sa = Screen.safeArea;
+            return new Rect(sa.x, Screen.height - sa.yMax, sa.width, sa.height);
+        }
+
         /// <summary>The inverse of ScreenToStage, for tests that need to aim at the screen the
         /// way a finger would instead of poking world coordinates directly.</summary>
         public Vector3 StageToScreen(Vector2 stage)
         {
-            return new Vector3((stage.x / 18f + 0.5f) * Screen.width,
-                (stage.y / (HalfH * 2f) + 0.5f) * Screen.height, 0f);
+            var sa = Screen.safeArea;
+            return new Vector3(sa.x + (stage.x / 18f + 0.5f) * sa.width,
+                sa.y + (stage.y / (HalfH * 2f) + 0.5f) * sa.height, 0f);
         }
 
         public Vector2 ScreenToStage(Vector3 screenPos)
         {
-            float nx = Screen.width > 0 ? screenPos.x / Screen.width : 0.5f;
-            float ny = Screen.height > 0 ? screenPos.y / Screen.height : 0.5f;
+            var sa = Screen.safeArea;
+            float nx = sa.width > 0f ? (screenPos.x - sa.x) / sa.width : 0.5f;
+            float ny = sa.height > 0f ? (screenPos.y - sa.y) / sa.height : 0.5f;
             return new Vector2((nx - 0.5f) * 18f, (ny - 0.5f) * (HalfH * 2f));
         }
 
         void OnGUI()
         {
             if (Target == null) return;
-            GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Target, ScaleMode.StretchToFill, false);
+            GUI.DrawTexture(DrawRect(), Target, ScaleMode.StretchToFill, false);
         }
 
         // ------------------------------------------------------------ editor preview
@@ -1612,7 +2700,7 @@ namespace MoonThief
         /// the previews would show text that is half a pixel off while the game is not.</summary>
         void SnapTextLayer()
         {
-            var labels = Object.FindObjectsOfType<PixelLabel>(true);
+            var labels = Object.FindObjectsByType<PixelLabel>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             foreach (var l in labels)
             {
                 if (l == null || !l.gameObject.activeInHierarchy || !l.SnapToPixelGrid) continue;
@@ -1706,7 +2794,9 @@ namespace MoonThief
             State.NewRun();
             State.Chapter = chapter;
             Phase = St.Explore;
-            _metMira = true;
+            Quests.SetStep("mq.1", 3);            // a staged run is past the first talk
+            if (Quests.Step("mq.2") == 0) Quests.Accept(Quests.Find("mq.2"));
+            _inHouse = false;          // staging the street cancels any room we stood in
             Menus.Hide();
             _titleRoot.gameObject.SetActive(false);
             _endRoot.gameObject.SetActive(false);
@@ -1745,8 +2835,26 @@ namespace MoonThief
                 // over the village. 11.4 units keeps it a two-line note in the corner.
                 _hudQuest.MaxWidthUnits = 11.4f;
             }
+            if (_hudQuestChip == null)
+            {
+                // a faint chip under the goal line: light pixel text over sunlit grass was
+                // unreadable, and the zone banner already carries the same dark backing
+                _hudQuestChip = SpriteRendererUtil.Make(World.HudRoot, "hudQuestChip", TexArt.Solid(), 5000);
+                _hudQuestChip.drawMode = SpriteDrawMode.Sliced;
+                _hudQuestChip.color = new Color32(10, 8, 20, 150);
+            }
             _hudQuest.transform.localPosition = new Vector3(G.Left + 0.55f, HalfH - 1.7f, 0f);
-            _hudQuest.enabled = true;
+            SetHudQuestVisible(true);
+        }
+
+        void SetHudQuestVisible(bool v)
+        {
+            // _hudQuest outlives the world it was parented under: a new chapter rebuilds the
+            // WorldView and the old label is Unity-dead but the field still holds it. Guard or
+            // the first battle of night two throws before MakeHud re-seats the references.
+            if (_hudQuest != null) _hudQuest.enabled = v;
+            if (_hudQuestChip != null && _hudQuest != null)
+                _hudQuestChip.enabled = v && _hudQuest.gameObject.activeSelf;
         }
 
         public void EditorDialog()
@@ -1784,7 +2892,7 @@ namespace MoonThief
             CloseDialog();
             EditorExplore(1);
             Menus.HideToast();
-            World.ShowBanner(Strings.Get("zone.arrive.2"));
+            ShowZoneBanner(Strings.Get("zone.arrive.2"));
             Menus.SetAnchor(Cam.transform.localPosition);
         }
 
@@ -1796,16 +2904,16 @@ namespace MoonThief
             FollowHero();
         }
 
-        public void EditorBattle()
+        public void EditorBattle(bool ambush = false)
         {
             Phase = St.Battle;
             Menus.Hide();
             World.gameObject.SetActive(false);
             if (_hudZone != null) _hudZone.enabled = false;
-            if (_hudQuest != null) _hudQuest.enabled = false;
+            SetHudQuestVisible(false);
             SetCamY(0f);
             BattleViewRef.gameObject.SetActive(true);
-            Director.StartBattle(BattleData.Roll(State.Chapter, new System.Random(7)));
+            Director.StartBattle(BattleData.Roll(State.Chapter, new System.Random(7)), ambush);
             Director.EditorTick();   // edit mode: coroutines are dead, drive the round start by hand
         }
 
@@ -1858,14 +2966,22 @@ namespace MoonThief
             State.NewRun();
             State.Chapter = 1;
             Phase = St.Explore;
-            _metMira = true;
+            Quests.SetStep("mq.1", 3);
+            if (Quests.Step("mq.2") == 0) Quests.Accept(Quests.Find("mq.2"));
             Menus.Hide();
             _titleRoot.gameObject.SetActive(false);
             _endRoot.gameObject.SetActive(false);
             BattleViewRef.gameObject.SetActive(false);
-            World.gameObject.SetActive(true);
-            if (World.Ready) World.Teardown();
-            _overworld = World;
+            // only remember the view we came FROM when we actually came from outside - a
+            // chained interior visit would otherwise stash the about-to-be-killed house
+            // view as the "overworld", and LeaveHouse would hand back a dead WorldView.
+            // no Teardown: the overworld must stay whole so LeaveHouse can walk back into it
+            if (World != null && !_inHouse)
+            {
+                _overworld = World;
+                _overworld.gameObject.SetActive(false);   // EnterHouse hides it too - its canopy mesh reads as black patches inside the room
+                _doorReturn = World.Map != null ? World.Map.VillageCenter : new Vector2(9.5f, 12.5f);
+            }
             if (_houseRoot == null)
             {
                 _houseRoot = new GameObject("house").transform;
@@ -1880,7 +2996,7 @@ namespace MoonThief
             World.PlaceHero(new Vector2(9.5f, 12.5f));
             _inHouse = true;
             MakeHud();
-            World.ShowBanner(Strings.Get(_houseMap.InteriorNameKey));
+            ShowZoneBanner(Strings.Get(_houseMap.InteriorNameKey));
             FollowHero();
             RefreshHud();
         }
@@ -1922,6 +3038,29 @@ namespace MoonThief
             Menus.SetAnchor(Cam.transform.localPosition);
         }
 
+        /// <summary>The first-boot onboarding card, middle page so the dots show progress.</summary>
+        public void EditorOnboard()
+        {
+            SetCam(0f, 0f);
+            _titleRoot.gameObject.SetActive(false);
+            World.gameObject.SetActive(false);
+            Menus.Hide();
+            Menus.ShowOnboard();
+            Menus.SetAnchor(Cam.transform.localPosition);
+        }
+
+        /// <summary>Marn's shop card with a purse worth spending: stock rows plus gold in the sub.</summary>
+        public void EditorShop()
+        {
+            CloseDialog();
+            State.NewRun();
+            State.Gold = 37;
+            _titleRoot.gameObject.SetActive(false);
+            if (World != null && World.Ready) World.SetTextVisible(false);
+            Menus.ShowShop();
+            Menus.SetAnchor(Cam.transform.localPosition);
+        }
+
         // ------------------------------------------------------------ self test
 
         IEnumerator SelfTest()
@@ -1940,36 +3079,340 @@ namespace MoonThief
             Shot("10-menu");
             Debug.Log("[selftest] front-end phase=" + Phase);
 
+            // the first-boot cards: page one, then tap through to the last page and out
+            Menus.ShowOnboard();
+            yield return new WaitForSeconds(0.4f);
+            Shot("10b-onboard");
+            Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);
+            yield return new WaitForSeconds(0.3f);
+            Shot("10b2-onboard-2");
+            Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);
+            yield return new WaitForSeconds(0.3f);
+            Shot("10c-onboard-3");
+            Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);   // page 4: GEAR UP
+            yield return new WaitForSeconds(0.3f);
+            Shot("10c3-onboard-4");
+            Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);   // BEGIN -> title
+            yield return new WaitForSeconds(0.5f);
+            Shot("10c2-menu");    // on a fresh boot shot 10 lands on onboarding, so re-take it here
+            Debug.Log("[selftest] after onboard phase=" + Phase);
+
+            // back on the title raises the goodbye card - the one screen no run ever stood
+            // up: cancel to raise it, then STAY drops back to the menu rows
+            Menus.Tick(0.1f, Vector2.zero, false, 0, false, true);
+            yield return new WaitForSeconds(0.5f);
+            Shot("10c4-quitconf");
+            Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);   // STAY -> title rows
+            yield return new WaitForSeconds(0.3f);
+
+            // the release-a-friend wording is the second card through the same frame: stand it
+            // up on demand so the title-fit pass proves both wordings, then cancel back out
+            Menus.ShowConfirm(() => { }, Strings.Get("conf.reltitle"),
+                Strings.Get("conf.relsub", Strings.Get("mon.wisp")), Strings.Get("conf.rel"), null,
+                Strings.Get("conf.relno"));
+            yield return new WaitForSeconds(0.5f);
+            Shot("10c5-setfree");
+            Menus.Tick(0.1f, Vector2.zero, false, 0, false, true);   // cancel -> title rows
+            yield return new WaitForSeconds(0.3f);
+
+            // the chapter card only plays inside the night-2/night-3 dissolve - too fast
+            // to catch live, so the editor hook stands it up on demand instead
+            Menus.ShowChapterCard(2);
+            yield return new WaitForSeconds(1.7f);   // night, then place, then the errand line
+            Shot("10d-chcard");
+
+            // the about card - the last room of the title screen no pass ever shot
+            Menus.ShowCredits();
+            yield return new WaitForSeconds(0.7f);
+            Shot("10e-about");
+            Menus.Tick(0.1f, Vector2.zero, false, 1, false, false);
+            Menus.Tick(0.1f, Vector2.zero, false, 1, false, false);
+            Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);   // BACK -> title
+            yield return new WaitForSeconds(0.3f);
+
+            // the intro reel: every slide sits behind ci.N text and one of three backdrop
+            // arts, none of which any shot has ever stood up. Walk the reel the way a player
+            // taps it - finish-line then next-slide - through the plain, forest and dungeon
+            // arts, then Hide drops the card without firing OnIntroDone (BeginRun still
+            // opens the run below). Ten slides: 0-3 plain, 4-6 forest, 7-9 dungeon.
+            Menus.ShowCinema(0);
+            yield return new WaitForSeconds(1.0f);
+            Shot("10f-cinema-1");
+            for (int s = 0; s < 8; s++) { Menus.Tick(0.05f, Vector2.zero, false, 0, true, false); yield return new WaitForSeconds(0.25f); }
+            Shot("10f-cinema-5");
+            for (int s = 0; s < 10; s++) { Menus.Tick(0.05f, Vector2.zero, false, 0, true, false); yield return new WaitForSeconds(0.25f); }
+            Shot("10f-cinema-9");
+            Menus.Hide();
+            yield return new WaitForSeconds(0.2f);
+
             BeginRun();
             yield return new WaitForSeconds(1.2f);
             Shot("11-village");
-            Debug.Log("[selftest] hero=" + World.HeroPos + " mons=" + World.Monsters.Count);
+            Debug.Log("[selftest] hero=" + World.HeroPos + " mons=" + World.Monsters.Count
+                + " respawns=" + World.PendingRespawns);
+
+            // stand beside Mira a moment: passing a villager should bubble a bark
+            World.PlaceHero(new Vector2(27.5f, 8.9f));
+            yield return new WaitForSeconds(1.4f);
+            Shot("11d-bark");
+
+            // creep vs stride: park the hero just inside a hunter's hearing twice. Prowling
+            // he is silent and unseen; striding he is heard through the dark itself -
+            // read it off the monster's own aggro flag
+            if (World.Monsters.Count > 0)
+            {
+                var mon = World.Monsters[0];
+                EditorSneak = true;
+                World.PlaceHero((Vector2)mon.Root.localPosition + new Vector2(2.4f, 0f));
+                mon.Aggro = false;   // anything it already caught resets - we time our own
+                yield return new WaitForSeconds(0.5f);
+                bool hid = !mon.Aggro;
+                float dhHid = Vector2.Distance((Vector2)mon.Root.localPosition, World.HeroPos);
+                Shot("11e-sneak");
+                EditorSneak = false;
+                yield return new WaitForSeconds(0.6f);
+                bool seen = mon.Aggro;
+                Debug.Log("[selftest] sneak hid=" + hid + " dh=" + dhHid.ToString("0.0") + " seen=" + seen);
+                World.PlaceHero(World.Map.VillageCenter + new Vector2(1.5f, 1.5f));
+                mon.Aggro = false;
+                yield return new WaitForSeconds(0.4f);
+            }
+
+            // a dozing beast, if the night's dice left one: park beside it and frame
+            // the drifting z - blind sleepers should not stir even this close
+            var sleeper = (WorldView.Actor)null;
+            foreach (var mm in World.Monsters) if (mm.Asleep) { sleeper = mm; break; }
+            if (sleeper != null)
+            {
+                EditorSneak = true;   // a silent approach: deaf to eyes, it should not stir
+                World.PlaceHero((Vector2)sleeper.Root.localPosition + new Vector2(2.0f, 0f));
+                yield return new WaitForSeconds(0.5f);
+                Debug.Log("[selftest] sleeper dozing=" + (sleeper.Asleep && !sleeper.Aggro));
+                Shot("11f-sleeper");
+                EditorSneak = false;
+                World.PlaceHero(World.Map.VillageCenter + new Vector2(1.5f, 1.5f));
+                yield return new WaitForSeconds(0.3f);
+            }
+
+            // the dialog frame - portrait plate, name tag, typewriter - is the one
+            // interactive surface every earlier pass left unphotographed
+            EditorTalk();
+            yield return new WaitForSeconds(0.9f);
+            Shot("11b-dialog");
+            Debug.Log("[selftest] dialog open=" + _dlgOpen);
+            CloseDialog();
+            yield return new WaitForSeconds(0.2f);
+
+            // an interior: the one space no pass had ever photographed. Mira's house
+            // (0) is the shrine room - rug, shelf, statue, hearth fire, lamp by the door
+            EditorInterior(0);
+            yield return new WaitForSeconds(0.9f);
+            Shot("11c-interior");
+            Debug.Log("[selftest] interior inHouse=" + _inHouse + " hero=" + World.HeroPos);
+            // every room layout once, so the audit sees all six furniture sets
+            for (int h = 1; h < 6; h++)
+            {
+                EditorInterior(h);
+                yield return new WaitForSeconds(0.7f);
+                Shot("11c" + h + "-interior");
+            }
+            // step back into the street before anything else: the hunt for a monster
+            // steered inside the last room once, and rooms have no monsters to find
+            if (_inHouse) LeaveHouse();
+            yield return new WaitForSeconds(0.6f);
+
+            // the menu pages fake a rich run so their shots have something to show -
+            // EditorJournal's NewRun() alone would poison every later leg (it leaves
+            // chapter 2, chestsOpened 5, quests re-seeded). Keep the real run: capture
+            // now, apply after the last page, resync the world to it.
+            var stash = State.Capture(World.HeroPos.x, World.HeroPos.y, _bossDown);
+
+            // Marn's stall: open the shop card for real, buy one thing, leave
+            State.Gold = 40;
+            OpenShop();
+            yield return new WaitForSecondsRealtime(0.5f);
+            Shot("21-shop");
+            Debug.Log("[selftest] shop rows=" + Menus.ActiveRowCount);
+            Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);   // buy first ware
+            yield return new WaitForSecondsRealtime(0.2f);
+            // the SELL card is a different layout (bag rows, its own footer hint, half prices):
+            // step down to the SELL row - it sits second from last, before BACK - and open it
+            for (int s = 0; s < Menus.ActiveRowCount - 2; s++) Menus.Tick(0.05f, Vector2.zero, false, 1, false, false);
+            Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);
+            yield return new WaitForSecondsRealtime(0.4f);
+            Shot("21b-shop-sell");
+            // back to buying, then one page deeper: BUY MODE is the sell card's last row,
+            // and MORE sits after the six wares on the buy card, before SELL and BACK
+            for (int s = 0; s < Menus.ActiveRowCount - 1; s++) Menus.Tick(0.05f, Vector2.zero, false, 1, false, false);
+            Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);   // BUY MODE -> buy card
+            yield return new WaitForSecondsRealtime(0.3f);
+            for (int s = 0; s < Menus.ActiveRowCount - 3; s++) Menus.Tick(0.05f, Vector2.zero, false, 1, false, false);
+            Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);   // MORE -> page two
+            yield return new WaitForSecondsRealtime(0.3f);
+            Shot("21c-shop-p2");
+            ClosePause();
+            yield return new WaitForSeconds(0.3f);
 
             // open the pause card and its settings page for real. The row layout used to be
             // wired to one shared list, so these two cards drew an empty frame on a device
             // while every singe-player shortcut test still passed -- capture them here.
             OpenPause();
-            yield return new WaitForSeconds(0.6f);
+            // realtime waits: the pause card now actually freezes the clock, so a scaled
+            // WaitForSeconds here would hang forever
+            yield return new WaitForSecondsRealtime(0.6f);
             Shot("19-pause");
             Debug.Log("[selftest] pause rows=" + Menus.ActiveRowCount);
             Menus.ShowSettings(true);
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSecondsRealtime(0.5f);
             Shot("20-settings");
             Debug.Log("[selftest] settings rows=" + Menus.ActiveRowCount);
+
+            // the wipe row lives only on the title-side card: stand that card up, arm the row
+            // once, photograph the armed label, and leave it armed - a second tap would erase
+            Menus.ShowSettings(false);
+            yield return new WaitForSecondsRealtime(0.4f);
+            for (int s = 0; s < Menus.ActiveRowCount - 2; s++) Menus.Tick(0.05f, Vector2.zero, false, 1, false, false);
+            Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);   // first tap arms it
+            yield return new WaitForSecondsRealtime(0.2f);
+            Shot("20b-erase");
 
             // the journal the pause card opens: hub, then a real page. Same reason as above -
             // the rows are built per page and a shared list made every page after the first draw
             // an empty frame.
             Menus.EditorJournal(-1);
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSecondsRealtime(0.5f);
             Shot("27-journal");
             Debug.Log("[selftest] journal rows=" + Menus.ActiveRowCount);
             Menus.EditorJournal(4);
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSecondsRealtime(0.5f);
             Shot("28-quests");
             Debug.Log("[selftest] quest rows=" + Menus.ActiveRowCount);
-            Menus.Hide();
-            _paused = false;
+            Menus.EditorJournal(5);
+            yield return new WaitForSecondsRealtime(0.5f);
+            Shot("28b-map");
+            Debug.Log("[selftest] map rows=" + Menus.ActiveRowCount);
+            // the four pages nobody has photographed yet: character stats, the bag,
+            // worn gear, and the bestiary with its FRIEND column
+            Menus.EditorJournal(0);
+            yield return new WaitForSecondsRealtime(0.5f);
+            Shot("28c-character");
+            // page two and three of the stat sheet: the icon row that only shows on
+            // later pages has drifted before - photograph it now
+            for (int i = 0; i < 6; i++) Menus.Tick(0.1f, Vector2.zero, false, 1, false, false);
+            Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);
+            yield return new WaitForSecondsRealtime(0.4f);
+            Shot("28c2-character-p2");
+            for (int i = 0; i < 6; i++) Menus.Tick(0.1f, Vector2.zero, false, 1, false, false);
+            Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);
+            yield return new WaitForSecondsRealtime(0.4f);
+            Shot("28c3-character-p3");
+            Menus.EditorJournal(1);
+            yield return new WaitForSecondsRealtime(0.5f);
+            Shot("28d-items");
+            Menus.EditorJournal(2);
+            yield return new WaitForSecondsRealtime(0.5f);
+            Shot("28e-equipment");
+            Menus.EditorJournal(3);
+            yield return new WaitForSecondsRealtime(0.5f);
+            Shot("28f-bestiary");
+            // page two of the beast book: late-night species and the FRIEND column
+            // live there, where no shot has ever reached them
+            for (int i = 0; i < 6; i++) Menus.Tick(0.1f, Vector2.zero, false, 1, false, false);
+            Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);
+            yield return new WaitForSecondsRealtime(0.4f);
+            Shot("28f2-bestiary-p2");
+            // the medal case: mostly "?????" this early - the trophy wall needs checking
+            // for both its earned rows and its locked ones
+            Menus.EditorJournal(6);
+            yield return new WaitForSecondsRealtime(0.5f);
+            Shot("28g-medals");
+            // the back pages of the case: the late feats live there - film them too
+            for (int i = 0; i < 6; i++) Menus.Tick(0.1f, Vector2.zero, false, 1, false, false);
+            Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);
+            yield return new WaitForSecondsRealtime(0.4f);
+            Shot("28g2-medals-p2");
+            for (int i = 0; i < 6; i++) Menus.Tick(0.1f, Vector2.zero, false, 1, false, false);
+            Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);
+            yield return new WaitForSecondsRealtime(0.4f);
+            Shot("28g3-medals-p3");
+            ClosePause();
+
+            // the real run comes back before a single world leg touches it - the fake
+            // journal state was only ever meant for the frames above
+            State.Apply(stash);
+            if (World != null && World.Ready) World.ResetForChapter();
+            RefreshHud();
+
+            // the company forms before the hunt, the same way a player forms it: find the
+            // wanderer, take the talk, and let the talk's close run the join. After this the
+            // wandering selves are gone, two walkers trail the hero, and every fight ahead
+            // (including the three bosses, which were tuned for three) has the full party.
+            var seaNpc = World.FindNpc("npc.sea");
+            if (seaNpc != null)
+            {
+                TalkTo(seaNpc.Npc);
+                yield return new WaitForSeconds(0.8f);
+                Shot("12a-sea-talk");
+                CloseDialog();
+                yield return new WaitForSeconds(0.4f);
+            }
+            var mossNpc = World.FindNpc("npc.moss");
+            if (mossNpc != null)
+            {
+                TalkTo(mossNpc.Npc);
+                yield return new WaitForSeconds(0.4f);
+                CloseDialog();
+                yield return new WaitForSeconds(0.4f);
+            }
+            Debug.Log("[selftest] company=" + string.Join(",", State.Joined));
+            Shot("12a-party");
+
+            // the shard path itself, which the hunt legs never touch: walk to the nearest
+            // unopened field chest and open it through TryInteract, the same call a tap
+            // lands on. The first three chests must grant a moon shard.
+            var shut = World.ShutChestPos();
+            if (shut.Count > 0)
+            {
+                var chestAt = shut[0]; float cd = float.MaxValue;
+                foreach (var c in shut)
+                {
+                    float d = Vector2.Distance(World.HeroPos, c);
+                    if (d < cd) { cd = d; chestAt = c; }
+                }
+                int cguard = 0, cstuck = 0;
+                var lastC = World.HeroPos;
+                while (Vector2.Distance(World.HeroPos, chestAt) > 1.0f && cguard++ < 900)
+                {
+                    var cdir = (chestAt - World.HeroPos).normalized;
+                    if (Vector2.Distance(World.HeroPos, lastC) < 0.02f)
+                    {
+                        if (++cstuck > 25) { cdir = new Vector2(Random.value < 0.5f ? -1f : 1f, 0.6f); cstuck = 0; }
+                    }
+                    else cstuck = 0;
+                    lastC = World.HeroPos;
+                    World.DriveHero(cdir, Time.deltaTime);
+                    TickWorldForTest();
+                    yield return null;
+                }
+                int shardsBeforeChest = State.MoonShards;
+                // TryInteract would work too, but a villager drifting beside the chest
+                // wins the interact first (NPCs are checked before chests) - the shard
+                // path is what this leg exists to prove, so call the chest directly
+                int cIdx = World.NearestChest(World.HeroPos);
+                if (cIdx >= 0)
+                {
+                    World.OpenChest(cIdx);
+                    Sfx.Play(State.MoonShards > shardsBeforeChest ? "shard" : "chest");
+                    ShowZoneBanner(World.LastLootText);
+                    CheckMains();
+                    RefreshHud();
+                }
+                yield return new WaitForSeconds(0.7f);
+                Debug.Log("[selftest] chest shards " + shardsBeforeChest + "->" + State.MoonShards
+                    + " left=" + World.ChestsLeft + " opened=" + State.ChestsOpened
+                    + " interior=" + (World.Map != null && World.Map.Interior));
+                Shot("12b-chest-shard");
+            }
 
             // hunt the nearest wild monster so an encounter is guaranteed, not lucky. Steering is
             // diagonal: the old axis-only version (straight east/west, then straight north) wedged
@@ -1979,7 +3422,7 @@ namespace MoonThief
             var lastHuntPos = World.HeroPos;
             int huntStuck = 0;
             float huntStart = Time.time;
-            while (Phase == St.Explore && Time.time - huntStart < 30f)
+            while (Phase == St.Explore && Time.time - huntStart < 50f)
             {
                 guard++;
                 var target = World.NearestMonsterPos();
@@ -2004,8 +3447,19 @@ namespace MoonThief
             int battles = 0;
             while (Phase == St.Battle && battles++ < 6)
             {
+                // jump the moonflow the moment the encounter begins, before the first
+                // hero turn draws its labels - a menu labelled STRIKE stays labelled
+                // STRIKE if the flow lands after it opens
+                if (battles == 1) Director.DebugFlow = 5;
                 yield return new WaitForSeconds(1.6f);
                 Shot("13-battle-" + battles);
+                // run one encounter on auto-battle so the AUTO chip path is exercised end to end
+                if (battles == 2 && !Director.Auto)
+                {
+                    Director.ToggleAuto();
+                    Shot("13b-battle-auto");
+                    Debug.Log("[selftest] auto battle on");
+                }
                 int t = 0;
                 float turnStart = Time.time;
                 while (Phase == St.Battle && Time.time - turnStart < 45f)
@@ -2013,6 +3467,22 @@ namespace MoonThief
                     t++;
                     if (Director.AwaitingInput)
                     {
+                        // a hero turn at flow five carries the pale MOONSTRIKE labels - the
+                        // menu grid itself must be up: AwaitingInput still reads true for a
+                        // frame after a dazed monster's skipped turn hides the cells
+                        if (battles == 1 && t >= 2 && !_shotMoon && BattleViewRef.MenuOn)
+                        {
+                            // MenuOn still flickers true for a frame when a dazed beast's
+                            // skipped turn interrupts the open menu - hold a beat so the
+                            // cells either settle in or the flag falls away
+                            yield return new WaitForSeconds(0.3f);
+                            if (BattleViewRef != null && BattleViewRef.MenuOn
+                                && !BattleViewRef.MessageRevealing)
+                            {
+                                _shotMoon = true;
+                                Shot("13c-battle-moon");
+                            }
+                        }
                         // one turn in three goes through the real tap path, so the hit test
                         // that a finger uses is exercised instead of only the shortcut. The
                         // point is round-tripped through the screen mapping a finger goes
@@ -2037,6 +3507,9 @@ namespace MoonThief
                     else if (BattleViewRef.OverlayButtonCount > 0)
                     {
                         Shot("14-card");
+                        // the card only listens once it has settled - tap the way a player
+                        // who waited for it would, not the way a machine polling frames could
+                        while (!BattleViewRef.CardArmed) yield return null;
                         var cr = BattleViewRef.CardButtonRect(0);
                         if (cr.width > 0f) { Director.TapAt(cr.center); Debug.Log("[selftest] TapAt card button"); }
                         else BattleViewRef.CardButtonAt(0)?.Invoke();
@@ -2053,106 +3526,275 @@ namespace MoonThief
             }
             Debug.Log("[selftest] after battles phase=" + Phase);
 
-            // keep exploring to the boss if we are still alive
-            guard = 0;
-            var lastPos = World.HeroPos;
-            int stuck = 0;
-            float walkStart = Time.time;
-            while ((Phase == St.Explore || Phase == St.Battle) && Time.time - walkStart < 75f)
+            // the one screen no win ever shows: losing. Stage the night's gatekeeper against
+            // a party at one health apiece, let AUTO play it honestly, photograph the fall
+            // card, then take the long walk home - the whole defeat path was a blind spot
+            if (Phase == St.Explore)
             {
-                guard++;
-                if (Phase == St.Battle)
+                EditorBattle();
+                Director.StartBattle(BattleData.BossFight(State.Chapter));
+                // venom ticks before its carrier acts, so AUTO can never mend these:
+                // one queue pass and the whole party drops - the loss is certain, not hoped for
+                foreach (var p in BattleViewRef.Party) { p.Hp = 1; p.Poison = 99; }
+                if (!Director.Auto) Director.ToggleAuto();
+                int loseGuard = 0;
+                while (Phase == St.Battle && loseGuard++ < 4000)
                 {
-                    if (Director.AwaitingInput) { Director.SelectCell(0); Director.Confirm(); }
-                    else if (BattleViewRef.OverlayButtonCount > 0)
+                    if (BattleViewRef.OverlayButtonCount > 0)
+                    {
+                        yield return new WaitForSeconds(0.9f);
+                        Shot("12b-losscard");
+                        BattleViewRef.CardButtonAt(BattleViewRef.OverlayButtonCount - 1)?.Invoke();
+                        break;
+                    }
+                    TickWorldForTest();
+                    yield return null;
+                }
+                Debug.Log("[selftest] defeat ended phase=" + Phase + " hero=" + World.HeroPos);
+                yield return new WaitForSeconds(1.4f);
+                Shot("12c-retreat");
+                // however the staged fight ended, the night must be Explore before the boss
+                // walk - a card still standing taps its way home instead of skipping the spine
+                int sweep = 0;
+                while (Phase == St.Battle && sweep++ < 600)
+                {
+                    if (BattleViewRef.OverlayButtonCount > 0)
+                        // CONTINUE on a win card, FLEE HOME on a loss: both land on Explore
+                        BattleViewRef.CardButtonAt(BattleViewRef.OverlayButtonCount - 1)?.Invoke();
+                    else TickWorldForTest();
+                    yield return null;
+                }
+            }
+
+            // the prowl's payoff staged on film: a fight the dark never saw coming opens
+            // with the whole roster reeling - stun stars over flat-footed rigs, then the
+            // walk loop's own battle branch plays it out like any other stray fight
+            if (Phase == St.Explore)
+            {
+                EditorBattle(true);
+                yield return new WaitForSeconds(1.2f);
+                Debug.Log("[selftest] ambush dazed=" + (BattleViewRef.Enemies.Length > 0 && BattleViewRef.Enemies[0].Dazed));
+                Shot("13d-ambush");
+                // and out again: the boss walk below only runs from Explore, so the staged
+                // fight must pay its way home first - AUTO settles a reeling pack in seconds
+                if (!Director.Auto) Director.ToggleAuto();
+                int asweep = 0;
+                while (Phase == St.Battle && asweep++ < 3000)
+                {
+                    if (BattleViewRef.OverlayButtonCount > 0)
                         BattleViewRef.CardButtonAt(0)?.Invoke();
                     else TickWorldForTest();
                     yield return null;
-                    continue;
                 }
-                if (guard % 600 == 0)
-                    Debug.Log("[selftest] walking north guard=" + guard + " t=" + (Time.time - walkStart).ToString("0.0")
-                        + "s hero=" + World.HeroPos + " phase=" + Phase + " near=" + World.NearBoss);
-                if (World.NearBoss) break;
-                var toB = World.Map.BossPos - World.HeroPos;
-                // diagonal again, so a blocked axis still leaves the other one moving
-                var dirB = toB.sqrMagnitude < 0.01f ? Vector2.up : toB.normalized;
-                // a straight line to the boss can wedge on a tree: sidestep when stuck
-                if (Vector2.Distance(World.HeroPos, lastPos) < 0.01f) stuck++;
-                else stuck = 0;
-                lastPos = World.HeroPos;
-                if (stuck > 25)
-                {
-                    dirB = new Vector2(Random.value < 0.5f ? -1f : 1f, 0.15f);
-                    stuck = 0;
-                }
-                World.DriveHero(dirB, Time.deltaTime);
-                TickWorldForTest();
-                yield return null;
             }
-            if (!World.NearBoss)
-            {
-                // pathing can stall on trees; step next to the boss so the fight is still tested
-                World.PlaceHero(new Vector2(World.Map.BossPos.x + 0.5f, World.Map.BossPos.y - 1.5f));
-                yield return null;
-            }
-            Shot("15-bosszone");
-            Debug.Log("[selftest] boss zone at y=" + World.HeroPos.y + " nearBoss=" + World.NearBoss);
 
-            // fight the boss
-            if (World.NearBoss && !_bossDown)
+            // keep exploring to the boss if we are still alive
+            // one loop per night: walk the map to its gatekeeper, let AUTO win the fight,
+            // tap the fall card and ride the chapter dissolve into the next night. The whole
+            // spine of the game is exercised every run - not just night one.
+            _testNoDoors = true;   // a house door on the way north would swallow the walk whole
+            if (_inHouse) LeaveHouse();   // step out before steering north
+            yield return new WaitForSeconds(0.3f);
+            for (int night = 1; night <= 3 && Phase == St.Explore; night++)
             {
-                StartBattle(BattleData.BossFight());
-                int t2 = 0;
-                float bossStart = Time.time;
-                while (Phase == St.Battle && Time.time - bossStart < 45f)
+                guard = 0;
+                var lastPos = World.HeroPos;
+                int stuck = 0;
+                float walkStart = Time.time;
+                while ((Phase == St.Explore || Phase == St.Battle) && Time.time - walkStart < 75f)
                 {
-                    t2++;
-                    if (Director.AwaitingInput) { Director.SelectCell(0); Director.Confirm(); }
-                    else if (BattleViewRef.OverlayButtonCount > 0)
+                    guard++;
+                    if (Phase == St.Battle)
                     {
-                        Shot("16-bosscard");
-                        var cr = BattleViewRef.CardButtonRect(0);
-                        if (cr.width > 0f) Director.TapAt(cr.center);
-                        else BattleViewRef.CardButtonAt(0)?.Invoke();
-                        yield return new WaitForSeconds(1.2f);
-                        break;
+                        // a stray wild fight on the road north: AUTO it, tap its card, keep walking
+                        if (!Director.Auto) Director.ToggleAuto();
+                        // the night-2 and night-3 fights are the only chances to photograph
+                        // those arenas and their packs - the n1 hunt only ever sees night one
+                        if (!_shotFight.Contains(night))
+                        {
+                            _shotFight.Add(night);
+                            yield return new WaitForSeconds(1.2f);
+                            Shot("13b-fight-n" + night);
+                        }
+                        if (BattleViewRef.OverlayButtonCount > 0)
+                            BattleViewRef.CardButtonAt(0)?.Invoke();
+                        else TickWorldForTest();
+                        yield return null;
+                        continue;
                     }
-                    else TickWorldForTest();
+                    if (guard % 600 == 0)
+                        Debug.Log("[selftest] walking north night " + night + " guard=" + guard + " t=" + (Time.time - walkStart).ToString("0.0")
+                            + "s hero=" + World.HeroPos + " phase=" + Phase + " near=" + World.NearBoss);
+                    if (World.NearBoss) break;
+                    var toB = World.Map.BossPos - World.HeroPos;
+                    // diagonal again, so a blocked axis still leaves the other one moving
+                    var dirB = toB.sqrMagnitude < 0.01f ? Vector2.up : toB.normalized;
+                    // a straight line to the boss can wedge on a tree: sidestep when stuck
+                    if (Vector2.Distance(World.HeroPos, lastPos) < 0.01f) stuck++;
+                    else stuck = 0;
+                    lastPos = World.HeroPos;
+                    if (stuck > 25)
+                    {
+                        dirB = new Vector2(Random.value < 0.5f ? -1f : 1f, 0.15f);
+                        stuck = 0;
+                    }
+                    World.DriveHero(dirB, Time.deltaTime);
+                    TickWorldForTest();
                     yield return null;
                 }
-            }
+                if (!World.NearBoss)
+                {
+                    // pathing can stall on trees; step next to the boss so the fight is still tested
+                    World.PlaceHero(new Vector2(World.Map.BossPos.x + 0.5f, World.Map.BossPos.y - 1.5f));
+                    yield return null;
+                }
+                // a stray ambusher can still be mid-fight at the gate: let its card fall
+                // and the fades clear before the keeper rises - else its verdict
+                // masquerades as his (this once hid the whole night-2 fight: a field
+                // battle's card was tapped as the boss's and the chapter never moved)
+                for (int bw = 0; bw < 1400 && (Phase == St.Battle || FadeAlpha > 0.04f); bw++)
+                {
+                    if (Phase == St.Battle && BattleViewRef.OverlayButtonCount > 0)
+                        BattleViewRef.CardButtonAt(0)?.Invoke();
+                    yield return null;
+                }
+                Shot("15-bosszone-n" + night);
+                Debug.Log("[selftest] boss zone night " + night + " at y=" + World.HeroPos.y + " nearBoss=" + World.NearBoss);
 
-            // the victory card rolls into the next night through a black dissolve; the old
-            // fixed 0.8 s wait landed inside it and the frame came out solid black
-            for (int fw = 0; fw < 600 && FadeAlpha > 0.04f; fw++) yield return null;
-            yield return new WaitForSeconds(0.5f);
-            Shot("17-after-boss");
-            Debug.Log("[selftest] after boss phase=" + Phase + " shards=" + State.MoonShards);
+                if (World.NearBoss && !_bossDown)
+                {
+                    StartBattle(BattleData.BossFight(State.Chapter));
+                    float bossStart = Time.time;
+                    // let the real AUTO battle play the finale: it mends, spends a morsel when
+                    // the party is hurt and aims for weak seams - the same hand a player has,
+                    // and a better solver than raw ATTACK spam that can wipe and re-fight.
+                    if (!Director.Auto) Director.ToggleAuto();
+                    int lastRoundLogged = -1;
+                    bool bossShot = false;
+                    while (Phase == St.Battle && Time.time - bossStart < 170f)
+                    {
+                        if (!bossShot && Time.time - bossStart > 2.5f)
+                        {
+                            bossShot = true;
+                            Shot("16b-bossfight-n" + night);
+                        }
+                        if (Director.DebugRound != lastRoundLogged)
+                        {
+                            lastRoundLogged = Director.DebugRound;
+                            Debug.Log("[selftest] boss round " + lastRoundLogged + " at " + Mathf.RoundToInt(Time.time - bossStart) + "s night " + night);
+                        }
+                        if (BattleViewRef.OverlayButtonCount > 0)
+                        {
+                            // the buttons list and the pixels share a frame boundary: the
+                            // card exists the frame it is built, but the screen still shows
+                            // the kill log. Wait one rendered frame or the shot is stale
+                            yield return null;
+                            yield return null;
+                            Shot("16-bosscard-n" + night);
+                            while (!BattleViewRef.CardArmed) yield return null;
+                            var cr = BattleViewRef.CardButtonRect(0);
+                            if (cr.width > 0f) Director.TapAt(cr.center);
+                            else BattleViewRef.CardButtonAt(0)?.Invoke();
+                            yield return new WaitForSeconds(1.2f);
+                            break;
+                        }
+                        else TickWorldForTest();
+                        yield return null;
+                    }
+                }
+
+                // the victory card rolls into the next night through a black dissolve; the old
+                // fixed 0.8 s wait landed inside it and the frame came out solid black
+                for (int fw = 0; fw < 600 && FadeAlpha > 0.04f; fw++) yield return null;
+                yield return new WaitForSeconds(0.5f);
+                Shot("17-after-boss-n" + night);
+                Debug.Log("[selftest] after boss night " + night + " phase=" + Phase
+                    + " chapter=" + State.Chapter + " shards=" + State.MoonShards);
+
+                if (night < 3)
+                {
+                    // the dissolve schedules the next chapter - wait for the world to rebuild
+                    float waitCh = Time.time;
+                    while (State.Chapter != night + 1 && Time.time - waitCh < 8f) yield return null;
+                    // and a beat for the new map's first frames
+                    for (int fw = 0; fw < 30; fw++) yield return null;
+                }
+            }
 
             if (Phase == St.Explore)
             {
                 // walk back to the cristal and end the game
                 World.DriveHero(Vector2.down, 0.016f);
                 int g3 = 0;
+                _stuck = 0; _prevHero = World.HeroPos;
                 float homeStart = Time.time;
-                while (Phase == St.Explore && Time.time - homeStart < 45f)
+                while ((Phase == St.Explore || Phase == St.Battle) && Time.time - homeStart < 45f)
                 {
                     g3++;
+                    if (Phase == St.Battle)
+                    {
+                        // a wild touch on the way home: AUTO it, tap its card, keep walking
+                        if (!Director.Auto) Director.ToggleAuto();
+                        if (BattleViewRef.OverlayButtonCount > 0)
+                            BattleViewRef.CardButtonAt(0)?.Invoke();
+                        else TickWorldForTest();
+                        yield return null;
+                        continue;
+                    }
                     if (g3 % 600 == 0)
                         Debug.Log("[selftest] walking to cristal g3=" + g3 + " hero=" + World.HeroPos
                             + " shards=" + State.MoonShards);
                     var target = World.Map.CristalPos;
                     var delta = target - World.HeroPos;
                     World.DriveHero(delta, Time.deltaTime);
+                    // a wall between the road and the ridge used to eat the whole 45s:
+                    // the steer pushed into it forever. When the hero stops moving,
+                    // slide along the wall - alternating sides so a corner can't trap it
+                    if (Vector2.Distance(World.HeroPos, _prevHero) < 0.008f) _stuck++;
+                    else _stuck = 0;
+                    _prevHero = World.HeroPos;
+                    if (_stuck > 12)
+                    {
+                        var perp = new Vector2(-delta.y, delta.x).normalized;
+                        World.DriveHero(perp * ((_stuck / 40) % 2 == 0 ? 1f : -1f), Time.deltaTime * 1.4f);
+                    }
                     TickWorldForTest();
                     if (Vector2.Distance(World.HeroPos, target) < 2f) break;
                     yield return null;
                 }
+                // a companion for the horizon line: without this the ending shot only
+                // ever sees the lone telling
+                if (State.Friends.Count == 0) { State.Friends.Add("mon.slime"); State.Friends.Add("moon.mon.wisp"); }
                 TriggerEnding();
+                _testNoDoors = false;
                 yield return new WaitForSeconds(1.0f);
-                Shot("18-ending");
+                Shot("18-ending");            // mid-rise: moon still low, words not up yet
+                yield return new WaitForSeconds(3.4f);
+                Shot("18b-ending-risen");     // the moon is up and the epilogue is on
                 Debug.Log("[selftest] ending shown");
+
+                // the night retells itself: out of the ending, back to the title, and
+                // straight into CONTINUE - the retold world must read as night 1
+                // again: caches shut, quests unwritten, beasts grown bolder (NG+)
+                DoTransition(() => ShowTitle());
+                yield return new WaitForSeconds(1.4f);
+                ContinueRun();
+                yield return new WaitForSeconds(2.2f);
+                Debug.Log("[selftest] ngp=" + State.NgPlus + " ch=" + State.Chapter
+                    + " shards=" + State.MoonShards + " chests=" + State.ChestsDone.Count
+                    + " quests=" + Quests.DoneCount + " joined=" + State.Joined.Count
+                    + " phase=" + Phase);
+                Shot("19-ngplus");
+
+                // the case by now: three keepers felled, the ending earned, the tale
+                // retold - the medal page should read won icons, not '?????'. This is
+                // the only shot in the pass that sees a medal as it is meant to look.
+                Menus.EditorJournal(6);
+                yield return new WaitForSecondsRealtime(0.5f);
+                Shot("29-medals-earned");
+                Debug.Log("[selftest] medals earned=" + Medals.Count);
+                ClosePause();
+                yield return new WaitForSecondsRealtime(0.3f);
             }
 
             Debug.Log("[selftest] done");

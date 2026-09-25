@@ -2,9 +2,9 @@
 
 # ---- title
 title.name|THE MOON THIEF
-title.tagline|The moon is gone. Find the shards and light it again.
-title.footer|a tale of three nights
-title.tap|TAP TO BEGIN
+title.tagline|The moon is gone. Find the shards and raise it again.
+title.footer|a tale in three nights
+title.tap|TAP OR ENTER TO BEGIN
 
 # ---- splash
 splash.studio|F7 DEVELOPER GAMES
@@ -12,14 +12,21 @@ splash.made|a hand-built night tale
 splash.presents|presents
 
 # ---- main menu
-menu.new|NEW NIGHT
+menu.new|NEW GAME
 menu.continue|CONTINUE
+menu.nosave|NO SAVE
+menu.story|STORY
 menu.settings|SETTINGS
-menu.credits|CREDITS
-menu.hint|TAP A ROW TO PICK
+menu.about|ABOUT
+menu.share|SHARE
+menu.rate|RATE US
+menu.hint|PICK A ROW
+share.copied|Store link copied - send it to a friend.
+share.text|The Moon Thief - a tale in three nights. {0}
+rate.store|Opening the store page...
 cred.title|THE MOON THIEF
 cred.sub|a tale in three nights
-cred.body|studio      f7 developer games\npixel art   super retro collection\ncode        unity, built from scratch\nsound       chiptune written in code\nfont        5x8 bitmap, drawn by hand
+cred.body|studio      f7 developer games\npixel art   super retro collection\ncode        unity, built from scratch\nsound       chiptune written in code\nfont        5x8 bitmap, drawn by hand\nversion     {0}
 cred.thanks|thank you for playing
 menu.back|BACK
 
@@ -33,9 +40,46 @@ set.speed.fast|FAST
 set.speed.instant|INSTANT
 set.sound|SOUND
 set.shake|SCREEN SHAKE
+set.erase|ERASE SAVE
+set.erase.sure|SURE? ONE MORE TAP
+set.erased|Save erased. The night is clear.
 set.on|ON
 set.off|OFF
 set.saved|PROGRESS SAVED
+set.music|MUSIC
+set.autobattle|AUTO BATTLE
+set.haptics|HAPTICS
+set.difficulty|DIFFICULTY
+set.diff.story|STORY
+set.diff.normal|NORMAL
+set.diff.hard|HARD
+set.howto|HOW TO PLAY
+
+# ---- onboarding (first boot, three cards)
+onb.title.1|WALK
+onb.body.1|Drag anywhere on the road to walk.\nPush gently, or hold SHIFT, to creep -\na creeping thief is harder to spot.\nTap a chest to open it.
+onb.title.2|FIGHT & BEFRIEND
+onb.body.2|Wild beasts chase you in the dark.\nIn a fight: ATTACK, BEFRIEND,\nshare a MORSEL, or FLEE.\nAUTO fights for you.
+onb.title.3|THE QUEST
+onb.body.3|Your goal is written in the corner.\nFollow the moon-chevron.\nGather shards. Raise the moon.
+onb.title.4|GEAR UP
+onb.body.4|MARN the trader sells swords,\ncloth and charms. The JOURNAL\nunder the gear icon equips them.
+onb.next|NEXT
+onb.start|BEGIN
+
+# ---- the shop
+shop.title|MARN'S WARES
+shop.sub|{0} GOLD
+shop.buy|BUY
+shop.sold|Carried off. Careful out there.
+shop.poor|Not enough gold, love.
+shop.owned|OWNED
+shop.have|You already have one, love.
+shop.hint|TAP A WARE TO BUY IT - * IS THE BEST SHELF
+shop.sellhint|TAP AN ITEM TO SELL - * IS THE BEST SHELF
+shop.sellmode|SELL SOMETHING
+shop.buymode|BUY SOMETHING
+shop.soldout|Sold. {0} gold for the road.
 
 # ---- pause
 pause.title|PAUSED
@@ -46,7 +90,8 @@ pause.settings|SETTINGS
 pause.totitle|LEAVE TO TITLE
 
 # ---- cinematic intro
-ci.skip|TAP TO SKIP
+ci.skip|TAP OR ENTER TO SKIP
+ci.0|Quiet Hollow, on the last\ngood night of the year.
 ci.1|Night came early.
 ci.2|The moon did not rise.
 ci.3|No one saw it go.
@@ -54,25 +99,32 @@ ci.4|Only tracks, crossing\nall four roads.
 ci.5|Something walked out\ncarrying the sky\nin four pieces.
 ci.6|Mira kept the last\nlantern of Quiet Hollow.
 ci.7|She gives it to you.
-ci.8|Gather the shards.\nRaise three friends.\nClimb the dark wood.
+ci.8|Gather the shards.\nGather your friends.\nClimb the dark wood.
 ci.9|Hang the moon back\nwhere it belongs.
 ci.ch.1|NIGHT ONE\nthe village of Quiet Hollow
 ci.ch.2|NIGHT TWO\nthe long fields
 ci.ch.3|NIGHT THREE\nthe dark wood
+ci.goal.1|gather what shines. something stalks the north gate.
+ci.goal.2|two more sleep out in the fields. the thane holds the wall.
+ci.goal.3|the last shard walks on two legs. reach the guard at the crystal.
 
 # ---- hud
 hud.nightshort|NIGHT {0}
 hud.round|ROUND {0}
-hud.explore|NIGHT {0}    SHARD {1}/{2}
+hud.roundf|FLOW x{0}
+hud.explore|NIGHT {0}    SHARDS {1}/{2}    GOLD {3}
 hud.quest|NEXT: {0}
 
 # ---- quest chain (the clear workflow). Kept short: this line lives in the corner of the
 # ---- screen over the world, and a 39-character line ran most of the way across it.
-quest.1|Talk to Mira by the crystal.
-quest.2|Open night chests. {0} shards left.
-quest.3|Follow the lamps north.
-quest.4|Face the Pale Guard.
-quest.5|Raise the moon at the crystal.
+# Numbered: the corner line reads like a walkthrough, so the order is never in doubt.
+quest.1|1. Talk to Mira.
+quest.sea|2. Find Sea at the village edge.
+quest.moss|3. Find Moss out in the fields.
+quest.2|4. Open {0} night {1}.
+quest.3|5. Follow the lamps.
+quest.4|6. Face the {0}.
+quest.5|7. Raise the moon at Mira's crystal.
 
 # ---- heroes
 hero.amber|AMBER
@@ -82,23 +134,89 @@ hero.you|YOU
 
 # ---- battle menu
 menu.attack|ATTACK
+menu.strike|STRIKE
+menu.sweep|SWEEP
+menu.mend|MEND
+menu.mstrike|MOON STRIKE
+menu.msweep|MOON SWEEP
+menu.mmend|MOON MEND
 menu.befriend|BEFRIEND
 menu.morsel|MORSEL
-menu.run|LET GO
+menu.run|FLEE
 
 # ---- battle messages
+bt.ambush|Struck from the dark - the {0} reels!
 bt.one|A wild {0} blocks the way!
 bt.two|{0} and a friend appear!
+bt.three|{0} answers the dark with its pack!
+bt.moonlit|A MOONLIT {0} shimmers into view!
+bt.flee|The party melts back into the dark.
+bt.noflee|The Guard bars every way out!
+bt.boss|The {0} bars your way!
+bt.fam.slime|Something wet glistens on the road. It is a {0}.
+bt.fam.mushroom|A {0} pops out of the loam!
+bt.fam.wasp|A {0} dives out of the dark!
+bt.fam.ghost|A {0} drifts out of the treeline.
+bt.fam.skeleton|A {0} drags itself upright.
+bt.fam.scorpion|A {0} skitters out, tail high!
+bt.fam.genius|A {0} floats down, lantern-bright.
+bt.fam.worm|A {0} bursts from under the furrows!
+bt.fam.zombi|A {0} drags itself out of the grave-dirt!
+bt.fam.slimesword|A {0} levels a rusty edge!
+bt.fam.succubus|A {0} swoops down, thirsty!
+bt.fam.lamia|A {0} uncoils from the reeds!
+bt.fam.blackmagus|A {0} raises its hollow hand.
+bt.fam.skeletonwarrior|A {0} lowers its plated helm.
+bt.fam.minotaur|A {0} paws the ground, horns low!
+bt.slam|The {0} rears up and SLAMS down!
+bt.enraged|The {0} is cornered - it fights without mercy now!
+bt.dazed|DAZED
+bt.tripped|TRIPPED
+bt.hexed|HEXED
+bt.coiled|COILED
+bt.plated|PLATED
+bt.fed|FED!
+bt.corroded|CORRODED
+bt.parried|PARRIED!
+bt.cleansed|CLEANSED
+bt.warmed|WARM
+bt.poison|POISON
+bt.poisoned|POISONED
+bt.phased|PHASED!
+bt.rises|IT RISES AGAIN!
+bt.ward|The {0} wreathes the Guard in light.
+bt.ward2|The {0} wreathes the {1} in light.
+bt.warded|WARDED
+bt.squiremend|The {0} mends its thane.
+bt.riposte|The {0} strikes right back!
+bt.slipped|The {0} slips away into the dark!
+bt.miss|MISS
 bt.yourturn|{0} - your move.
+bt.friendturn|{0} fights for you!
 bt.enemyturn|{0} strikes!
 bt.herodown|{0} falls...
 bt.fainted|{0} fades into mist.
-bt.trybefriend|{0} looks at you...
+bt.fellpack|{0} beasts fall together.
+bt.trybefriend|{0} looks at you... ({1}%)
 bt.befriended|{0} joins you!
+bt.befriended.rare|The MOONLIT {0} joins your night!
 bt.befriendfail|{0} is not ready yet.
-bt.morsel|You lay down a moonlit morsel.
+bt.stablefull|Your stable is full.
+bt.notame|The {0} will not be tamed.
 bt.nomore|The bag is empty.
-bt.hint|tap a command, then a foe
+bt.hint|PICK A COMMAND, TAP A FOE TO AIM
+bt.auto.on|AUTO on - the party fights itself.
+bt.auto.off|AUTO off.
+bt.attack.0|{0} lunges!
+bt.attack.1|{0} sweeps the whole field!
+bt.attack.2|{0} mends {1}!
+bt.attack.2c|{0} weaves a warm mending over {1}!
+bt.attack.2x|{0} mends {1} and draws the venom out!
+bt.cleanse|{0} draws the venom out of {1}.
+bt.attack.2b|{0} throws a pebble at {1}!
+bt.attack.crit|{0} finds the weak seam! {1} damage!
+bt.weak|WEAK!
+bt.heal|+{0}
 
 # ---- monsters
 mon.slime|DEW SLIME
@@ -112,25 +230,97 @@ mon.wasp2|DUSK BEE
 mon.shade|SHADE
 mon.bones|HOLLOW BONES
 mon.hob|STONE HOB
+mon.revenant|GRAVE REVENANT
 mon.wisp|LANTERN WISP
 mon.minotaur|PALE GUARD
+mon.thane|NIGHT THANE
+mon.thick|THICKET
+mon.palebell|PALE BELL
+mon.stalker|DUSK STALKER
+mon.squire|SHADE SQUIRE
+mon.slime.d|It misses the moon too. Its goo holds your feet when it lands.
+mon.slime2.d|Softer than it looks. Meaner too. Its smear trips the careless.
+mon.imp.d|Grew from a kettle nobody emptied. Dropped, it breathes spores on whoever struck close.
+mon.slimeB.d|The dark squeezes into puddles now. Stand in it and you fall.
+mon.gloop.d|Smells like the pond. The bad side. Its weight drags you down too.
+mon.impB.d|Older than the hollow. Grumpier. Its last breath is spores - strike from afar.
+mon.wasp.d|Still looking for a lamp to die on. Nearly dead, it'd rather fly home.
+mon.wasp2.d|Stings first. Asks never. Corners badly - slips away before the end.
+mon.shade.d|A shadow that lost its person. Blows pass through it.
+mon.bones.d|Keeps walking. Out of habit. Knocked down, it gets up once.
+mon.hob.d|Sleeps as a rock. Walks as a grudge. Its sting lingers.
+mon.wisp.d|Lamp smoke that learned to float. Its light shields friends.
+mon.minotaur.d|It wears the shard like a crown.
+mon.thane.d|The dark's own knight. No oath, just hunger.
+mon.thick.d|The hedge grew teeth last winter. Felled up close, it puffs spores.
+mon.palebell.d|It rings. Something answers.
+mon.revenant.d|It died angry. The dark keeps the grievance filed. Down once, up once.
+mon.stalker.d|It ate the dusk patrol. Now it eats the road.
+mon.squire.d|A page that outlived its knight.
+mon.magus|HOLLOW MAGUS
+mon.lamia|COIL SISTER
+mon.worm|TUNNEL WORM
+mon.zombi|GRAVEROT
+mon.sword|BLADE PUDDING
+mon.worm2|DEEP BURROWER
+mon.zombi2|BARROW LORD
+mon.sword2|DUEL PUDDING
+mon.thirst|THIRSTLING
+mon.swarrior|BONE WARDEN
+mon.magus.d|Traded its face for one more spell. Its mark saps the arm it lands on.
+mon.lamia.d|Half the dark, half the river. It holds its mark past a turn or two.
+mon.worm.d|The field's own hunger. Its bite rusts the arm it takes.
+mon.zombi.d|Walks out of every grave it ever filled. One fall in three, it stands back up.
+mon.sword.d|Ate the swordsman, kept the sword. Turns steel aside with steel.
+mon.worm2.d|It outgrew the furrows. The rot in its bite never did.
+mon.zombi2.d|The grave's own landlord. One fall in three it collects again - rises once more.
+mon.sword2.d|Kept the swordsman too, this time. Two edges answer one.
+mon.thirst.d|It kisses with teeth. Whatever it takes, it keeps.
+mon.swarrior.d|A knight out of the bone pile. Its plate drinks part of every blow.
 
 # ---- result cards
 card.wintitle|THE WAY IS CLEAR
 card.bosstitle|THE GUARD FALLS
+card.bosstitle.1|THE STALKER FALLS
+card.bosstitle.2|THE THANE FALLS
+card.bosstitle.3|THE GUARD FALLS
 card.losstitle|THE NIGHT WINS
 card.bossline|The last shard slips out of its hands.
-card.lossline|The party wakes by the crystal. The moon is still gone.
+card.bossline.1|The road north lies open.
+card.bossline.2|Its helm rings once on the stones, and is still.
+card.bossline.3|The last shard slips out of its hands.
+card.lossline|The party wakes in the village. The moon is still gone.
+card.tithe|The dark takes its due: {0} gold slips away.
 card.xp|XP {0}
 card.gold|GOLD {0}
+card.levelup|LEVEL UP - LV {0}!
+card.flawless|FLAWLESS - NOBODY FELL!
+card.untouch|UNTOUCHED - NOT A SCRATCH!
+card.healall|The party breathes easier.
+card.newseen|NEW IN THE BOOK: {0}
 card.befriended|FRIENDS {0}/{1}
 card.joined|They wanted to come.
-card.moon|The moon is still gone.
+card.moon|The moon stays gone.
+card.drop|FOUND {0}!
 
 # ---- buttons
 btn.continue|CONTINUE
 btn.retry|TRY AGAIN
-btn.title|BACK TO TITLE
+btn.flee|FLEE HOME
+
+# ---- the START OVER card: the one choice that should never be a mis-tap away
+conf.title|START OVER?
+conf.sub|Your saved night will be replaced.
+conf.yes|START OVER
+conf.no|KEEP MY SAVE
+conf.reltitle|SET FREE?
+conf.relsub|The {0} returns to the night.
+conf.rel|SET FREE
+conf.relno|KEEP IT
+conf.quittitle|LEAVE THE NIGHT?
+conf.quitsub|The saved night waits where it is.
+conf.quityes|LEAVE
+conf.quitstay|STAY
 
 # ---- world zones. Two lines: the night in the big face, the place in the small one.
 zone.arrive.1|NIGHT ONE\nquiet hollow
@@ -141,9 +331,44 @@ zone.bossdown|THE LAST SHARD IS YOURS
 zone.retreat|You fall back to the village.
 zone.shard|A MOON SHARD hums in your hands
 
+# ---- boss talk. Each night's gatekeeper speaks before it swings.
+boss1.t.1|The dusk stalker crouches on the road. It does not share.
+boss1.t.2|Bleed, little light. The dark is hungry too.
+boss2.t.1|The thane's helm is split by a shard. He wears it anyway.
+boss2.t.2|No oath. No quarter. The road is mine, and I hold it.
+boss.taunt.1|A hundred nights I stood this watch. The shard crown burns my head.
+boss.taunt.2|Take it if you can. Or kneel, little thief, and keep the dark.
+zone.name.village|QUIET HOLLOW
+zone.name.fields|THE LONG FIELDS
+zone.name.wood|THE DARK WOOD
+bark.sea.village|SEA: I kept watch here. It never needed one before.
+bark.sea.fields|SEA: Mind the rows - things nest in them.
+bark.sea.wood|SEA: The wood listens. Keep your knife loose.
+bark.moss.village|MOSS: Smell the smoke? The stoves still burn.
+bark.moss.fields|MOSS: I used to count stems out here.
+bark.moss.wood|MOSS: The old trees do not like us walking.
+bark.sea.idle.0|SEA: Stay close. The dark has eyes tonight.
+bark.sea.idle.1|SEA: I used to walk this road alone.
+bark.sea.idle.2|SEA: Hear that? Something moved off the path.
+bark.sea.idle.3|SEA: Your lantern is the only light for miles.
+bark.moss.idle.0|MOSS: The stems are still out here somewhere.
+bark.moss.idle.1|MOSS: Breathe slow. Fear draws them.
+bark.moss.idle.2|MOSS: I can mend cuts. I cannot mend fear.
+bark.moss.idle.3|MOSS: The moon would know what to do here.
+bark.sea.idle.4|SEA: Keep your blade oiled and your feet quiet.
+bark.sea.idle.5|SEA: Moss hums when she is scared. She is always humming.
+bark.sea.idle.6|SEA: Four shards down, and the night only grows teeth.
+bark.sea.idle.7|SEA: When this is over I am sleeping for a week.
+bark.moss.idle.4|MOSS: These trees remember the moon. Listen.
+bark.moss.idle.5|MOSS: If I slow down, walk on without me.
+bark.moss.idle.6|MOSS: Sea pretends he is not afraid. I mend his hands anyway.
+bark.moss.idle.7|MOSS: Somewhere past the dark, morning is already walking here.
+zone.short.village|HOLLOW
+zone.short.fields|FIELDS
+zone.short.wood|WOOD
+
 # ---- interact / loot
 loot.moonshard|A MOON SHARD hums in your hands
-loot.herbbread|Herbed bread. The party shares it.
 loot.oldcoin|Old coins from a kinder night.
 
 # ---- tutorial hints
@@ -164,17 +389,28 @@ npc.pip|PIP
 npc.oda|ODA
 npc.nail|NAIL
 npc.prune|PRUNE
+npc.marn|MARN
+npc.sea|SEA
+npc.moss|MOSS
 
 # ---- dialog: Mira, the keeper of the lantern
 dl.elder.1.1|The moon did not rise. Not one cloud, and still dark.
 dl.elder.1.2|Tracks crossed all four roads. Something carried the sky away.
-dl.elder.1.3|Four shards of moonlight are out there. Take the lantern.
+dl.elder.1.3|Four shards of moonlight are out there. Take the lantern.\nSea waits at the village's north edge, Moss out in the fields.\nBring them with you - nobody should walk this dark alone.
 dl.elder.2.1|Two nights gone, and the fields grow bold. You carry shards.
 dl.elder.2.2|Befriend what you can. Two hearts walk further than one.
 dl.elder.2.3|The road north opens at the far gate. Follow the lamps.
 dl.elder.3.1|This is the last night, child. The wood has no dawn.
 dl.elder.3.2|The Pale Guard wears the last shard. It does not sleep.
 dl.elder.3.3|Sing to the crystal when you return. The sky listens.
+
+# ---- dialog: Sea, the knife-hand at the village edge
+dl.sea.1|You must be the thief Mira sent for. I heard the moon never rose.
+dl.sea.2|My knives are dull against the dark alone. Take me with you - I will cut what the night sends.
+
+# ---- dialog: Moss, the field-mender
+dl.moss.1|I was counting stems when the sky went black. The fields are not safe to work now.
+dl.moss.2|Let me walk with you. I can still mend what is torn - better than hiding here.
 
 # ---- dialog: Tobbe, the kid
 dl.kid.1|The slimes glow a little at night. They miss the moon too.
@@ -205,9 +441,12 @@ dl.nail.1|I dig by feel now. Every hole I open, the dark is already in it.
 dl.nail.2|If I do not come back up tonight, my lantern is yours.
 dl.prune.1|I am the queen of this square. Four days now. Nobody argued.
 dl.prune.2|When the moon comes back I will knight the first person who finds it.
+dl.marn.1|Wares for the dark. Gold keeps the lantern lit.
+dl.marn.2|You look like trouble. My favourite kind of customer.
+dl.marn.3|Every night the stock gets braver. So must you.
 
 # ---- battle messages, part two
-bt.morsel2|{0} is shared out. The party gains {1} HP.
+bt.morsel2|{0} is shared out. +{1} HP. Wild things sniff closer.
 bt.nofood|The bag has nothing left to eat.
 
 # ---- interact, part two
@@ -217,17 +456,20 @@ loot.found|You found {0} and {1} gold.
 # ---- the journal
 pause.journal|JOURNAL
 jr.title|JOURNAL
-jr.hint|TAP A ROW TO OPEN, BACK TO RETURN
-jr.pagehint|TAP A ROW, BACK RETURNS TO THE JOURNAL
+jr.hint|PICK A ROW TO OPEN, BACK TO RETURN
+jr.pagehint|PICK A ROW FOR DETAILS
+jr.items.tip|TAP TO EQUIP - * MARKS THE BEST SHELF
+jr.bestiary.tip|FRIENDS YOU KEEP CARRY THEIR FAMILY MARK
+jr.map.tip|SPECKS MARK UNOPENED CHESTS
 jr.sub|LEVEL {0}    {1} GOLD
+jr.ngp|TALE {0}
 jr.character|CHARACTER
 jr.items|BAG
 jr.equip|EQUIPMENT
 jr.bestiary|BESTIARY
 jr.quests|QUESTS
-jr.count|QUESTS {0}/{1}
 jr.level|LEVEL
-jr.xp|EXPERIENCE
+jr.xp|XP EARNED
 jr.shards|MOON SHARDS
 jr.befriended|BEFRIENDED
 jr.felled|BEASTS FELLED
@@ -235,7 +477,11 @@ jr.chests|CHESTS OPENED
 jr.gold|GOLD
 jr.atk|ATK
 jr.hp|HP
+jr.cure|CURE
+jr.wake|WAKE
+jr.mom|FLOW
 jr.maxhp|MAX HP
+jr.spd|SPD
 jr.all|ALL
 jr.key|KEEPSAKE
 jr.slot.blade|BLADE
@@ -243,24 +489,33 @@ jr.slot.cloth|CLOTH
 jr.slot.charm|CHARM
 jr.none|nothing
 jr.worn|WORN
+jr.company|COMPANY
+jr.alone|ALONE
 jr.empty|Bag empty.
 jr.keyitem|A keepsake for somebody in the village.
 jr.usefight|Save it for a hard fight.
-jr.items.sub|{0} THINGS CARRIED
+jr.items.sub|{0} {1} CARRIED
 jr.equip.sub|Tap a slot to swap it.
 jr.equip.tip|Bonus applies to the party.
 jr.bestiary.sub|MET {0} OF {1}
-jr.beast|HP {0}   ATK {1}-{2}
+jr.bestiary.kept|{0} {1} KEPT
+jr.beast|HP {0}   ATK {1}-{2}   WEAK {3}
 jr.unknown|?????
+jr.friend|FRIEND
+jr.down| - DOWN
 jr.unseen|Nobody has met this one yet.
-jr.quests.sub|ACTIVE {0}   DONE {1}
-jr.main|MAIN
+jr.quests.sub|MAIN {0}   SIDE {1}
+jr.map|MAP
+jr.map.sub|the night's road, south to north
+jr.new|NEW
 jr.active|ACTIVE
+jr.prog|{0}/{1}
 jr.ready|READY
 jr.done|DONE
 jr.page|NEXT PAGE {0}/{1}
 jr.newquest|NEW QUEST: {0}
 jr.questdone|QUEST DONE: {0}
+jr.join|{0} joins the walk.
 q.goal|It is written down in your journal.
 q.reward|Gold in hand, and something to carry.
 
@@ -270,22 +525,146 @@ item.berry|EMBER BERRY
 item.honey|WILD HONEY
 item.soup|MUSHROOM SOUP
 item.tea|MOON TEA
+item.crumb|POCKET CRUMB
+item.plum|MOON PLUM
+item.nut|ACORN SACK
+item.toast|CHAR TOAST
+item.egg|HEN'S EGG
+item.apple|ORCHARD APPLE
+item.milk|WARM MILK
+item.bread|DARK LOAF
+item.fig|NIGHT FIG
+item.roll|FIELD ROLL
+item.biscuit|THIEF'S BISCUIT
+item.jam|BRAMBLE JAM
+item.pudding|EGG PUDDING
+item.cheese|GOAT CHEESE
+item.broth|CLEAR BROTH
+item.pie|MOON PIE
+item.cider|PRESSED CIDER
+item.dumpling|BERRY DUMPLING
+item.stew|HEARTH STEW
+item.fish|SILVER FISH
+item.cake|SEED CAKE
+item.mead|OLD MEAD
+item.roast|DUSK ROAST
+item.chowder|MOON CHOWDER
+item.moonpie|FULL MOON PIE
+item.moontart|STAR TART
+item.feast|VILLAGE FEAST
+item.starlight|BOTTLED STARLIGHT
+item.ambrosia|DEW AMBROSIA
+item.mooncake|MOON CAKE
+item.starjam|STAR JAM
+item.nightfeast|NIGHT FEAST
+item.dawnsoup|DAWN SOUP
+item.cristalbite|CRISTAL BITE
 item.spoon|BENT SPOON
 item.knife|KITCHEN KNIFE
 item.sickle|OLD SICKLE
 item.blade|MOON BLADE
+item.fork|GARDEN FORK
+item.peeler|TURNIP PEELER
+item.shiv|TWIG SHIV
+item.dagger|NIGHT DAGGER
+item.machete|FIELD MACHETE
+item.cutter|HEDGE CUTTER
+item.handaxe|HAND AXE
+item.spear|RIVER SPEAR
+item.falchion|FALCHION
+item.saber|REED SABER
+item.glaive|WARDEN GLAIVE
+item.lance|LAMP LANCE
+item.pike|NIGHT PIKE
+item.rapier|FOX RAPIER
+item.moonedge|MOON EDGE
+item.cleaver|BUTCHER'S CLEAVER
+item.fang|WOLF FANG
+item.windsword|WIND SWORD
+item.nightbrand|NIGHTBRAND
+item.frostsaber|FROST SABER
+item.flamebrand|EMBER BRAND
+item.voidedge|VOID EDGE
+item.starmetal|STARMETAL EDGE
+item.moonblade|CRESCENT BLADE
+item.dawnbreaker|DAWNBREAKER
+item.moonsteel|MOONSTEEL SABER
+item.nightfall|NIGHTFALL EDGE
+item.starforged|STARFORGED BLADE
+item.duskbane|DUSKBANE
+item.palesaber|PALE SABER
+item.cristalblade|CRISTAL BLADE
 item.cloak|MOTH CLOAK
 item.vest|HIDE VEST
 item.mail|CHAIN MAIL
+item.scarf|NIGHT SCARF
+item.apron|WORK APRON
+item.tunic|HEMP TUNIC
+item.robe|WAYFARER ROBE
+item.shawl|WOOL SHAWL
+item.jerkin|THICK JERKIN
+item.pelt|BEAST PELT
+item.leather|FIELD LEATHER
+item.hauberk|RIVETED HAUBERK
+item.brigandine|BRIGANDINE
+item.scale|MOON SCALE
+item.plate|FIELD PLATE
+item.moonweave|MOONWEAVE
+item.nightshroud|NIGHT SHROUD
+item.stormcoat|STORM COAT
+item.ironhide|IRONHIDE
+item.starcloak|STAR CLOAK
+item.voidmantle|VOID MANTLE
+item.dawnplate|DAWN PLATE
+item.lunarplate|LUNAR PLATE
+item.aegis|MOON AEGIS
+item.starweave|STARWEAVE
+item.nightsilk|NIGHTSILK WRAP
+item.dawnweave|DAWNWEAVE
+item.moonmail|MOON MAIL
+item.starmail|STAR MAIL
+item.cristalplate|CRISTAL PLATE
 item.charm.bell|BELL CHARM
 item.charm.leaf|LEAF CHARM
 item.charm.moon|MOON CHARM
 item.charm.thread|THREAD CHARM
+item.charm.acorn|LUCKY ACORN
+item.charm.bead|GLASS BEAD
+item.charm.coin|LUCKY COIN
+item.charm.feather|OWL FEATHER
+item.charm.shell|RIVER SHELL
+item.charm.pebble|WISHING PEBBLE
+item.charm.fang|FOX FANG
+item.charm.ivy|IVY BRAID
+item.charm.owl|OWL TOKEN
+item.charm.lantern|LANTERN CHARM
+item.charm.rune|ASH RUNE
+item.charm.ash|MOURNING ASH
+item.charm.moth|MOON MOTH
+item.charm.star|FALLEN STAR
+item.charm.wisp|WISP OIL
+item.charm.comet|COMET DUST
+item.charm.halo|PALE HALO
+item.charm.eclipse|ECLIPSE STONE
+item.charm.zodiac|ZODIAC WHEEL
+item.charm.moonstone|MOONSTONE
+item.charm.aurora|AURORA CHARM
+item.charm.nova|NOVA CHARM
+item.charm.lumen|LUMEN CHARM
+item.charm.crown|MOON CROWN
+item.charm.cristal|CRISTAL CHARM
 item.axe|AN OLD AXE
 item.doll|A RED DOLL
 item.note|A FOLDED NOTE
 item.mushroom|NIGHT CAPS
 item.keepsake|A KEEPSAKE
+item.wormhide|WORMHIDE JERKIN
+item.gravemail|GRAVE MAIL
+item.rusted|RUSTED EDGE
+item.thirstfang|THIRSTFANG
+item.marrow|MARROW BREAD
+item.rotberry|ROT BERRY
+item.charm.grave|GRAVE TOKEN
 
 # ---- the villagers behind the six doors
 npc.house.0|ILSE
@@ -294,6 +673,24 @@ npc.house.2|MARA
 npc.house.3|SABLE
 npc.house.4|TAVI
 npc.house.5|JUNO
+bark.elder|the moon watches us
+bark.kid|i saw a wisp once
+bark.smith|hammer never sleeps
+bark.hunter|easy, hunter
+bark.bard|hmm hmm...
+bark.grandma|keep your lamp lit
+bark.finn|cold out tonight
+bark.pip|watch the treeline
+bark.prune|no moon, no sleep
+bark.oda|shardlight guide you
+bark.nail|heard the stalker?
+bark.marn|wares, cheap
+bark.house.0|mind the floorboards
+bark.house.1|soup is on
+bark.house.2|sit a while
+bark.house.3|quiet in here
+bark.house.4|the door sticks
+bark.house.5|fresh bread
 house.0|ILSE'S SHRINE
 house.1|BRAM'S ROOM
 house.2|COLD FORGE
@@ -317,14 +714,17 @@ dl.home.5.2|My hen has opinions. Do not take them personally.
 q.mq1.title|LAST LANTERN
 q.mq1.step|Take the lantern and step outside.
 q.mq1.offer|So the sky is short one moon, and Mira is short one thief.
+q.mq1.offer.ng|The night tells itself again, and it still owes you a moon.
 q.mq1.done|Go on. The chests the village left shut are worth opening now.
 q.mq2.title|FOUR SHARDS
 q.mq2.step|Open night chests for shards. {0} left.
 q.mq2.offer|Four shards of moonlight fell with the moon. The chests have them.
+q.mq2.offer.ng|The shards fell in the same places. You walked this once already.
 q.mq2.done|Three, and then the road north does the rest. Follow the lamps.
 q.mq3.title|PALE GUARD
 q.mq3.step|Break the Pale Guard. {0} left.
 q.mq3.offer|The guard on the ridge wears the last shard like a crown.
+q.mq3.offer.ng|It wears the shard again. You have taken it once; take it again.
 q.mq3.done|The way to the crystal is open. Sing to it.
 
 # ---- quest log: the side errands (funny, odd, and a few that are not)
@@ -332,46 +732,57 @@ q.axe.title|LENT AXE
 q.axe.step|Find my axe in a chest. {0} left.
 q.axe.offer|I lent my axe to a neighbour, and then the neighbour went out into the dark.
 q.axe.done|That is my axe. Take the thread charm - it never snaps.
+q.axe.offer.ng|The neighbour went out into the dark again. My axe went with him, same as before.
 q.mush.title|MUSHROOMS
 q.mush.step|Gather night mushrooms. {0} left.
-q.mush.offer|Three mushrooms, dear. The ones that grow under the trees and glow a little.
+q.mush.offer|Three mushrooms, dear. The ones that glow a little. The cap-folk in the fields carry them, if you're quick.
 q.mush.done|Now sit down, and no arguing about the soup.
+q.mush.offer.ng|Three mushrooms again, dear. The cap-folk keep growing them, the night keeps asking.
 q.doll.title|RED DOLL
 q.doll.step|Look for the doll. {0} left.
 q.doll.offer|I dropped her somewhere in the fields. She is red. She is not scary.
 q.doll.done|She is not even wet! Where did you find her? Never mind - thank you.
+q.doll.offer.ng|She is lost again. Red, not scary, same field as last time. She never learns.
 q.chicken.title|THE HEN
 q.chicken.step|Talk the hen down off the roof.
 q.chicken.offer|My hen is on the roof again. She only ever listens to strangers.
 q.chicken.done|You said one word and she came down. One word! What was it?
+q.chicken.offer.ng|The roof, the hen, the strangers. You know how this one goes.
 q.toll.title|BRIDGE TOLL
 q.toll.step|Pay the boy his toll. {0} gold left.
 q.toll.offer|A boy has put a toll on the old bridge. Pay him before I do something I regret.
 q.toll.done|Good. And here is a bell. Ring it when the dark gets close.
+q.toll.offer.ng|The boy is at the bridge again with his stick. Eight coins, same toll as ever.
 q.kettle.title|KETTLES
 q.kettle.step|Open night chests for kettles. {0} left.
 q.kettle.offer|I need three kettles, and the only stock left in this village is inside the chests.
 q.kettle.done|Three kettles. Now the forge can at least boil water at night.
+q.kettle.offer.ng|The chests restock themselves when the tale retells. Three kettles, same as always.
 q.rhyme.title|THREE PLACES
 q.rhyme.step|Walk somewhere new. {0} left.
 q.rhyme.offer|Go to the village, the fields, and the wood, and bring me back what the wind said.
 q.rhyme.done|No, no - the wind said it wrong. Still. Here is a leaf charm for the trip.
+q.rhyme.offer.ng|Walk the three roads again - village, fields, wood. The wind tells it differently each time.
 q.watch.title|NIGHT WATCH
 q.watch.step|Fell beasts for the watch. {0} left.
 q.watch.offer|Five beasts down and I might sleep again. That is the whole of my plan.
 q.watch.done|Five. I will sleep tonight with the light on, just the same.
+q.watch.offer.ng|Five more beasts, same bargain. The dark never runs out of them; neither do you.
 q.grave.title|EMPTY CHAIR
 q.grave.step|Find Wren and speak about the chair. {0} left.
 q.grave.offer|My brother's chair is still set for supper. If you meet a hunter called Wren, tell him.
 q.grave.done|He came home. He does not remember me. Take this - he would have wanted it given away.
+q.grave.meet|A chair? Set for supper? ...I should go home. Tell her I am coming.
+q.grave.offer.ng|The chair is set again. Wren is out there again. Some lines the night rewrites unchanged.
 q.ledger.title|THE LEDGER
 q.ledger.step|Open night chests for the ledger. {0} left.
 q.ledger.offer|My father kept a ledger of everything the dark was owed. Six lines are still unpaid.
 q.ledger.done|Six lines closed. Now take the blade - it was always meant to leave this house.
+q.ledger.offer.ng|The ledger's lines come back unpaid when the night retells. Six, same six.
 
 # ---- one-off things on the road
-ev.hen|A hen looks at you, coughs, and drops a coin she has plainly swallowed twice. There is no arguing with her.
-ev.toll|A boy holds out a stick. Toll, he says, and takes six coins out of your pocket himself.
+ev.hen|A hen looks at you, coughs, and drops an ember berry she has plainly swallowed twice. There is no arguing with her.
+ev.toll|A boy holds out a stick. Toll, he says, and pushes six coins into your hand. He is not good at this.
 ev.laundry|Somebody has hung the night's washing on the fog. It is dry. Nobody is anywhere.
 ev.rock|You sit on a warm rock and feel better. The rock is humming an old marching song.
 ev.moth|A moth the size of your hand lands on the lantern and leaves a small charm inside. It seems to expect nothing.
@@ -381,5 +792,119 @@ ev.lantern|An old lantern burns alone on the ridge. Nobody lit it. Fifteen coins
 ev.dog|A hunting dog will not leave the gate. It has waited long enough to forget what for.
 
 # ---- ending
-end.notyet|The crystal is cold. {0} shards are still missing.
-end.text|The shards rise\nfrom your hands and\nclimb the sky.\n\nThe moon takes\nits old place over\nthe fields.\n{0} friends walk\nhome beside you.\n\nThe village wakes\nto its first gold\nmorning.
+end.notyet|The crystal is cold. {0} more to find.
+end.again|the night will dream again - harder
+end.tap|TAP OR ENTER TO CONTINUE
+end.stats|LEVEL {0}    {1} {2}    {3} GOLD\n{4} {5} FACED THE NIGHT
+end.stats.lone|LEVEL {0}    {1} GOLD\n{2} {3} FACED THE NIGHT
+end.medals|{0} {1} EARNED ALONG THE WAY
+end.text|The shards rise\nfrom your hands and\nclimb the sky.\n\nThe moon takes\nits old place over\nthe fields.\nYour new friends\nwalk home beside\nyou.\n\nThe village wakes\nto its first gold\nmorning.
+end.text.one|The shards rise\nfrom your hands and\nclimb the sky.\n\nThe moon takes\nits old place over\nthe fields.\nYour new friend\nwalks home beside\nyou.\n\nThe village wakes\nto its first gold\nmorning.
+end.text.lone|The shards rise\nfrom your hands and\nclimb the sky.\n\nThe moon takes\nits old place over\nthe fields.\nYou walk home\nunder its watch.\n\nThe village wakes\nto its first gold\nmorning.
+
+# ---- the medal case: feats the night remembers across every telling
+jr.medals|MEDALS
+jr.medals.sub|{0} OF {1} EARNED
+jr.medals.tip|TAP A MEDAL TO READ IT - THEY STAY WON FOREVER
+md.locked|??????
+md.earn|MEDAL EARNED: {0}
+md.friend|FIRST HEART
+md.friend.d|A wild beast chose your hand over the dark.
+md.army|TWO DEEP
+md.army.d|Two tamed hearts walk your road at once.
+md.moonlit|SILVER SLAYER
+md.moonlit.d|You felled a moonlit beast - the silver ones fight hardest.
+md.luck|SILVER SOUL
+md.luck.d|A moonlit beast said yes to you. That almost never happens.
+md.hoard|CACHE KEEPER
+md.hoard.d|Ten night chests opened. The road knows you now.
+md.rich|DEEP POCKETS
+md.rich.d|Three hundred gold held at once - Marn sends her regards.
+md.boss1|DUSK BREAKER
+md.boss1.d|The dusk stalker crouched on the road. It does not crouch now.
+md.boss2|THANE BREAKER
+md.boss2.d|The night thane held the wall. The wall holds nothing now.
+md.boss3|PALE BREAKER
+md.boss3.d|The pale guard wore the last shard. You took it back.
+md.keeper|NIGHT'S END
+md.keeper.d|All three keepers felled inside one telling of the night.
+md.ender|MOON HANGER
+md.ender.d|The moon hangs back where it belongs. You put it there.
+md.ngp|TALE RETOLD
+md.ngp.d|The night began again - harder - and you walked back in.
+md.fleet|OPEN HAND
+md.fleet.d|You wished a friend back to the wild. That is its own mercy.
+md.warden|VILLAGE WARDEN
+md.warden.d|Every errand in Quiet Hollow finished. Nobody waited on you.
+md.iron|IRON THIEF
+md.iron.d|The moon raised on the cruel telling. The wild bit hardest - you bit back.
+
+# locked medals keep their name but tell you the feat to chase
+md.friend.h|Unearned: a wild beast has not yet said yes.
+md.army.h|Unearned: two tamed hearts on one road.
+md.moonlit.h|Unearned: the silver beasts hide among the herd.
+md.luck.h|Unearned: try BEFRIEND on a silver beast - if you dare.
+md.hoard.h|Unearned: chests sparkle along the road - open ten.
+md.rich.h|Unearned: sell Marn your surplus - hold three hundred.
+md.boss1.h|Unearned: the night one's keeper crouches on the north road.
+md.boss2.h|Unearned: the second night walls its keeper behind a squire.
+md.boss3.h|Unearned: the pale guard waits at the last shard.
+md.keeper.h|Unearned: three keepers, one telling.
+md.ender.h|Unearned: walk the moon home.
+md.ngp.h|Unearned: when the credits end, the night offers a retelling.
+md.fleet.h|Unearned: a friend can be wished back to the wild, from its page.
+md.warden.h|Unearned: the villagers' errand list, emptied.
+md.iron.h|Unearned: set DIFFICULTY to HARD, then hang the moon.
+
+# ---- battle barks: the friends mutter one line a breath while they fight
+bk.amber.0|stay sharp
+bk.amber.1|here goes
+bk.amber.2|steady now
+bk.sea.0|my swing!
+bk.sea.1|spread them!
+bk.sea.2|wide open!
+bk.moss.0|hold together
+bk.moss.1|patches first!
+bk.moss.2|don't drop!
+bk.pet.0|chirps!
+bk.pet.1|growls low
+bk.pet.2|hops in!
+bk.boss.1.0|the road is mine
+bk.boss.1.1|no light passes
+bk.boss.1.2|screeches low
+bk.boss.2.0|kneel, little thief
+bk.boss.2.1|the night keeps its tithe
+bk.boss.2.2|your moon is owed
+bk.boss.3.0|the moon stays caged
+bk.boss.3.1|light dies here
+bk.boss.3.2|lanterns all go out
+md.ghost|SHADOW
+md.ghost.d|Three blades they never saw coming. The night keeps your secret.
+md.ghost.h|Unearned: creep close - strike from the dark three times.
+hint.sneak|The wild hears a heavy step - small tilts slip past, and an unseen strike stuns.
+bk.amb.0|Softly now.
+bk.amb.1|They never saw us.
+bk.amb.2|From the dark.
+bk.mim.0|I knew that box was wrong!
+bk.mim.1|It had teeth - I saw teeth!
+bk.mim.2|Nobody touch anything!
+bark.doze.0|Shh - it sleeps. Walk soft.
+bark.doze.1|A sleeper. The quiet road lies past it.
+bark.doze.2|Even the wild dreams. Don't wake it.
+bark.doze.solo|Sleeping. Softly now.
+bt.sleep|Roused from dreams - the {0} wakes swinging!
+bt.mimic|That's no chest - the {0} was lying in wait!
+dl.hunter.3|Chests out there aren't all chests, boy. The wild learned our shapes - a shimmer that runs cold instead of gold means teeth. Look twice before you touch.
+md.bitten|TEETH MARKS
+md.bitten.d|You touched the wrong box and lived. The wild's shapes fool you once - not twice.
+md.bitten.h|Unearned: a shimmer that runs cold means teeth - spring one anyway.
+bark.spot.0|It's caught our scent!
+bark.spot.1|Eyes on us - run or fight!
+bark.spot.2|It knows we're here - move!
+dl.kid.3|I saw a chest out there that breathed. It shimmered cold, like winter. Don't open the cold ones, okay?
+bark.spot.solo|It's got my scent.
+md.full|FULL MOON
+md.full.d|Every mark in the case earned. The night has no more secrets to keep from you.
+md.full.h|Unearned: it falls the moment the rest of the case is full.
+bt.burrowed|The {0} sinks back into the loam!
+bt.shambles|it won't stay down!

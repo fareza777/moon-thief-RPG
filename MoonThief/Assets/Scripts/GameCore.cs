@@ -340,6 +340,17 @@ namespace MoonThief
             while (t < seconds) { t += Time.deltaTime; yield return null; }
         }
 
+        /// <summary>A phone's buzz for the moments worth feeling: the crit that lands, the
+        /// friend that falls, the slam that shakes the arena. No-op everywhere a motor
+        /// isn't bolted in, so the call sites never need a platform check.</summary>
+        public static void Buzz()
+        {
+#if UNITY_ANDROID || UNITY_IOS
+            if (!Prefs.Haptics) return;   // the settings page can still the motor
+            try { Handheld.Vibrate(); } catch { }
+#endif
+        }
+
         public static IEnumerator MoveLocal(Transform t, Vector3 to, float duration)
         {
             if (t == null) yield break;
@@ -409,6 +420,28 @@ namespace MoonThief
                 yield return null;
             }
             if (anim != null) anim.SetTint(to);
+        }
+
+        /// <summary>A bright diagonal streak that flashes over the point a hit landed:
+        /// pops small, swells, dies - a quarter second of impact.</summary>
+        public static IEnumerator Slash(Transform parent, Vector3 pos, Color tint, float scale = 1f)
+        {
+            if (parent == null) yield break;
+            var sr = SpriteRendererUtil.Make(parent, "slash", TexArt.Slash(), 120);
+            sr.transform.localPosition = pos;
+            sr.transform.localEulerAngles = new Vector3(0f, 0f, UnityEngine.Random.Range(-55f, -35f));
+            sr.color = tint;
+            float e = 0f;
+            while (e < 0.17f)
+            {
+                e += Time.deltaTime;
+                float k = Mathf.Clamp01(e / 0.17f);
+                if (sr == null) yield break;
+                sr.transform.localScale = Vector3.one * (0.5f + k * 1.9f) * scale;
+                var c = sr.color; c.a = (1f - k) * tint.a; sr.color = c;
+                yield return null;
+            }
+            Kill(sr);
         }
 
         public static IEnumerator Tween(float duration, Action<float> step)
