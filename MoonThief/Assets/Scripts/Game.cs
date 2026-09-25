@@ -327,6 +327,8 @@ namespace MoonThief
         // selftest only: boss walks must not be diverted through a front door - a hero who
         // ducks inside a house keeps steering for a BossPos that lives on the other map
         bool _testNoDoors;
+        Vector2 _prevHero;      // selftest steering: where the hero stood last frame
+        int _stuck;             // ...and how many frames it has gone nowhere
         readonly HashSet<int> _shotFight = new HashSet<int>();   // nights already photographed mid-fight
         bool _shotMoon;                                          // moonlit-label shot already taken
         int _houseIndex = -1;
@@ -3141,6 +3143,7 @@ namespace MoonThief
                 // walk back to the cristal and end the game
                 World.DriveHero(Vector2.down, 0.016f);
                 int g3 = 0;
+                _stuck = 0; _prevHero = World.HeroPos;
                 float homeStart = Time.time;
                 while ((Phase == St.Explore || Phase == St.Battle) && Time.time - homeStart < 45f)
                 {
@@ -3161,6 +3164,17 @@ namespace MoonThief
                     var target = World.Map.CristalPos;
                     var delta = target - World.HeroPos;
                     World.DriveHero(delta, Time.deltaTime);
+                    // a wall between the road and the ridge used to eat the whole 45s:
+                    // the steer pushed into it forever. When the hero stops moving,
+                    // slide along the wall - alternating sides so a corner can't trap it
+                    if (Vector2.Distance(World.HeroPos, _prevHero) < 0.008f) _stuck++;
+                    else _stuck = 0;
+                    _prevHero = World.HeroPos;
+                    if (_stuck > 12)
+                    {
+                        var perp = new Vector2(-delta.y, delta.x).normalized;
+                        World.DriveHero(perp * ((_stuck / 40) % 2 == 0 ? 1f : -1f), Time.deltaTime * 1.4f);
+                    }
                     TickWorldForTest();
                     if (Vector2.Distance(World.HeroPos, target) < 2f) break;
                     yield return null;
