@@ -1639,8 +1639,12 @@ namespace MoonThief
             View.Menu[0].Text.SetColor(moonlit ? new Color(0.72f, 0.82f, 1f) : Color.white);
             View.Menu[0].Icon.sprite = TexArt.MenuIcon(style == 1 ? 13 : style == 2 ? 29 : 0);
             // commands that cannot fire go grey: morsel needs bag food and a fresh
-            // portion, befriend needs room in the two-heart stable
-            View.SetCellEnabled(2, !_morselUsed && Game.State.BestFood() != null);
+            // portion, befriend needs room in the two-heart stable. The morsel cell
+            // counts the portion it would serve - 'MORSEL x3' answers 'how many left'
+            var food = Game.State.BestFood();
+            View.SetCellEnabled(2, !_morselUsed && food != null);
+            View.Menu[2].Text.Set(Strings.Get("menu.morsel")
+                + (food != null ? " x" + Game.State.BagCount(food) : ""));
             View.SetCellEnabled(1, Game.State.Friends.Count < 2 && !_hasBoss);
             View.SetCellEnabled(3, !_hasBoss);   // the Guard bars every way out
             View.AimStyle = f.Style;
