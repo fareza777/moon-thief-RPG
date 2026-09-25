@@ -1310,17 +1310,20 @@ namespace MoonThief
             return r == null ? Vector2.zero : new Vector2(r.Home.x, r.Home.y + r.BodyHeight * 0.6f);
         }
 
-        readonly List<(Vector2 pos, float t)> _floatSpots = new List<(Vector2, float)>();
+        readonly List<(Vector2 pos, float t, int scale)> _floatSpots = new List<(Vector2, float, int)>();
 
         public void FloatNumber(Vector2 pos, string text, Color color, int scale = 2)
         {
             // a beat that earns two words (a crit that also dazes, a ward over a
             // venom tick) used to print them on top of each other; floats live
-            // under a second, so a small upward stagger keeps each one legible
+            // under a second, so each newcomer climbs above every word still
+            // aloft - spaced by the real glyph heights, since a swollen number
+            // needs more room than a whispered one
             foreach (var fr in _floatSpots)
-                if (Time.time - fr.t < 0.9f && Vector2.Distance(fr.pos, pos) < 1.1f)
-                    pos.y = Mathf.Max(pos.y, fr.pos.y + 0.62f);
-            _floatSpots.Add((pos, Time.time));
+                if (Time.time - fr.t < 0.95f && Vector2.Distance(fr.pos, pos) < 1.6f)
+                    pos.y = Mathf.Max(pos.y, fr.pos.y +
+                        0.5f * (PixelFont.GlyphHUnits(fr.scale) + PixelFont.GlyphHUnits(scale)) + 0.16f);
+            _floatSpots.Add((pos, Time.time, scale));
             if (_floatSpots.Count > 8) _floatSpots.RemoveAt(0);
             var go = new GameObject("floatn");
             go.transform.SetParent(Stage, false);
