@@ -890,3 +890,4 @@ bark.spot.solo|It's got my scent.
 md.full|FULL MOON
 md.full.d|Every mark in the case earned. The night has no more secrets to keep from you.
 md.full.h|Unearned: it falls the moment the rest of the case is full.
+bt.burrowed|The {0} sinks back into the loam!

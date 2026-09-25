@@ -1966,10 +1966,13 @@ namespace MoonThief
             // its bar it may quit the field entirely - dive-bomber, not a martyr
             var fam0 = e.Species != null && BattleData.Species(e.Species).HasValue
                 ? BattleData.FamilyOf(BattleData.Species(e.Species).Value) : "";
-            if (fam0 == "wasp" && !e.Boss && e.Hp01 < 0.25f && UnityEngine.Random.value < 0.35f)
+            if ((fam0 == "wasp" && !e.Boss && e.Hp01 < 0.25f && UnityEngine.Random.value < 0.35f)
+                || (fam0 == "mushroom" && !e.Boss && e.Hp01 < 0.2f && UnityEngine.Random.value < 0.3f))
             {
                 var wRig = View.RigOf(e);
-                View.SetMessage(Strings.Get("bt.slipped", e.Name));
+                // the wasp dives off; the mushroom does what mushrooms do - sinks
+                // straight back into the loam it popped out of
+                View.SetMessage(Strings.Get(fam0 == "mushroom" ? "bt.burrowed" : "bt.slipped", e.Name));
                 yield return Fx.Wait(0.35f);
                 e.Captured = true;   // gone like a catch, minus the pet: it left on its own
                 e.Hp = 0;
