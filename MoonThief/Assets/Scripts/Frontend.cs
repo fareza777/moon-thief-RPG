@@ -1102,6 +1102,12 @@ namespace MoonThief
                 // quest: half her shelf price, she says, and a story thrown in free.
                 var keys = new List<string>();
                 foreach (var b in Game.State.Bag) if (!keys.Contains(b)) keys.Add(b);
+                keys.Sort((a, b) =>
+                {
+                    var da = Items.Get(a); var db = Items.Get(b);
+                    return da.Kind != db.Kind ? ((int)da.Kind).CompareTo((int)db.Kind)
+                        : db.Power.CompareTo(da.Power);
+                });
                 foreach (var key in keys)
                 {
                     var def = Items.Get(key);
@@ -1518,6 +1524,14 @@ namespace MoonThief
                         icons = new List<int>();
                         var keys = new List<string>();
                         foreach (var b in Game.State.Bag) if (!keys.Contains(b)) keys.Add(b);
+                        // an inventory reads grouped: food together at the top, gear under it,
+                        // trinkets last - bag order was whoever happened to drop first
+                        keys.Sort((a, b) =>
+                        {
+                            var da = Items.Get(a); var db = Items.Get(b);
+                            return da.Kind != db.Kind ? ((int)da.Kind).CompareTo((int)db.Kind)
+                                : db.Power.CompareTo(da.Power);
+                        });
                         if (keys.Count == 0) { AddK(labels, vals, acts, "jr.empty", ""); icons.Add(-1); }
                         foreach (var key in keys)
                         {
