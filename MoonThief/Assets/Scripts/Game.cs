@@ -820,7 +820,10 @@ namespace MoonThief
         {
             Prefs.OnbSeen = true;
             Prefs.Store();
-            ShowTitle();
+            // a replay asked for from the settings card hands the player back to
+            // that card; the once-ever run lands on the title as always
+            if (Menus.OnboardReturn != null) { var r = Menus.OnboardReturn; Menus.OnboardReturn = null; r(); }
+            else ShowTitle();
         }
 
         /// <summary>STORY on the main menu replays the intro reel and returns to the menu.</summary>

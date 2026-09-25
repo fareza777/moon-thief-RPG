@@ -194,6 +194,9 @@ namespace MoonThief
 
         // wired by Game
         public Action OnStartNew, OnLoadSave, OnResume, OnSaveGame, OnLeaveToTitle, OnIntroDone, OnSplashDone, OnOnboardDone, OnShopClosed, OnStory;
+        /// <summary>Set while a settings-opened onboarding runs: the done callback returns to
+        /// this instead of the title. Null on the once-ever first-boot run.</summary>
+        public Action OnboardReturn;
         public Action<string> OnReleaseFriend;   // a tamed species wished back to the wild
 
         /// <summary>The store page SHARE and RATE point at. Application.identifier is the same
@@ -937,6 +940,7 @@ namespace MoonThief
                 Strings.Get("set.autobattle"),
                 Strings.Get("set.haptics"),
                 Strings.Get("set.difficulty"),
+                Strings.Get("set.howto"),
             };
             var acts = new List<Action>
             {
@@ -953,6 +957,14 @@ namespace MoonThief
                     else { Prefs.Story = true; Prefs.Hard = false; }
                     Prefs.Store(); RefreshSettingsRows(); Select(_sel);
                 },
+                // the lessons are a card, not a life sentence: replaying them drops the
+                // player back on whatever card sent them here, not on the title screen
+                () =>
+                {
+                    bool backToPause = _settingsFromPause;
+                    OnboardReturn = () => { if (backToPause) ShowPause(); else ShowSettings(false); };
+                    ShowOnboard();
+                },
             };
             var vals = new List<string>
             {
@@ -963,9 +975,10 @@ namespace MoonThief
                 Prefs.Auto ? Strings.Get("set.on") : Strings.Get("set.off"),
                 Prefs.Haptics ? Strings.Get("set.on") : Strings.Get("set.off"),
                 Prefs.Story ? Strings.Get("set.diff.story") : Prefs.Hard ? Strings.Get("set.diff.hard") : Strings.Get("set.diff.normal"),
+                "",
             };
 
-            var icons = new List<int> { 9, 10, 11, 12, 13, 25, 18 };
+            var icons = new List<int> { 9, 10, 11, 12, 13, 25, 18, 5 };
             // the wipe lives only on the title-side card: erasing mid-run would be
             // rewritten by the next autosave, which reads as the button doing nothing
             if (!_settingsFromPause)
