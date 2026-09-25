@@ -90,7 +90,7 @@ pause.totitle|LEAVE TO TITLE
 
 # ---- cinematic intro
 ci.skip|TAP OR ENTER TO SKIP
-ci.0a|Quiet Hollow, on the last\ngood night of the year.
+ci.0|Quiet Hollow, on the last\ngood night of the year.
 ci.1|Night came early.
 ci.2|The moon did not rise.
 ci.3|No one saw it go.

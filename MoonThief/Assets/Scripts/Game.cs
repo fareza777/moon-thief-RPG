@@ -780,7 +780,7 @@ namespace MoonThief
             Phase = St.Cinema;
             _afterScreen = ShowTitle;
             Sfx.Mus.Play("cinema");
-            Menus.ShowCinema(1);
+            Menus.ShowCinema(0);
         }
 
         /// <summary>The main menu (title art + the row list).</summary>
@@ -887,7 +887,7 @@ namespace MoonThief
             Phase = St.Cinema;
             _afterScreen = () => StartChapter(1);
             Sfx.Mus.Play("cinema");
-            Menus.ShowCinema(1);
+            Menus.ShowCinema(0);
         }
 
         /// <summary>Chapter intro card, then the world. The card is skipped in the editor

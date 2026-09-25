@@ -2052,7 +2052,7 @@ namespace MoonThief
 
         // ------------------------------------------------------------------ cinema
 
-        const int CinemaSlides = 9;
+        const int CinemaSlides = 10;
 
         void RefreshCinemaSlide()
         {
