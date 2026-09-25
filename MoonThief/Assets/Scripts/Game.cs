@@ -408,6 +408,9 @@ namespace MoonThief
             // a phone's Unity default is 30fps - everything here reads sluggish at 30.
             // 60 is the target every animation is timed for.
             Application.targetFrameRate = 60;
+            // a fight can play itself while hands are off the glass; the dark dimming
+            // mid-battle reads as the game stalling, so the display stays awake
+            Screen.sleepTimeout = SleepTimeout.NeverSleep;
             if (!Application.isMobilePlatform && !Application.isEditor)
                 Screen.SetResolution(576, 1024, false);
             BuildAll(Application.isMobilePlatform ? ComputeHalfHeight() : 16f);
