@@ -2166,7 +2166,11 @@ namespace MoonThief
                 float scale = Mathf.Max(18f / sprite.bounds.size.x, (HalfH * 2f) / sprite.bounds.size.y);
                 _ciArt.transform.localScale = Vector3.one * scale;
                 _ciArt.transform.localPosition = Vector3.zero;
-                _ciArt.color = new Color(0.55f, 0.58f, 0.8f, 1f);
+                // the wash darkens as the tale descends: rose dusk on the plains, road
+                // blue under the trees, the keep's cold for the last slides
+                _ciArt.color = _ciIndex <= 3 ? new Color(0.74f, 0.6f, 0.68f, 1f)
+                    : _ciIndex <= 6 ? new Color(0.55f, 0.58f, 0.8f, 1f)
+                    : new Color(0.44f, 0.46f, 0.7f, 1f);
             }
             _ciHold = 0f;
         }
