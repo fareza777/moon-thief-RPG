@@ -1447,6 +1447,13 @@ namespace MoonThief
             var npc = World.NearestNpc(World.HeroPos);
             int chestAt = World.NearestChest(World.HeroPos);
 
+            // whoever is nearer wins the tap: the talk branch used to run first, so a
+            // villager leaning on a chest could keep it shut forever
+            if (npc.NameKey != null && chestAt >= 0 &&
+                Vector2.Distance(World.HeroPos, World.ChestPos(chestAt)) <
+                Vector2.Distance(World.HeroPos, World.NearestNpcPos(World.HeroPos)))
+                npc = default;
+
             if (npc.NameKey != null)
             {
 

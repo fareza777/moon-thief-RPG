@@ -2196,6 +2196,8 @@ namespace MoonThief
 
         public Vector2 HeroPos => Hero != null ? (Vector2)Hero.Root.localPosition : Vector2.zero;
 
+
+
         public NpcDef NearestNpc(Vector2 pos, float maxDist = 1.4f)
         {
             NpcDef best = default; float bd = maxDist;
@@ -2203,6 +2205,21 @@ namespace MoonThief
             {
                 float d = Vector2.Distance((Vector2)n.Root.localPosition, pos);
                 if (d < bd) { bd = d; best = n.Npc; }
+            }
+            return best;
+        }
+
+        /// <summary>Live position of the npc NearestNpc would find (a far point if none).
+        /// The tap can't compare distances without it: spawn Pos isn't where a wanderer stands.
+        /// </summary>
+        public Vector2 NearestNpcPos(Vector2 pos, float maxDist = 1.4f)
+        {
+            Vector2 best = pos + Vector2.one * 999f; float bd = maxDist;
+            foreach (var n in Npcs)
+            {
+                if (n.Root == null) continue;
+                float d = Vector2.Distance((Vector2)n.Root.localPosition, pos);
+                if (d < bd) { bd = d; best = n.Root.localPosition; }
             }
             return best;
         }
