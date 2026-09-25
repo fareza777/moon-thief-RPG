@@ -3107,6 +3107,22 @@ namespace MoonThief
                 yield return new WaitForSeconds(0.4f);
             }
 
+            // a dozing beast, if the night's dice left one: park beside it and frame
+            // the drifting z - blind sleepers should not stir even this close
+            var sleeper = (WorldView.Actor)null;
+            foreach (var mm in World.Monsters) if (mm.Asleep) { sleeper = mm; break; }
+            if (sleeper != null)
+            {
+                EditorSneak = true;   // a silent approach: deaf to eyes, it should not stir
+                World.PlaceHero((Vector2)sleeper.Root.localPosition + new Vector2(2.0f, 0f));
+                yield return new WaitForSeconds(0.5f);
+                Debug.Log("[selftest] sleeper dozing=" + (sleeper.Asleep && !sleeper.Aggro));
+                Shot("11f-sleeper");
+                EditorSneak = false;
+                World.PlaceHero(World.Map.VillageCenter + new Vector2(1.5f, 1.5f));
+                yield return new WaitForSeconds(0.3f);
+            }
+
             // the dialog frame - portrait plate, name tag, typewriter - is the one
             // interactive surface every earlier pass left unphotographed
             EditorTalk();
