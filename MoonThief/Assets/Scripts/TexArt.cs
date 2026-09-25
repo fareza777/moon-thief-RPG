@@ -417,7 +417,7 @@ namespace MoonThief
         static Sprite _solid, _panel, _shadow, _glow, _moon, _spark, _chevron, _moonFull, _ring, _dot, _slash;
         static Sprite _mat;
         static Sprite[] _wear;
-        static Sprite _night, _vignette, _stars, _star, _alert;
+        static Sprite _night, _vignette, _stars, _star, _alert, _sleepZ;
 
         static Sprite Make(string name, int w, int h, System.Func<int, int, Color32> pixel, Vector4 border)
         {
@@ -1144,11 +1144,25 @@ namespace MoonThief
             return _alert;
         }
 
+        /// <summary>"z" drifted off a sleeping beast: top bar, diagonal, bottom bar (y=0 row).</summary>
+        public static Sprite SleepZ()
+        {
+            if (_sleepZ == null)
+            {
+                _sleepZ = Make("sleepz", 5, 5, (x, y) =>
+                {
+                    bool ink = y == 0 || y == 4 || x + y == 4;
+                    return ink ? new Color32(178, 196, 242, 255) : new Color32(0, 0, 0, 0);
+                }, Vector4.zero);
+            }
+            return _sleepZ;
+        }
+
         public static void ClearCache()
         {
             _tex.Clear(); _sprite.Clear(); _grid.Clear();
             _solid = _panel = _shadow = _glow = _moon = _spark = _chevron = _moonFull = _ring = _dot = null;
-            _night = _vignette = _stars = _star = _alert = null;
+            _night = _vignette = _stars = _star = _alert = _sleepZ = null;
         }
     }
 }

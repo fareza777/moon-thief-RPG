@@ -32,6 +32,8 @@ namespace MoonThief
             public string Art;          // the walk sheet this actor cycles (critters, see Strip)
             public SpriteRenderer Alert;   // "!" bubble shown while aggro-chasing
             public SpriteRenderer Rare;    // star a moonlit wild thing wears overhead
+            public bool Asleep;            // some beasts doze: deaf to eyes, still hear steps
+            public SpriteRenderer SleepMark;  // "z" drifting off a sleeper
             public SpriteRenderer NameChip;   // the tag behind the name; hidden with the name
             public float FadeIn;        // respawn materialise: alpha ramps in over ~0.9s
         }
@@ -1337,6 +1339,9 @@ namespace MoonThief
                 var a = MakeActor(Map.CellCenter(cell), WorldOrder(cell.y), isNpc: false);
                 if (rng.Next(100) < 10) spec.Rare = true;   // moonlit: silver skin, worth hunting
                 a.Spec = spec;
+                // about a fifth of the field dozes off - blind to everything but still
+                // within earshot, so a stomping thief wakes them into the chase anyway
+                a.Asleep = rng.Next(100) < 20;
                 a.Name = null;
                 a.Speed = spec.Speed * 0.55f;
                 a.HomeCell = new Vector2(x, y);
@@ -2698,11 +2703,13 @@ namespace MoonThief
                 // silent and near-invisible - a beast only spots one about to step on it.
                 // The "!" holds a beat before the chase so the player gets a dodge window.
                 float dh = Vector2.Distance(mpos, HeroPos);
+                // a dozing beast is blind but not deaf: sight range collapses to nothing
+                // while ears stay as sharp as any hunter's
                 float hearR = Sneaking ? 0f : 3.6f;
-                float seeR = Sneaking ? 0.7f : 3.2f;
+                float seeR = m.Asleep ? 0f : (Sneaking ? 0.7f : 3.2f);
                 // a chase runs at full field speed; the 0.55 gait is only for wandering -
                 // without this every hunter chases at a stroll the hero can simply outwalk
-                if (!m.Aggro && (dh < hearR || (dh < seeR && ClearLineOfSight(mpos, HeroPos)))) { m.Aggro = true; m.AggroT = 0.85f; m.Speed = m.Spec.Speed; Sfx.Play("alert"); }
+                if (!m.Aggro && (dh < hearR || (dh < seeR && ClearLineOfSight(mpos, HeroPos)))) { m.Asleep = false; m.Aggro = true; m.AggroT = 0.85f; m.Speed = m.Spec.Speed; Sfx.Play("alert"); }
 
                 // a moonlit thing wears a star overhead: the night's prize should read
                 // from across the field, not only once the fight has started
@@ -2721,6 +2728,28 @@ namespace MoonThief
                     m.Rare.transform.localPosition = new Vector3(0f,
                         1.55f + Mathf.Sin(_time * 3f + m.HomeCell.x) * 0.07f, 0f);
                 }
+
+                if (m.Asleep)
+                {
+                    // still and breathing; the z drifts up-right off its shoulder
+                    if (m.Anim != null) m.Anim.Fps = 0f;
+                    if (m.SleepMark == null)
+                    {
+                        var zgo = new GameObject("sleepMark");
+                        zgo.transform.SetParent(m.Root, false);
+                        zgo.transform.localScale = Vector3.one * 0.6f;
+                        m.SleepMark = zgo.AddComponent<SpriteRenderer>();
+                        m.SleepMark.sprite = TexArt.SleepZ();
+                        m.SleepMark.color = new Color(0.7f, 0.78f, 0.95f, 0.9f);
+                        m.SleepMark.sortingOrder = 2100;
+                    }
+                    float zt = ((_time * 0.55f) + m.HomeCell.x * 0.37f) % 1f;
+                    m.SleepMark.transform.localPosition = new Vector3(0.3f + zt * 0.28f, 0.9f + zt * 0.55f, 0f);
+                    var zc = m.SleepMark.color; zc.a = 0.9f - zt * 0.75f; m.SleepMark.color = zc;
+                    continue;
+                }
+                else if (m.SleepMark != null) m.SleepMark.enabled = false;
+
                 if (m.Aggro && dh > (Sneaking ? 4.5f : 6.5f)) { m.Aggro = false; m.Speed = m.Spec.Speed * 0.55f; }
 
                 if (m.Aggro)
