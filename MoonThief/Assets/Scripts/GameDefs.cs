@@ -1237,6 +1237,10 @@ namespace MoonThief
                 // Marn keeps the stall: gold finally has somewhere to go
                 new NpcDef{ Chara=0, Sheet="Pack/Chara/chara_14", Pos=new Vector2(24.5f,9.5f), NameKey="npc.marn",
                     Lines=new[]{ "dl.marn.1", "dl.marn.2" }, Shop=true },
+                // the grandmother has always lived here - her mushroom errand is a first-night
+                // task, so she cannot wait for the third night to exist
+                new NpcDef{ Chara=0, Pos=new Vector2(20.5f,6.5f), NameKey="npc.grandma",
+                    Lines=new[]{ "dl.grandma.1", "dl.grandma.2" } },
             };
             if (chapter >= 2)
             {
@@ -1244,13 +1248,13 @@ namespace MoonThief
                     Lines=new[]{ "dl.hunter.1", "dl.hunter.2" } });
                 all.Add(new NpcDef{ Chara=0, Sheet="Pack/Chara/chara_10", Pos=new Vector2(26.5f,13.5f), NameKey="npc.oda",
                     Lines=new[]{ "dl.oda.1", "dl.oda.2" } });
+                // the bard walks out once the fields open - her rhyme errand is a second-night
+                // task, so she has to exist on the second night
+                all.Add(new NpcDef{ Chara=5, Pos=new Vector2(30.5f,12.5f), NameKey="npc.bard",
+                    Lines=new[]{ "dl.bard.1", "dl.bard.2" } });
             }
             if (chapter >= 3)
             {
-                all.Add(new NpcDef{ Chara=5, Pos=new Vector2(30.5f,12.5f), NameKey="npc.bard",
-                    Lines=new[]{ "dl.bard.1", "dl.bard.2" } });
-                all.Add(new NpcDef{ Chara=0, Pos=new Vector2(20.5f,6.5f), NameKey="npc.grandma",
-                    Lines=new[]{ "dl.grandma.1", "dl.grandma.2" } });
                 all.Add(new NpcDef{ Chara=0, Sheet="Pack/Chara/chara_20", Pos=new Vector2(34.5f,6.5f), NameKey="npc.nail",
                     Lines=new[]{ "dl.nail.1", "dl.nail.2" } });
             }
