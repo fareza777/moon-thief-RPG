@@ -54,6 +54,7 @@ namespace MoonThief
 
         SpriteRenderer _backdrop, _floorTint, _hudPanel, _menuPanel, _msgPanel, _moonIcon, _targetChev, _turnChev, _nextChev;
         SpriteRenderer _bvig;
+        float _hurtPulseT;   // HurtPulse owns the vignette color while it runs
         SpriteRenderer _autoChip;
         PixelLabel _hudNight, _hudRound, _hudFlow, _msg, _hint, _autoLabel;
         Transform _overlayRoot;
@@ -645,6 +646,7 @@ namespace MoonThief
         public void HurtPulse()
         {
             if (_bvig == null || !Application.isPlaying) return;
+            _hurtPulseT = 0.3f;
             Co(Fx.Tween(0.3f, k =>
             {
                 if (_bvig != null)
@@ -937,6 +939,19 @@ namespace MoonThief
             // the daze star spins over whoever took a slam last turn
             foreach (var rig in EnemyRigs) { TickStun(rig); TickWard(rig); TickPoison(rig); TickSnare(rig); TickWeaken(rig); TickCorrode(rig); }
             foreach (var rig in PartyRigs) { TickStun(rig); TickWard(rig); TickPoison(rig); TickSnare(rig); TickWeaken(rig); TickCorrode(rig); }
+            // low blood: the arena's edge keeps a slow red breathe while a party member
+            // is close to dropping, so the danger reads before the hp bar is even looked at
+            if (_hurtPulseT > 0f) _hurtPulseT -= Time.deltaTime;
+            else if (_bvig != null)
+            {
+                float worst = 1f;
+                if (Party != null)
+                    foreach (var f in Party) if (f.Alive) worst = Mathf.Min(worst, f.Hp / (float)f.MaxHp);
+                var target = worst < 0.3f
+                    ? new Color(1f, 0.45f, 0.38f, 0.62f + 0.22f * Mathf.Sin(_time * 3.1f))
+                    : new Color(1f, 1f, 1f, 0.7f);
+                _bvig.color = Color.Lerp(_bvig.color, target, Time.deltaTime * 2.6f);
+            }
             // hp bars bleed toward the real value instead of snapping
             foreach (var rig in PartyRigs) TickBar(rig);
             foreach (var rig in EnemyRigs) TickBar(rig);
