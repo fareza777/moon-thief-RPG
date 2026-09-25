@@ -2291,6 +2291,31 @@ namespace MoonThief
             return Mathf.Clamp(x, ViewCenter.x - 9f + pad, ViewCenter.x + 9f - pad);
         }
 
+        /// <summary>The bubble's x, dodged off any nameplate it would sit on. The crowd
+        /// parks its plates one row up at almost the bubble's band, so a sideways nudge
+        /// usually finds air; a packed knot keeps the clamped spot and that's fine.
+        /// _barkW is the raw text half-width - the chip rides a little wider.
+        /// </summary>
+        float BarkPlaceX(float x, float y)
+        {
+            float bxf = BarkX(x);
+            for (int i = 0; i < Npcs.Count; i++)
+            {
+                var o = Npcs[i];
+                if (o == _barkActor || o?.Name == null || !o.Name.gameObject.activeSelf) continue;
+                var op = o.Name.transform.localPosition;
+                if (Mathf.Abs(op.y - y) > 1.1f) continue;
+                float ow = o.NameChip != null ? o.NameChip.transform.localScale.x : 2.2f;
+                float overlap = (_barkW + ow) * 0.5f + 0.1f - Mathf.Abs(bxf - op.x);
+                if (overlap > 0.05f)
+                {
+                    float dir = bxf <= op.x ? -1f : 1f;
+                    bxf = BarkX(bxf + dir * (overlap + 0.2f));
+                }
+            }
+            return bxf;
+        }
+
         void TickBarks(float dt)
         {
             if (_barkCd > 0f) _barkCd -= dt;
@@ -2301,7 +2326,7 @@ namespace MoonThief
                 if (_bark != null && _barkActor?.Root != null)
                 {
                     var ap = (Vector2)_barkActor.Root.localPosition;
-                    float bxf = BarkX(ap.x);
+                    float bxf = BarkPlaceX(ap.x, ap.y + NameAnchorY + 1.15f);
                     _bark.transform.localPosition = new Vector3(bxf, ap.y + NameAnchorY + 1.15f, 0f);
                     _barkChip.transform.localPosition = new Vector3(
                         bxf, ap.y + NameAnchorY + 1.15f - _barkChip.transform.localScale.y * 0.32f, 0f);
@@ -2345,7 +2370,7 @@ namespace MoonThief
             var pos = (Vector2)who.Root.localPosition;
             // a full label-height over the name plate: at +0.7 the bubble's hung text
             // still came down onto the sprite's own bounds (and any friend beside it)
-            float bx = BarkX(pos.x);
+            float bx = BarkPlaceX(pos.x, pos.y + NameAnchorY + 1.15f);
             _bark.transform.localPosition = new Vector3(bx, pos.y + NameAnchorY + 1.15f, 0f);
             _barkChip.transform.localPosition = new Vector3(bx, pos.y + NameAnchorY + 1.15f - (h + 0.34f) * 0.32f, 0f);
             _bark.gameObject.SetActive(true);
