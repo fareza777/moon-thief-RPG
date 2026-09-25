@@ -1211,13 +1211,17 @@ namespace MoonThief
         public static NpcDef[] House(int houseIndex, int chapter)
         {
             int h = Mathf.Abs(houseIndex) % 6;
-            var chroma = new[] { 1, 2, 3, 4, 5, 0 };
+            // each hearth gets its own face out of the pack's drawer - the old chroma table
+            // dressed the six residents in the same sheets the elder, the kid, the smith,
+            // the hunter and the bard already wear in the street
+            var sheets = new[] { "Pack/Chara/chara_0", "Pack/Chara/chara_9", "Pack/Chara/chara_13",
+                                 "Pack/Chara/chara_15", "Pack/Chara/chara_17", "Pack/Chara/chara_24" };
             var names = new[] { "npc.house.0", "npc.house.1", "npc.house.2", "npc.house.3", "npc.house.4", "npc.house.5" };
             return new[]
             {
                 new NpcDef
                 {
-                    Chara = chroma[h], Pos = new Vector2(9.5f, 12.5f), NameKey = names[h],
+                    Chara = 0, Sheet = sheets[h], Pos = new Vector2(9.5f, 12.5f), NameKey = names[h],
                     Lines = new[] { "dl.home." + h + ".1", "dl.home." + h + ".2" },
                 }
             };
@@ -1250,8 +1254,10 @@ namespace MoonThief
                 new NpcDef{ Chara=0, Sheet="Pack/Chara/chara_14", Pos=new Vector2(24.5f,9.5f), NameKey="npc.marn",
                     Lines=new[]{ "dl.marn.1", "dl.marn.2" }, Shop=true },
                 // the grandmother has always lived here - her mushroom errand is a first-night
-                // task, so she cannot wait for the third night to exist
-                new NpcDef{ Chara=0, Pos=new Vector2(20.5f,6.5f), NameKey="npc.grandma",
+                // task, so she cannot wait for the third night to exist. The white bonnet is
+                // her own face: atlas slot 0 is the same sheet house five's resident wears,
+                // and two villagers sharing a face is the thing the night was asked to avoid
+                new NpcDef{ Chara=0, Sheet="Pack/Chara/chara_19", Pos=new Vector2(20.5f,6.5f), NameKey="npc.grandma",
                     Lines=new[]{ "dl.grandma.1", "dl.grandma.2" } },
             };
             if (chapter >= 2)
