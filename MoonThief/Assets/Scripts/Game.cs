@@ -333,6 +333,9 @@ namespace MoonThief
 
         public St Phase { get; private set; } = St.Splash;
         public bool EditorMode;
+        /// <summary>A creep held down by script rather than by a finger, for passes that
+        /// need to prove the prowling sight radius without a real key on the board.</summary>
+        public bool EditorSneak;
         public static bool SelfTestMode;
         public static string SelfTestDir;
 
@@ -1396,6 +1399,9 @@ namespace MoonThief
             if (TapPressed() && StagePos().x > G.Right - 2.6f && StagePos().y > HalfH - 2.2f) { OpenPause(); return; }
 
             var move = ReadMoveInput();
+            // a held Shift is the keyboard's creep: the stick needs no such key because
+            // a gentle push already walks softly - the view reads either one the same way
+            World.SneakHeld = EditorSneak || Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
             World.DriveHero(move, Time.deltaTime);
             UpdateJoyVisual(true);
             PollWorldTap();
@@ -3051,6 +3057,24 @@ namespace MoonThief
             World.PlaceHero(new Vector2(27.5f, 8.9f));
             yield return new WaitForSeconds(1.4f);
             Shot("11d-bark");
+
+            // creep vs stride: park the hero in a hunter's outer sight ring twice. Prowling
+            // he goes unseen; upright he earns the "!" - read it off the monster's own flag
+            if (World.Monsters.Count > 0)
+            {
+                var mon = World.Monsters[0];
+                EditorSneak = true;
+                World.PlaceHero((Vector2)mon.Root.localPosition + new Vector2(2.4f, 0f));
+                yield return new WaitForSeconds(1.1f);
+                bool hid = !mon.Aggro;
+                Shot("11e-sneak");
+                EditorSneak = false;
+                yield return new WaitForSeconds(0.6f);
+                bool seen = mon.Aggro;
+                Debug.Log("[selftest] sneak hid=" + hid + " seen=" + seen);
+                World.PlaceHero(World.Map.VillageCenter + new Vector2(1.5f, 1.5f));
+                yield return new WaitForSeconds(0.4f);
+            }
 
             // the dialog frame - portrait plate, name tag, typewriter - is the one
             // interactive surface every earlier pass left unphotographed

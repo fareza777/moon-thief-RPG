@@ -57,7 +57,7 @@ set.howto|HOW TO PLAY
 
 # ---- onboarding (first boot, three cards)
 onb.title.1|WALK
-onb.body.1|Drag anywhere on the road to walk.\nTap a villager to talk.\nTap a chest to open it.
+onb.body.1|Drag anywhere on the road to walk.\nPush gently, or hold SHIFT, to creep -\na creeping thief is harder to spot.\nTap a chest to open it.
 onb.title.2|FIGHT & BEFRIEND
 onb.body.2|Wild beasts chase you in the dark.\nIn a fight: ATTACK, BEFRIEND,\nshare a MORSEL, or FLEE.\nAUTO fights for you.
 onb.title.3|THE QUEST

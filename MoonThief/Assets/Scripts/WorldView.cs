@@ -2003,11 +2003,27 @@ namespace MoonThief
         static float StepBob(float t, float hz, float phase)
             => Mathf.Abs(Mathf.Sin((t + phase) * hz)) > 0.45f ? Fx.Pixel : 0f;
 
+        /// <summary>True while the hero creeps: a gentle joystick push (or a held Shift)
+        /// drops his gait to a prowl - slower, quieter, and much harder for the
+        /// dark to notice. The shade on his sprite is the tell, not a HUD light.</summary>
+        public bool SneakHeld;
+        public bool Sneaking { get; private set; }
+
+        void SetHeroShade(bool sneak)
+        {
+            if (Hero == null || Hero.Sr == null) return;
+            var c = Hero.Sr.color;
+            c.a = sneak ? 0.62f : 1f;
+            Hero.Sr.color = c;
+        }
+
         public bool DriveHero(Vector2 input, float dt)
         {
             if (Hero == null) return false;
             if (input.sqrMagnitude < 0.001f)
             {
+                Sneaking = SneakHeld;   // a held breath still counts as hiding
+                SetHeroShade(Sneaking);
                 if (_heroWalking)
                 {
                     _heroWalking = false;
@@ -2017,6 +2033,13 @@ namespace MoonThief
                 }
                 return false;
             }
+
+            // the stick is analogue: a half-push walks softly on its own, and only a full
+            // push is a stride. The flag watches the magnitude, so creeping needs no button.
+            float mag = Mathf.Clamp01(input.magnitude);
+            bool sneak = SneakHeld || mag < 0.55f;
+            Sneaking = sneak;
+            SetHeroShade(sneak);
 
             var dir = DirVec.From(input);
             if (!_heroWalking || Hero.Facing != dir)
@@ -2041,13 +2064,14 @@ namespace MoonThief
                 var g = Map != null ? Map.At(new Vector2Int(
                     Mathf.RoundToInt(HeroPos.x), Mathf.RoundToInt(HeroPos.y))) : Ground.Grass;
                 float surf = g == Ground.Floor ? 1.28f : g == Ground.Path ? 1.12f : 1f;
-                Sfx.Play("step", (0.9f + UnityEngine.Random.value * 0.2f) * surf);
-                SpawnDust((Vector2)Hero.Root.localPosition - input.normalized * 0.35f);
-                _stepSfxT = 0.24f;
+                Sfx.Play("step", (0.9f + UnityEngine.Random.value * 0.2f) * surf * (sneak ? 0.62f : 1f));
+                if (!sneak) SpawnDust((Vector2)Hero.Root.localPosition - input.normalized * 0.35f);
+                _stepSfxT = sneak ? 0.34f : 0.24f;
             }
 
             var pos = (Vector2)Hero.Root.localPosition;
-            var next = pos + input.normalized * Hero.Speed * dt;
+            var next = pos + input.normalized * Hero.Speed
+                * (SneakHeld ? 0.55f : Mathf.Min(mag, 1f)) * dt;
             // axis-separated collision so sliding along walls feels right
             if (CanStand(new Vector2(next.x, pos.y))) pos.x = next.x;
             if (CanStand(new Vector2(pos.x, next.y))) pos.y = next.y;
@@ -2665,7 +2689,7 @@ namespace MoonThief
                 float dh = Vector2.Distance(mpos, HeroPos);
                 // a chase runs at full field speed; the 0.55 gait is only for wandering -
                 // without this every hunter chases at a stroll the hero can simply outwalk
-                if (!m.Aggro && dh < 3.2f && ClearLineOfSight(mpos, HeroPos)) { m.Aggro = true; m.AggroT = 0.85f; m.Speed = m.Spec.Speed; Sfx.Play("alert"); }
+                if (!m.Aggro && dh < (Sneaking ? 1.7f : 3.2f) && ClearLineOfSight(mpos, HeroPos)) { m.Aggro = true; m.AggroT = 0.85f; m.Speed = m.Spec.Speed; Sfx.Play("alert"); }
 
                 // a moonlit thing wears a star overhead: the night's prize should read
                 // from across the field, not only once the fight has started
@@ -2684,7 +2708,7 @@ namespace MoonThief
                     m.Rare.transform.localPosition = new Vector3(0f,
                         1.55f + Mathf.Sin(_time * 3f + m.HomeCell.x) * 0.07f, 0f);
                 }
-                if (m.Aggro && dh > 6.5f) { m.Aggro = false; m.Speed = m.Spec.Speed * 0.55f; }
+                if (m.Aggro && dh > (Sneaking ? 4.5f : 6.5f)) { m.Aggro = false; m.Speed = m.Spec.Speed * 0.55f; }
 
                 if (m.Aggro)
                 {
