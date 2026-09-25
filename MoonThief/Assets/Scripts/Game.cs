@@ -1005,7 +1005,7 @@ namespace MoonThief
             // only the first three caches hold shards - the fourth rides the Pale Guard.
             // Counting ShardsNeeded-MoonShards here promised chests that hold nothing.
             int shardChests = Mathf.Max(0, 3 - State.ChestsOpened);
-            if (World != null && World.ChestsLeft > 0 && State.Chapter < 3 && shardChests > 0)
+            if (World != null && World.ChestsLeft > 0 && shardChests > 0)
                 return Strings.Get("quest.2", shardChests);
             // the corner names the night's real gatekeeper, not the finale's - a walkthrough
             // line that reads "Face the Pale Guard" in night one is steering the hero wrong
