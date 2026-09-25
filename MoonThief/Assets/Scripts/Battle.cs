@@ -1557,6 +1557,21 @@ namespace MoonThief
             Sfx.Mus.Duck = 1f;                  // and the band comes back up for the fight
             Sfx.Mus.Play(hasBoss ? "boss" : "battle");
             Sfx.Play(hasBoss ? "boss" : "enemy");
+            // a clean prowl gets its own whisper: the thief's first voice of the fight
+            // gloats about the entrance, not the upcoming swings
+            if (ambush && Application.isPlaying)
+            {
+                foreach (var pf in View.Party)
+                    if (pf.Species == null && pf.Alive)
+                    {
+                        var prig = View.RigOf(pf);
+                        if (prig != null)
+                            View.FloatNumber(prig.Home + new Vector3(0f, 2.15f, 0f),
+                                Strings.Get("bk.amb." + UnityEngine.Random.Range(0, 3)),
+                                new Color(0.75f, 0.85f, 1f), 1);
+                        break;
+                    }
+            }
             if (Application.isPlaying) StartCoroutine(Timer(1.4f, RoundStart));
         }
 

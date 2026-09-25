@@ -873,3 +873,6 @@ md.ghost|SHADOW
 md.ghost.d|Three blades they never saw coming. The night keeps your secret.
 md.ghost.h|Unearned: creep close - strike from the dark three times.
 hint.sneak|The wild hears a heavy step - small tilts slip past, and an unseen strike stuns.
+bk.amb.0|Softly now.
+bk.amb.1|They never saw us.
+bk.amb.2|From the dark.
