@@ -1102,6 +1102,11 @@ namespace MoonThief
                     int gold = Map.Interior ? 20 : 12;
                     Game.State.Gold += gold;
                     string item = Items.RollLoot(Game.State.Chapter, rng);
+                    // a named errand can hide its thing in the next chest you open: while an
+                    // item quest runs and the bag still lacks the piece, the cache coughs it
+                    // up half the time - found, not handed, but never impossible
+                    if (rng.NextDouble() < 0.5)
+                        item = Quests.WantedQuestItem() ?? item;
                     Game.State.AddBag(item);
                     LastLootText = Strings.Get("loot.found", Strings.Get(item), gold);
                 }

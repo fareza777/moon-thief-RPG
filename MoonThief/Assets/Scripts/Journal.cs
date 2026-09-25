@@ -514,6 +514,21 @@ namespace MoonThief
             return Mathf.Max(0, Counter(q.Kind) - b);
         }
 
+        /// <summary>The key item an active errand still wants. A chest that opens while the
+        /// errand runs can be the place the thing was left - without this the item quests
+        /// could never finish, because nothing else in the world holds them.</summary>
+        public static string WantedQuestItem()
+        {
+            foreach (var q in All)
+                if (q.Kind == QuestKind.Item && Step(q.Id) == 1)
+                {
+                    string goal = GoalItem(q);
+                    if (!string.IsNullOrEmpty(goal) && Game.State.BagCount(goal) < q.Need)
+                        return goal;
+                }
+            return null;
+        }
+
         /// <summary>Which key item a quest wants. Carried on the quest itself so the offer can
         /// name it without a second table.</summary>
         public static string GoalItem(QuestDef q)
