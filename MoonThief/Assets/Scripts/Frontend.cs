@@ -882,7 +882,8 @@ namespace MoonThief
         void DoRate()
         {
             Sfx.Play("ui");
-            ShowToast(Strings.Get("rate.thanks"), 3.0f);
+            // say where we're going, not thanks for a rating that hasn't happened yet
+            ShowToast(Strings.Get("rate.store"), 3.0f);
 #if UNITY_ANDROID && !UNITY_EDITOR
             Application.OpenURL("market://details?id=" + Application.identifier);
 #else

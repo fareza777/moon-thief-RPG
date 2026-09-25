@@ -20,12 +20,10 @@ menu.settings|SETTINGS
 menu.about|ABOUT
 menu.share|SHARE
 menu.rate|RATE US
-menu.credits|CREDITS
 menu.hint|PICK A ROW
 share.copied|Store link copied - send it to a friend.
 share.text|The Moon Thief - a tale in three nights. {0}
 rate.store|Opening the store page...
-rate.thanks|Stars make the night brighter. Thank you!
 cred.title|THE MOON THIEF
 cred.sub|a tale in three nights
 cred.body|studio      f7 developer games\npixel art   super retro collection\ncode        unity, built from scratch\nsound       chiptune written in code\nfont        5x8 bitmap, drawn by hand\nversion     {0}
@@ -200,7 +198,6 @@ bt.befriended.rare|The MOONLIT {0} joins your night!
 bt.befriendfail|{0} is not ready yet.
 bt.stablefull|Your stable is full.
 bt.notame|The {0} will not be tamed.
-bt.morsel|You lay down a moonlit morsel.
 bt.nomore|The bag is empty.
 bt.hint|PICK A COMMAND, TAP A FOE TO AIM
 bt.auto.on|AUTO on - the party fights itself.
@@ -305,7 +302,6 @@ card.drop|FOUND {0}!
 btn.continue|CONTINUE
 btn.retry|TRY AGAIN
 btn.flee|FLEE HOME
-btn.title|BACK TO TITLE
 
 # ---- the START OVER card: the one choice that should never be a mis-tap away
 conf.title|START OVER?
@@ -355,7 +351,6 @@ zone.short.wood|WOOD
 
 # ---- interact / loot
 loot.moonshard|A MOON SHARD hums in your hands
-loot.herbbread|Herbed bread. The party shares it.
 loot.oldcoin|Old coins from a kinder night.
 
 # ---- tutorial hints
@@ -455,7 +450,6 @@ jr.items|BAG
 jr.equip|EQUIPMENT
 jr.bestiary|BESTIARY
 jr.quests|QUESTS
-jr.count|QUESTS {0}/{1}
 jr.level|LEVEL
 jr.xp|XP EARNED
 jr.shards|MOON SHARDS
@@ -494,7 +488,6 @@ jr.unseen|Nobody has met this one yet.
 jr.quests.sub|MAIN {0}   SIDE {1}
 jr.map|MAP
 jr.map.sub|the night's road, south to north
-jr.main|MAIN
 jr.new|NEW
 jr.active|ACTIVE
 jr.prog|{0}/{1}
