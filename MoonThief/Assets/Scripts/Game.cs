@@ -3064,8 +3064,9 @@ namespace MoonThief
             yield return new WaitForSeconds(1.4f);
             Shot("11d-bark");
 
-            // creep vs stride: park the hero in a hunter's outer sight ring twice. Prowling
-            // he goes unseen; upright he earns the "!" - read it off the monster's own flag
+            // creep vs stride: park the hero just inside a hunter's hearing twice. Prowling
+            // he is silent and unseen; striding he is heard through the dark itself -
+            // read it off the monster's own aggro flag
             if (World.Monsters.Count > 0)
             {
                 var mon = World.Monsters[0];

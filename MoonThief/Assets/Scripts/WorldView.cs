@@ -2004,8 +2004,8 @@ namespace MoonThief
             => Mathf.Abs(Mathf.Sin((t + phase) * hz)) > 0.45f ? Fx.Pixel : 0f;
 
         /// <summary>True while the hero creeps: a gentle joystick push (or a held Shift)
-        /// drops his gait to a prowl - slower, quieter, and much harder for the
-        /// dark to notice. The shade on his sprite is the tell, not a HUD light.</summary>
+        /// drops his gait to a prowl - slower, dimmer, silent, and all but unseen until
+        /// he is nearly standing on a beast. The shade on his sprite is the tell.</summary>
         public bool SneakHeld;
         public bool Sneaking { get; private set; }
 
@@ -2684,12 +2684,16 @@ namespace MoonThief
                     m.Sr.color = fc;
                 }
 
-                // notice the hero: close in, give up if they slip away. The "!" holds a beat
-                // before the chase so the player gets a dodge window instead of an ambush.
+                // notice the hero: striding feet are HEARD through the dark (3.6u, walls
+                // or no), and once close enough also seen outright. A creeping thief is
+                // silent and near-invisible - a beast only spots one about to step on it.
+                // The "!" holds a beat before the chase so the player gets a dodge window.
                 float dh = Vector2.Distance(mpos, HeroPos);
+                float hearR = Sneaking ? 0f : 3.6f;
+                float seeR = Sneaking ? 0.7f : 3.2f;
                 // a chase runs at full field speed; the 0.55 gait is only for wandering -
                 // without this every hunter chases at a stroll the hero can simply outwalk
-                if (!m.Aggro && dh < (Sneaking ? 1.7f : 3.2f) && ClearLineOfSight(mpos, HeroPos)) { m.Aggro = true; m.AggroT = 0.85f; m.Speed = m.Spec.Speed; Sfx.Play("alert"); }
+                if (!m.Aggro && (dh < hearR || (dh < seeR && ClearLineOfSight(mpos, HeroPos)))) { m.Aggro = true; m.AggroT = 0.85f; m.Speed = m.Spec.Speed; Sfx.Play("alert"); }
 
                 // a moonlit thing wears a star overhead: the night's prize should read
                 // from across the field, not only once the fight has started
