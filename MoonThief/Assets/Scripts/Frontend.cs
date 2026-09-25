@@ -1630,7 +1630,9 @@ namespace MoonThief
                     // opening the book counts as seeing what it holds - same * rule as medals
                     Prefs.BeastsSeen = Game.State.Seen.Count;
                     Prefs.Store();
-                    sub = Strings.Get("jr.bestiary.sub", Game.State.Seen.Count, BattleData.Bestiary.Length + 1);
+                    sub = Strings.Get("jr.bestiary.sub", Game.State.Seen.Count,
+                        BattleData.Bestiary.Length + 1, Game.State.Friends.Count,
+                        Game.State.Friends.Count == 1 ? "FRIEND" : "FRIENDS");
                     sprites = new List<Sprite>();
                     foreach (var spec in BattleData.Bestiary)
                     {

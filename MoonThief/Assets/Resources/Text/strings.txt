@@ -481,7 +481,7 @@ jr.usefight|Save it for a hard fight.
 jr.items.sub|{0} {1} CARRIED
 jr.equip.sub|Tap a slot to swap it.
 jr.equip.tip|Bonus applies to the party.
-jr.bestiary.sub|MET {0} OF {1}
+jr.bestiary.sub|MET {0} OF {1}    {2} {3} KEPT
 jr.beast|HP {0}   ATK {1}-{2}   WEAK {3}
 jr.unknown|?????
 jr.friend|FRIEND
