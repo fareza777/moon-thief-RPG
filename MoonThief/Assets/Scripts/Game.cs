@@ -1876,15 +1876,18 @@ namespace MoonThief
                 Menus.HideToast();   // the last notice of the night does not ride into the dawn
                 Sfx.Mus.Duck = 1f; Sfx.Mus.Play("end");
                 _endLines.RevealSpeed = 0f;
-                // three tellings of the same dawn: alone, one companion, or a company
-                string textKey = State.Befriended == 0 ? "end.text.lone"
-                    : State.Befriended == 1 ? "end.text.one" : "end.text";
+                // three tellings of the same dawn: alone, one companion, or a company.
+                // Counted from the stable, not the run - a friend you let go does not
+                // walk home beside you, and the ending should not say it does
+                int company = State.Friends.Count;
+                string textKey = company == 0 ? "end.text.lone"
+                    : company == 1 ? "end.text.one" : "end.text";
                 _endLines.Set(Strings.Get(textKey));
-                _endStats.Set(State.Befriended == 0
+                _endStats.Set(company == 0
                     ? Strings.Get("end.stats.lone", State.Level, State.Gold,
                         State.Defeats, State.Defeats == 1 ? "BEAST" : "BEASTS")
-                    : Strings.Get("end.stats", State.Level, State.Befriended,
-                        State.Befriended == 1 ? "FRIEND" : "FRIENDS", State.Gold,
+                    : Strings.Get("end.stats", State.Level, company,
+                        company == 1 ? "FRIEND" : "FRIENDS", State.Gold,
                         State.Defeats, State.Defeats == 1 ? "BEAST" : "BEASTS"));
                 SaveSystem.Erase();          // the tale is told; the menu offers a fresh night
             }, 0.4f, 0.6f);
