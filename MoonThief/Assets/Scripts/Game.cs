@@ -2678,6 +2678,15 @@ namespace MoonThief
             yield return new WaitForSeconds(1.7f);   // night, then place, then the errand line
             Shot("10d-chcard");
 
+            // the about card - the last room of the title screen no pass ever shot
+            Menus.ShowCredits();
+            yield return new WaitForSeconds(0.7f);
+            Shot("10e-about");
+            Menus.Tick(0.1f, Vector2.zero, false, 1, false, false);
+            Menus.Tick(0.1f, Vector2.zero, false, 1, false, false);
+            Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);   // BACK -> title
+            yield return new WaitForSeconds(0.3f);
+
             BeginRun();
             yield return new WaitForSeconds(1.2f);
             Shot("11-village");
