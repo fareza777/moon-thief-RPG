@@ -23,7 +23,6 @@ namespace MoonThief
             public Vector2 HomeCell;
             public bool Aggro;
             public float AggroT;      // windup under the "!" before the chase begins
-            public float WanderCd;
             public float Pause;         // idle pause before moving again
             public Vector2Int Dest;
             public MonsterSpec Spec;
@@ -906,7 +905,6 @@ namespace MoonThief
                 a.Art = def.Art;
                 a.Anim.Play(clip, 5f, true);
                 a.Speed = 0.75f;
-                a.WanderCd = (float)i * 0.7f;
                 a.Sr.transform.localScale = Vector3.one * 0.85f;
                 a.Shadow.transform.localScale = new Vector3(0.6f, 0.7f, 1f);
                 _critters.Add(a);
@@ -1472,7 +1470,6 @@ namespace MoonThief
                 a.Name = null;
                 a.Speed = spec.Speed * 0.55f;
                 a.HomeCell = new Vector2(x, y);
-                a.WanderCd = (float)rng.NextDouble() * 2f;
                 a.Anim.Play(MonsterClip(spec.MapSheet, Dir.Down), 4f, true);
                 // size telegraphs the risk: heavier tiers stand taller, moonlit
                 // silver loom largest of all
@@ -2876,7 +2873,6 @@ namespace MoonThief
                 a.Spec = r.Spec;
                 a.Speed = r.Spec.Speed * 0.55f;
                 a.HomeCell = new Vector2(cell.x, cell.y);
-                a.WanderCd = Random.value * 2f;
                 a.Anim.Play(MonsterClip(r.Spec.MapSheet, Dir.Down), 4f, true);
                 a.Sr.transform.localScale = Vector3.one * (0.68f + r.Spec.Tier * 0.04f + (r.Spec.Rare ? 0.1f : 0f));
                 if (r.Spec.Rare) a.Sr.color = new Color(0.72f, 0.84f, 1f);
