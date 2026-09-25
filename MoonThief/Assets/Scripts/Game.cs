@@ -2058,8 +2058,11 @@ namespace MoonThief
                         fr.transform.localPosition =
                             new Vector3((shown - 1f) * 1.9f, -HalfH + 1.4f, 0f);
                         fr.transform.localScale = Vector3.one * 1.5f;
-                        // the first light catches only their shape - not their faces
-                        fr.color = new Color(0.4f, 0.42f, 0.6f, 0.95f);
+                        // the first light catches only their shape - not their faces;
+                        // a moonlit one still shines a little silver out of the dark
+                        fr.color = key.StartsWith("moon.")
+                            ? new Color(0.62f, 0.72f, 1f, 0.95f)
+                            : new Color(0.4f, 0.42f, 0.6f, 0.95f);
                         shown++;
                     }
                 }
