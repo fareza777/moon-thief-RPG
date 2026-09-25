@@ -869,3 +869,6 @@ bk.boss.2.2|your moon is owed
 bk.boss.3.0|the moon stays caged
 bk.boss.3.1|light dies here
 bk.boss.3.2|lanterns all go out
+md.ghost|SHADOW
+md.ghost.d|Three blades they never saw coming. The night keeps your secret.
+md.ghost.h|Unearned: creep close - strike from the dark three times.

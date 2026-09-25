@@ -30,6 +30,8 @@ namespace MoonThief
             // fights settled on a kinder difficulty; IRON THIEF only honours a telling
             // where every blade was drawn on hard, so the medal cannot be bought at the door
             public static int EasyFights;
+            // fights opened from the dark - SHADOW honours a thief the wild never saw
+            public static int Ambushes;
 
             // ---- the journal: the bag, what is worn, what has been seen, what has been done ----
             public static readonly List<string> Bag = new List<string>();          // item keys, repeats allowed
@@ -51,6 +53,7 @@ namespace MoonThief
             {
                 Chapter = 1; MoonShards = 0; Befriended = 0; HeldItems = 0; MorselsUsed = 0;
                 Gold = 0; Xp = 0; ChestsOpened = 0; Defeats = 0; NgPlus = 0; EasyFights = 0;
+                Ambushes = 0;
                 Bag.Clear(); Worn[0] = Worn[1] = Worn[2] = null;
                 Zones.Clear(); Seen.Clear(); ChestsDone.Clear(); Friends.Clear();
                 Joined.Clear();
@@ -266,7 +269,7 @@ namespace MoonThief
                 gold = Gold, xp = Xp, morsels = MorselsUsed, items = HeldItems,
                 chestsOpened = ChestsOpened, heroX = heroX, heroY = heroY,
                 defeats = Defeats, bossDown = bossDown, ngp = NgPlus,
-                easyFights = EasyFights,
+                easyFights = EasyFights, ambushes = Ambushes,
                 bag = Bag.ToArray(), worn = (string[])Worn.Clone(),
                 friends = Friends.ToArray(), joined = JoinedArray(),
                 zones = Zones.ToArray(), quests = Quests.Capture(),
@@ -300,6 +303,7 @@ namespace MoonThief
                 ChestsOpened = Mathf.Max(0, d.chestsOpened);
                 Defeats = Mathf.Max(0, d.defeats);
                 EasyFights = Mathf.Max(0, d.easyFights);
+                Ambushes = Mathf.Max(0, d.ambushes);
                 NgPlus = Mathf.Max(0, d.ngp);
 
                 Bag.Clear();
@@ -1528,6 +1532,11 @@ namespace MoonThief
                 // opens the fight reeling - the prowl's payoff, not a free pass
                 bool ambush = !touched.Aggro;
                 World.RemoveMonster(touched);
+                if (ambush)
+                {
+                    State.Ambushes++;
+                    if (State.Ambushes >= 3) Medals.Grant("ghost");
+                }
                 StartBattle(new[] { spec }, ambush);
                 return;
             }
