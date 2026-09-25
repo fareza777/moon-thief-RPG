@@ -96,7 +96,7 @@ ci.4|Only tracks, crossing\nall four roads.
 ci.5|Something walked out\ncarrying the sky\nin four pieces.
 ci.6|Mira kept the last\nlantern of Quiet Hollow.
 ci.7|She gives it to you.
-ci.8|Gather the shards.\nRaise three friends.\nClimb the dark wood.
+ci.8|Gather the shards.\nGather your friends.\nClimb the dark wood.
 ci.9|Hang the moon back\nwhere it belongs.
 ci.ch.1|NIGHT ONE\nthe village of Quiet Hollow
 ci.ch.2|NIGHT TWO\nthe long fields
@@ -298,6 +298,12 @@ boss.taunt.2|Take it if you can. Or kneel, little thief, and keep the dark.
 zone.name.village|QUIET HOLLOW
 zone.name.fields|THE LONG FIELDS
 zone.name.wood|THE DARK WOOD
+bark.sea.village|SEA: I kept watch here. It never needed one before.
+bark.sea.fields|SEA: Mind the rows - things nest in them.
+bark.sea.wood|SEA: The wood listens. Keep your knife loose.
+bark.moss.village|MOSS: Smell the smoke? The stoves still burn.
+bark.moss.fields|MOSS: I used to count stems out here.
+bark.moss.wood|MOSS: The old trees do not like us walking.
 zone.short.village|HOLLOW
 zone.short.fields|FIELDS
 zone.short.wood|WOOD

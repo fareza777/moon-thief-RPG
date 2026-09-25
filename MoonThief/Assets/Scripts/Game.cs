@@ -1186,8 +1186,16 @@ namespace MoonThief
                 State.CurZone = zk.Substring(5);
                 // first time crossing a border the place announces itself, once, ever
                 if (State.NoteZone(zk))
+                {
                     ShowZoneBanner(Strings.Get("zone.name." + zk.Substring(5))
                         + "\n" + Strings.Get("hud.nightshort", State.Chapter));
+                    // a company member reads the land too - the party talks, not just walks
+                    string bark = State.Joined.Contains("hero.sea")
+                        ? Strings.Get("bark.sea." + zk.Substring(5))
+                        : State.Joined.Contains("hero.moss")
+                            ? Strings.Get("bark.moss." + zk.Substring(5)) : "";
+                    if (!string.IsNullOrEmpty(bark)) Menus.ShowToast(bark, 3.4f);
+                }
                 if (TryWorldEvent()) return;
             }
 
