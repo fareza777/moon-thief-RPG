@@ -282,7 +282,8 @@ namespace MoonThief
         Transform _titleRoot, _endRoot;
         PixelLabel _titleName, _titleTag, _titleTap, _titleEnd, _endLines, _endStats, _tapHint;
         Transform _titleMoon, _endMoon;
-        SpriteRenderer _endGlow;
+        SpriteRenderer _endGlow, _endSky;
+        float _endRise;      // 1 once the moon has climbed and the bob can take over
         Transform _fadeRoot;
         SpriteRenderer _fade;
         Transform _joyRoot;
@@ -632,6 +633,7 @@ namespace MoonThief
             sky.transform.localPosition = new Vector3(0f, 0f, 0f);
             sky.transform.localScale = new Vector3(18f * 16f, (HalfH * 2f + 2f) * 16f, 1f);
             sky.color = new Color(0.09f, 0.09f, 0.2f, 1f);
+            _endSky = sky;
 
             var moon = SpriteRendererUtil.Make(_endRoot, "moonFull", TexArt.MoonFull(), 98);
             moon.transform.localPosition = new Vector3(0f, HalfH - 4.2f, 0f);
@@ -1121,7 +1123,7 @@ namespace MoonThief
             {
                 float a = 0.55f + 0.45f * Mathf.PingPong(Time.time * 0.9f, 1f);
                 _tapHint.SetColor(new Color(1f, 0.88f, 0.5f, a));
-                if (_endMoon != null)
+                if (_endMoon != null && _endRise >= 1f)
                     _endMoon.localPosition = new Vector3(0f, HalfH - 4.2f + Mathf.Sin(Time.time * 0.7f) * 0.3f, 0f);
                 if (_endGlow != null)
                 {
@@ -1131,7 +1133,7 @@ namespace MoonThief
                 }
                 TwinkleStars();
                 UpdateJoyVisual(false);
-                if (TapPressed() || KeyConfirm()) DoTransition(() => ShowTitle());
+                if (_endRise >= 1f && (TapPressed() || KeyConfirm())) DoTransition(() => ShowTitle());
                 return;
             }
 
@@ -1946,6 +1948,18 @@ namespace MoonThief
                 if (_hudZone != null) _hudZone.enabled = false;
                 _endRoot.gameObject.SetActive(true);
                 Menus.HideToast();   // the last notice of the night does not ride into the dawn
+                // the payoff is a moon-rise, not a card: start it low and dim, the words
+                // and the tap wait until it has climbed. The bob write in Update is gated
+                // on _endRise so the two never fight over the same transform
+                _endRise = 0f;
+                _endSky.color = new Color(0.05f, 0.05f, 0.14f, 1f);
+                _endMoon.localScale = Vector3.one * 4.2f;
+                _endMoon.localPosition = new Vector3(0f, -HalfH + 3f, 0f);
+                _endGlow.color = new Color(1f, 0.95f, 0.75f, 0f);
+                _endLines.gameObject.SetActive(false);
+                _endStats.gameObject.SetActive(false);
+                _tapHint.gameObject.SetActive(false);
+                StartCoroutine(CoMoonRise());
                 Sfx.Mus.Duck = 1f; Sfx.Mus.Play("end");
                 _endLines.RevealSpeed = 0f;
                 // three tellings of the same dawn: alone, one companion, or a company.
@@ -1963,6 +1977,36 @@ namespace MoonThief
                         State.Defeats, State.Defeats == 1 ? "BEAST" : "BEASTS"));
                 SaveSystem.Erase();          // the tale is told; the menu offers a fresh night
             }, 0.4f, 0.6f);
+        }
+
+        /// <summary>The shards leave the cristal: the moon climbs out of the low sky and the
+        /// night remembers what colour it was. ~3.4s of rise, then the bob takes over and the
+        /// epilogue shows itself.</summary>
+        IEnumerator CoMoonRise()
+        {
+            var skyFrom = new Color(0.05f, 0.05f, 0.14f, 1f);
+            var skyTo = new Color(0.09f, 0.09f, 0.2f, 1f);
+            var posFrom = new Vector3(0f, -HalfH + 3f, 0f);
+            var posTo = new Vector3(0f, HalfH - 4.2f, 0f);
+            yield return Fx.Wait(0.35f);
+            Sfx.Play("shard");
+            float t = 0f;
+            while (t < 1f)
+            {
+                t += Time.unscaledDeltaTime / 3.4f;
+                float k = Mathf.Clamp01(t);
+                k = k * k * (3f - 2f * k);   // smoothstep: a rise, not a lift
+                _endMoon.localPosition = Vector3.LerpUnclamped(posFrom, posTo, k);
+                _endMoon.localScale = Vector3.one * Mathf.Lerp(4.2f, 6f, k);
+                _endSky.color = Color.Lerp(skyFrom, skyTo, k);
+                var gc = _endGlow.color; gc.a = Mathf.Lerp(0f, 0.5f, k); _endGlow.color = gc;
+                yield return null;
+            }
+            _endRise = 1f;
+            _endLines.gameObject.SetActive(true);
+            _endStats.gameObject.SetActive(true);
+            _tapHint.gameObject.SetActive(true);
+            Sfx.Play("win");
         }
 
         IEnumerator CoWait(float t, System.Action done)
@@ -3059,7 +3103,9 @@ namespace MoonThief
                 TriggerEnding();
                 _testNoDoors = false;
                 yield return new WaitForSeconds(1.0f);
-                Shot("18-ending");
+                Shot("18-ending");            // mid-rise: moon still low, words not up yet
+                yield return new WaitForSeconds(3.4f);
+                Shot("18b-ending-risen");     // the moon is up and the epilogue is on
                 Debug.Log("[selftest] ending shown");
             }
 
