@@ -73,7 +73,7 @@ shop.poor|Not enough gold, love.
 shop.owned|OWNED
 shop.have|You already have one, love.
 shop.hint|TAP A WARE TO BUY IT - * IS THE BEST SHELF
-shop.sellhint|TAP AN ITEM TO SELL IT - * IS THE BEST SHELF
+shop.sellhint|TAP AN ITEM TO SELL - * IS THE BEST SHELF
 shop.sellmode|SELL SOMETHING
 shop.buymode|BUY SOMETHING
 shop.soldout|Sold. {0} gold for the road.
