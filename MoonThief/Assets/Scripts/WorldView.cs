@@ -2015,6 +2015,15 @@ namespace MoonThief
             var c = Hero.Sr.color;
             c.a = sneak ? 0.62f : 1f;
             Hero.Sr.color = c;
+            // the company creeps with him: a party at full glow while their leader
+            // prowls would give the whole trick away
+            for (int i = 0; i < _friends.Count; i++)
+                if (_friends[i].Sr != null)
+                {
+                    var fc = _friends[i].Sr.color;
+                    fc.a = sneak ? 0.62f : 1f;
+                    _friends[i].Sr.color = fc;
+                }
         }
 
         public bool DriveHero(Vector2 input, float dt)
