@@ -1397,6 +1397,10 @@ namespace MoonThief
             _t = 0f;
             _ciHold = 0f;
             _ciRoot.gameObject.SetActive(true);
+            // the reel reads at the reader's pace: a thief who set FAST or INSTANT in
+            // settings should not wait on fixed 46-char lines while every other text
+            // honors the choice (0 = the lines appear already told)
+            _ciText.RevealSpeed = Prefs.RevealSpeed;
             RefreshCinemaSlide();
         }
 
