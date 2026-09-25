@@ -492,7 +492,7 @@ namespace MoonThief
                 // hover a half-unit over it - a nameplate parked at +0.45 overlapped both, and
                 // at +1.05 the plate's hanging text still brushed the chevron tops; it rides
                 // well clear when there is room and drops under the sprite when not
-                float nameTop = aboveHead <= HudBottom - 0.4f ? aboveHead : home.y - 1.0f;
+                float nameTop = aboveHead <= HudBottom - 0.4f ? aboveHead : home.y - 1.35f;
                 rig.Name.transform.localPosition = new Vector3(home.x, nameTop, 0f);
                 rig.Name.Set(f.Name);
                 // dark plate behind the name: the arena art has flat bright patches and light
@@ -1345,6 +1345,10 @@ namespace MoonThief
 
         public void StartBattle(MonsterSpec[] specs)
         {
+            // a stale invocation - a ghost card's TRY AGAIN, a queued callback landing after
+            // the stage came down - must not build rigs on a dead view: every coroutine it
+            // launches would error against the inactive game object
+            if (!View.gameObject.activeSelf) return;
             _specs = specs;
             _ph = Ph.Intro;
             _round = 1;

@@ -1869,6 +1869,7 @@ namespace MoonThief
                 World.gameObject.SetActive(false);
                 // the battle stage is its own root: if the ending fires while a fight is still
                 // up (a wild touch on the way to the cristal), its rigs outlive the tale
+                BattleViewRef.HideCard();
                 BattleViewRef.gameObject.SetActive(false);
                 if (_hudZone != null) _hudZone.enabled = false;
                 _endRoot.gameObject.SetActive(true);
