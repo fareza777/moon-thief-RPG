@@ -1314,7 +1314,8 @@ namespace MoonThief
             // venom tick) used to print them on top of each other; floats live
             // under a second, so a small upward stagger keeps each one legible
             foreach (var fr in _floatSpots)
-                if (Time.time - fr.t < 0.9f && Vector2.Distance(fr.pos, pos) < 1.1f) pos.y += 0.62f;
+                if (Time.time - fr.t < 0.9f && Vector2.Distance(fr.pos, pos) < 1.1f)
+                    pos.y = Mathf.Max(pos.y, fr.pos.y + 0.62f);
             _floatSpots.Add((pos, Time.time));
             if (_floatSpots.Count > 8) _floatSpots.RemoveAt(0);
             var go = new GameObject("floatn");
