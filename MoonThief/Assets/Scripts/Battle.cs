@@ -423,8 +423,16 @@ namespace MoonThief
         {
             var sp = Bank.One(path);
             _backdrop.sprite = sp;
-            // a gatekeeper casts the whole field into its cold violet
-            _backdrop.color = boss ? new Color(0.62f, 0.55f, 0.8f) : Color.white;
+            // the pack's sheets are lit for day, and the tale is told at night: each
+            // chapter pulls its own veil over the art - the hollow's forest is already
+            // dusk-dark, the plain needs the deep blue pulled over it, the keep's hall
+            // only a little - and a gatekeeper adds its cold violet on top of all that
+            var night = Game.State.Chapter == 2 ? new Color(0.42f, 0.45f, 0.7f)
+                      : Game.State.Chapter == 1 ? Color.white
+                      : new Color(0.85f, 0.85f, 0.95f);
+            _backdrop.color = boss
+                ? new Color(night.r * 0.62f, night.g * 0.55f, night.b * 0.8f)
+                : night;
             if (sp != null)
             {
                 // cover the WHOLE portrait frame (was: only the arena) so no flat band
