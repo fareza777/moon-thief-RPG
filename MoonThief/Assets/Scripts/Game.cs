@@ -2726,6 +2726,41 @@ namespace MoonThief
             Debug.Log("[selftest] company=" + string.Join(",", State.Joined));
             Shot("12a-party");
 
+            // the shard path itself, which the hunt legs never touch: walk to the nearest
+            // unopened field chest and open it through TryInteract, the same call a tap
+            // lands on. The first three chests must grant a moon shard.
+            var shut = World.ShutChestPos();
+            if (shut.Count > 0)
+            {
+                var chestAt = shut[0]; float cd = float.MaxValue;
+                foreach (var c in shut)
+                {
+                    float d = Vector2.Distance(World.HeroPos, c);
+                    if (d < cd) { cd = d; chestAt = c; }
+                }
+                int cguard = 0, cstuck = 0;
+                var lastC = World.HeroPos;
+                while (Vector2.Distance(World.HeroPos, chestAt) > 1.0f && cguard++ < 300)
+                {
+                    var cdir = (chestAt - World.HeroPos).normalized;
+                    if (Vector2.Distance(World.HeroPos, lastC) < 0.02f)
+                    {
+                        if (++cstuck > 25) { cdir = new Vector2(Random.value < 0.5f ? -1f : 1f, 0.6f); cstuck = 0; }
+                    }
+                    else cstuck = 0;
+                    lastC = World.HeroPos;
+                    World.DriveHero(cdir, Time.deltaTime);
+                    TickWorldForTest();
+                    yield return null;
+                }
+                int shardsBeforeChest = State.MoonShards;
+                TryInteract();
+                yield return new WaitForSeconds(0.7f);
+                Debug.Log("[selftest] chest shards " + shardsBeforeChest + "->" + State.MoonShards
+                    + " left=" + World.ChestsLeft);
+                Shot("12b-chest-shard");
+            }
+
             // hunt the nearest wild monster so an encounter is guaranteed, not lucky. Steering is
             // diagonal: the old axis-only version (straight east/west, then straight north) wedged
             // against a barrel or a house corner and stayed there, because the blocked axis was
