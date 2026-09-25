@@ -1423,7 +1423,7 @@ namespace MoonThief
                 "L" + Game.State.Level, Game.State.Bag.Count.ToString(), WornCount() + "/3",
                 Game.State.Seen.Count + "/" + (BattleData.Bestiary.Length + 1)
                     + (Game.State.Seen.Count > Prefs.BeastsSeen ? " *" : ""),
-                Quests.DoneCount + "/" + Quests.All.Length,
+                Quests.DoneCount + "/" + Quests.All.Length + (QuestReady() ? " *" : ""),
                 Strings.Get("zone.short." + Game.State.CurZone),
                 Medals.Count + "/" + Medals.All.Length + (Medals.Count > Prefs.MedalsSeen ? " *" : ""), "",
             };
@@ -1431,6 +1431,15 @@ namespace MoonThief
             _jrFoot.transform.localPosition = new Vector3(0f, FootY(bottom), 0f);
             _jrFoot.Set(Strings.Get("jr.hint"));
             Select(0);
+        }
+
+        /// <summary>Any errand waiting on a hand-in: drives the * on the hub's quest row -
+        /// actionable news, not just unviewed pages like the medal and book marks.</summary>
+        static bool QuestReady()
+        {
+            foreach (var q in Quests.All)
+                if (Quests.Step(q.Id) == 2 || Quests.ReadyToHand(q)) return true;
+            return false;
         }
 
         /// <summary>Slots with something worn in them, for the hub's value column.</summary>
