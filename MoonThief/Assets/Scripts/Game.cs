@@ -948,6 +948,21 @@ namespace MoonThief
         {
             // a clean shutdown must always be explainable; the stack says who asked for it
             Debug.Log("[game] quitting. phase=" + Phase + "\n" + System.Environment.StackTrace);
+            ParkProgress();
+        }
+
+        void OnApplicationPause(bool paused)
+        {
+            // a phone call or the home button should never cost a night of thieving
+            if (paused) ParkProgress();
+        }
+
+        /// <summary>Park the run wherever it stands. Only the live play phases have a run
+        /// worth writing - menus, cinema and the ending have nothing to lose.</summary>
+        void ParkProgress()
+        {
+            if (Phase == St.Explore || Phase == St.Battle || _inHouse)
+                SaveRun();
         }
 
         void BuildChapterNow(int chapter)
