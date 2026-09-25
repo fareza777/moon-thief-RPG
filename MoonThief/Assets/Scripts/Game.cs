@@ -1142,17 +1142,84 @@ namespace MoonThief
                 var moss = World.FindNpc("npc.moss");
                 if (moss != null && moss.Root != null) return moss.Root.localPosition;
             }
-            if (State.MoonShards >= ShardsNeeded)
+            // an errand already run to ground outranks every unopened chest: the arrow
+            // always walks a finished errand back to whoever waits to hear it done
+            var handIn = SideQuestPos(true);
+            if (handIn.HasValue) return handIn.Value;
+            bool atGate = State.MoonShards >= ShardsNeeded;
+            int shardChests = Mathf.Max(0, 3 - State.ChestsOpened);
+            if (atGate || shardChests <= 0)
+            {
+                // and before the arrow says 'go end the night', it sweeps the errands still
+                // open: an accepted side quest with a findable mark gets the point first
+                var side = SideQuestPos(false);
+                if (side.HasValue) return side.Value;
+            }
+            if (atGate)
                 return _bossDown ? (Vector2?)World.Map.CristalPos : World.Map.BossPos;
             // chests only carry three of the four shards - once those are found, the night's
             // gate is its boss, and pointing the compass at loot would walk the hero backwards
-            int shardChests = Mathf.Max(0, 3 - State.ChestsOpened);
             if (shardChests > 0)
             {
                 int chestAt = World.NearestChest(World.HeroPos, 999f);
                 if (chestAt >= 0) return World.ChestPos(chestAt);
             }
             return World.Map.BossPos;
+        }
+
+        /// <summary>The nearest side-errand the road can still point at. handIn selects the
+        /// finished kind: step 2 (the mark told, the giver waiting) or ReadyToHand (the
+        /// thing found) - both walk back to whoever asked. The open kind walks to its mark:
+        /// a soul to tell or pay, a chest to open. Errands without a mark - zones to visit,
+        /// beasts to fell - keep the arrow for themselves.</summary>
+        Vector2? SideQuestPos(bool handIn)
+        {
+            Vector2? best = null;
+            float bestD = float.MaxValue;
+            foreach (var q in Quests.All)
+            {
+                if (q.Main || q.Chapter != State.Chapter || string.IsNullOrEmpty(q.Giver)) continue;
+                bool ready = Quests.Step(q.Id) == 2 || Quests.ReadyToHand(q);
+                if (ready != handIn) continue;
+                if (!ready && Quests.Step(q.Id) != 1) continue;
+                Vector2? p = null;
+                if (ready)
+                {
+                    p = NpcMark(q.Giver);
+                }
+                else if (q.Kind == QuestKind.Talk || q.Kind == QuestKind.Pay)
+                {
+                    p = NpcMark(string.IsNullOrEmpty(q.Target) ? q.Giver : q.Target);
+                }
+                else if (q.Kind == QuestKind.Item || q.Kind == QuestKind.Chests)
+                {
+                    int chestAt = World.NearestChest(World.HeroPos, 999f);
+                    if (chestAt >= 0) p = World.ChestPos(chestAt);
+                }
+                if (p.HasValue)
+                {
+                    float d = Vector2.Distance(World.HeroPos, p.Value);
+                    if (d < bestD) { bestD = d; best = p; }
+                }
+            }
+            return best;
+        }
+
+        /// <summary>Where a named soul can be found, from the street anyway: their spot in the
+        /// world, or - for "npc.house.N", who only ever waits behind their own door - that
+        /// house's doorstep. Walking onto the doorstep is what puts them in reach.</summary>
+        Vector2? NpcMark(string nameKey)
+        {
+            var npc = World.FindNpc(nameKey);
+            if (npc != null && npc.Root != null) return npc.Root.localPosition;
+            if (nameKey != null && nameKey.StartsWith("npc.house.")
+                && int.TryParse(nameKey.Substring(10), out int h)
+                && h >= 0 && h < World.Map.Doors.Count)
+            {
+                var c = World.Map.Doors[h];
+                return new Vector2(c.x + 0.5f, c.y + 0.5f);
+            }
+            return null;
         }
 
         // ------------------------------------------------------------ main loop
