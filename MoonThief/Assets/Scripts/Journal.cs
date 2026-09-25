@@ -71,9 +71,11 @@ namespace MoonThief
             string[] pool;
             switch (fam)
             {
-                case "slimesword":      pool = new[] { "item.saber", "item.glaive", "item.moonedge", "item.sickle" }; break;
-                case "zombi":           pool = new[] { "item.charm.rune", "item.charm.coin", "item.charm.owl", "item.mead" }; break;
-                case "worm":            pool = new[] { "item.stew", "item.roast", "item.pudding", "item.chowder" }; break;
+                case "slimesword":      pool = new[] { "item.saber", "item.glaive", "item.moonedge", "item.sickle", "item.rusted" }; break;
+                case "zombi":           pool = new[] { "item.charm.rune", "item.charm.coin", "item.charm.owl", "item.mead",
+                                                       "item.gravemail", "item.marrow", "item.charm.grave" }; break;
+                case "worm":            pool = new[] { "item.stew", "item.roast", "item.pudding", "item.chowder",
+                                                       "item.wormhide", "item.rotberry" }; break;
                 case "ghost":           pool = new[] { "item.charm.thread", "item.charm.star", "item.nightsilk" }; break;
                 case "wisp":            pool = new[] { "item.charm.lantern", "item.charm.bell", "item.honey" }; break;
                 case "scorpion":        pool = new[] { "item.cider", "item.jam", "item.charm.feather" }; break;
@@ -81,7 +83,7 @@ namespace MoonThief
                 case "skeletonwarrior": pool = new[] { "item.hauberk", "item.brigandine", "item.pike" }; break;
                 case "lamia":           pool = new[] { "item.charm.thread", "item.fish", "item.scale" }; break;
                 case "blackmagus":      pool = new[] { "item.charm.rune", "item.charm.star", "item.moonpie" }; break;
-                case "succubus":        pool = new[] { "item.mead", "item.charm.moon", "item.charm.star" }; break;
+                case "succubus":        pool = new[] { "item.mead", "item.charm.moon", "item.charm.star", "item.thirstfang" }; break;
                 default: return null;
             }
             return pool[rng.Next(pool.Length)];
@@ -180,6 +182,9 @@ namespace MoonThief
             new ItemDef{ Key="item.duskbane",   Kind=ItemKind.Blade, Power=20, Price=124 },
             new ItemDef{ Key="item.palesaber",  Kind=ItemKind.Blade, Power=21, Price=136 },
             new ItemDef{ Key="item.cristalblade",Kind=ItemKind.Blade, Power=22, Price=150 },
+            // the wild things carry their own steel too - drops only, never on a shelf
+            new ItemDef{ Key="item.rusted",     Kind=ItemKind.Blade, Power=11, Price=40 },
+            new ItemDef{ Key="item.thirstfang", Kind=ItemKind.Blade, Power=14, Price=70 },
 
             // ---- cloth (26): +max hp to the whole party. Scarves and aprons first,
             // then leather and mail, then the woven-moon armour.
@@ -213,6 +218,9 @@ namespace MoonThief
             new ItemDef{ Key="item.moonmail",   Kind=ItemKind.Cloth, Power=30, Price=124 },
             new ItemDef{ Key="item.starmail",   Kind=ItemKind.Cloth, Power=31, Price=136 },
             new ItemDef{ Key="item.cristalplate",Kind=ItemKind.Cloth, Power=32, Price=150 },
+            // hides and mail the wild things wear - drops only, never on a shelf
+            new ItemDef{ Key="item.wormhide",   Kind=ItemKind.Cloth, Power=17, Price=50 },
+            new ItemDef{ Key="item.gravemail",  Kind=ItemKind.Cloth, Power=22, Price=70 },
 
             // ---- charms (24): a small mixed blessing - a little speed, a little edge,
             // a little health all at once. Pocket luck first, star-magic last.
@@ -245,6 +253,12 @@ namespace MoonThief
             new ItemDef{ Key="item.charm.lumen",   Kind=ItemKind.Charm, Power=17, Price=88 },
             new ItemDef{ Key="item.charm.crown",   Kind=ItemKind.Charm, Power=18, Price=96 },
             new ItemDef{ Key="item.charm.cristal", Kind=ItemKind.Charm, Power=19, Price=110 },
+            // dug out of a grave with the dead thing still wearing it - drops only
+            new ItemDef{ Key="item.charm.grave", Kind=ItemKind.Charm, Power=12, Price=50 },
+
+            // field fare the wild things carry - drops only, never on a shelf
+            new ItemDef{ Key="item.rotberry",  Kind=ItemKind.Food,  Power=24, Price=12 },
+            new ItemDef{ Key="item.marrow",    Kind=ItemKind.Food,  Power=30, Price=16 },
 
             // ---- things a quest wants (5): never sold, never bought
             new ItemDef{ Key="item.axe",      Kind=ItemKind.Key, Price=0 },

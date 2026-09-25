@@ -638,6 +638,13 @@ item.doll|A RED DOLL
 item.note|A FOLDED NOTE
 item.mushroom|NIGHT CAPS
 item.keepsake|A KEEPSAKE
+item.wormhide|WORMHIDE JERKIN
+item.gravemail|GRAVE MAIL
+item.rusted|RUSTED EDGE
+item.thirstfang|THIRSTFANG
+item.marrow|MARROW BREAD
+item.rotberry|ROT BERRY
+item.charm.grave|GRAVE TOKEN
 
 # ---- the villagers behind the six doors
 npc.house.0|ILSE
