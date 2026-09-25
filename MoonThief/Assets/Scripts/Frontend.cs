@@ -1058,7 +1058,8 @@ namespace MoonThief
                     if (def.Kind == ItemKind.Key) continue;          // quest things stay
                     if (Items.IsEquip(def.Kind) && IsWorn(key)) continue;   // on your back
                     int n = Game.State.BagCount(key);
-                    goods.Add(Strings.Get(key) + (n > 1 ? " x" + n : ""));
+                    goods.Add(Strings.Get(key) + (n > 1 ? " x" + n : "")
+                        + (Items.Rare(def) ? " *" : ""));
                     gvals.Add(Mathf.Max(1, def.Price / 2) + " G");
                     gicons.Add(iconOf(def.Kind));
                     var k = key;
@@ -1087,7 +1088,8 @@ namespace MoonThief
                             fx += " (" + (diff >= 0 ? "+" : "") + diff + ")";
                         }
                     }
-                    goods.Add(Strings.Get(key) + "  " + fx);
+                    goods.Add(Strings.Get(key) + "  " + fx
+                        + (Items.Rare(def) ? " *" : ""));
                     bool owned = Items.IsEquip(def.Kind)
                         && (Game.State.BagCount(key) > 0 || Array.IndexOf(Game.State.Worn, key) >= 0);
                     gvals.Add(owned ? Strings.Get("shop.owned") : def.Price + " G");
@@ -1457,7 +1459,8 @@ namespace MoonThief
                             var def = Items.Get(key);
                             int n = Game.State.BagCount(key);
                             bool worn = IsWorn(key);
-                            labels.Add(Strings.Get(key) + (n > 1 ? " x" + n : ""));
+                            labels.Add(Strings.Get(key) + (n > 1 ? " x" + n : "")
+                                + (Items.Rare(def) ? " *" : ""));
                             string val = worn ? Strings.Get("jr.worn") : Items.Effect(def);
                             // same question the shop answers: a bagged blade is only
                             // worth wearing if it beats what is on your back

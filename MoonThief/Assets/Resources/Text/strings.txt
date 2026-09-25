@@ -72,8 +72,8 @@ shop.sold|Carried off. Careful out there.
 shop.poor|Not enough gold, love.
 shop.owned|OWNED
 shop.have|You already have one, love.
-shop.hint|TAP A WARE TO BUY IT
-shop.sellhint|TAP AN ITEM TO SELL IT
+shop.hint|TAP A WARE TO BUY IT - * IS THE BEST SHELF
+shop.sellhint|TAP AN ITEM TO SELL IT - * IS THE BEST SHELF
 shop.sellmode|SELL SOMETHING
 shop.buymode|BUY SOMETHING
 shop.soldout|Sold. {0} gold for the road.
@@ -392,7 +392,7 @@ loot.found|You found {0} and {1} gold.
 pause.journal|JOURNAL
 jr.title|JOURNAL
 jr.hint|PICK A ROW TO OPEN, BACK TO RETURN
-jr.pagehint|PICK A ROW, BACK RETURNS TO THE JOURNAL
+jr.pagehint|PICK A ROW - * MARKS THE BEST SHELF
 jr.map.tip|SPECKS MARK UNOPENED CHESTS
 jr.sub|LEVEL {0}    {1} GOLD
 jr.character|CHARACTER

@@ -212,6 +212,20 @@ namespace MoonThief
 
         public static bool IsEquip(ItemKind k) => k == ItemKind.Blade || k == ItemKind.Cloth || k == ItemKind.Charm;
 
+        /// <summary>The night's best shelf: the top tier of each kind. Lists star it so the
+        /// rarest steel and the last night's baking stand out in a long bag.</summary>
+        public static bool Rare(ItemDef d)
+        {
+            switch (d.Kind)
+            {
+                case ItemKind.Food:  return d.Power >= 20;
+                case ItemKind.Blade: return d.Power >= 10;
+                case ItemKind.Cloth: return d.Power >= 18;
+                case ItemKind.Charm: return d.Power >= 11;
+                default: return false;
+            }
+        }
+
         public static int SlotOf(ItemKind k) => k == ItemKind.Blade ? 0 : k == ItemKind.Cloth ? 1 : 2;
 
         public static string SlotKey(ItemKind k) =>
