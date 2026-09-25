@@ -1539,6 +1539,9 @@ namespace MoonThief
             _flow = 0;
             _levelAtStart = Game.State.Level;
             AwaitingInput = false;
+            // the round/flow strip is only rewritten at StartRound - reset it now or the
+            // last fight's "ROUND n" hangs over this one's entrance
+            View.SetRound(_round, _flow);
             // each night has its own ground: the hollow's woods, the long fields, the deep
             View.SetBackdrop(Game.State.Chapter >= 3 ? "Art/Backgrounds/DungeonA"
                 : Game.State.Chapter == 2 ? "Art/Backgrounds/PlainA" : "Art/Backgrounds/ForestA",
