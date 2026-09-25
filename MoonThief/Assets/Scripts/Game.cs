@@ -351,7 +351,6 @@ namespace MoonThief
         Vector2 _joyVec;
         // a deliberate tap on the world: pressed and released without dragging
         bool _tapPending;
-        Vector2 _tapStage;
         int _tapFinger = -1;
         Vector2 _tapStart;
         float _tapTime;
@@ -2365,11 +2364,11 @@ namespace MoonThief
                         }
                         else if (t.phase == TouchPhase.Ended)
                         {
+                            // a clean tap anywhere is the interact press: which of the
+                            // neighbours answers is decided by who stands nearest the hero,
+                            // not by where the finger landed
                             if (!_tapMoved && Time.unscaledTime - _tapTime < 0.45f)
-                            {
-                                _tapStage = ScreenToStage(t.position);
                                 _tapPending = true;
-                            }
                             _tapFinger = -1;
                         }
                         else if (t.phase == TouchPhase.Canceled) _tapFinger = -1;
@@ -2382,7 +2381,6 @@ namespace MoonThief
                 // desktop helper: a plain left click taps (the mouse joystick needs Ctrl or RMB)
                 if (Input.GetMouseButtonDown(0) && !Input.GetKey(KeyCode.LeftControl))
                 {
-                    _tapStage = ScreenToStage(Input.mousePosition);
                     _tapPending = true;
                 }
             }
