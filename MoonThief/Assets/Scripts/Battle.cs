@@ -481,9 +481,12 @@ namespace MoonThief
                 var battler = Bank.One(spec.Battler);
                 // wild things get a little tougher as the party levels, so levelling
                 // shortens a fight instead of making it meaningless; a retold night
-                // (CONTINUE after the ending) bites a little deeper on top of that
+                // (CONTINUE after the ending) bites a little deeper on top of that,
+                // and a story-told one takes the edge off the beasts themselves -
+                // taking less damage but still grinding full bars is only half a mercy
                 int elv = (Game.State.Level - 1) * 2;
-                float nmul = (1f + 0.45f * Game.State.NgPlus) * (Prefs.Hard ? 1.25f : 1f);
+                float nmul = (1f + 0.45f * Game.State.NgPlus)
+                    * (Prefs.Hard ? 1.25f : Prefs.Story ? 0.8f : 1f);
                 var f = new Fighter
                 {
                     Id = "e" + i,
