@@ -2621,6 +2621,7 @@ namespace MoonThief
                 PlayIdle(aRig);
                 if (!target.Alive)
                 {
+                    OnFighterDown(target);   // even a pebble's kill feeds the grave-born
                     yield return FadeOut(tRig);
                     View.SetMessage(Strings.Get("bt.fainted", target.Name));
                     yield return Fx.Wait(0.6f);
@@ -2652,7 +2653,14 @@ namespace MoonThief
                     var e = View.Enemies[i];
                     if (e.Alive) continue;
                     var er = View.RigOf(e);
-                    if (er != null && er.Root.gameObject.activeSelf) { yield return FadeOut(er); felled++; last = e.Name; }
+                    // only a kill this swing feeds the grave-born: a body still standing
+                    // in its rig is fresh-fallen - last round's dead were eaten already
+                    if (er != null && er.Root.gameObject.activeSelf)
+                    {
+                        OnFighterDown(e);
+                        yield return FadeOut(er);
+                        felled++; last = e.Name;
+                    }
                 }
                 if (felled > 0)
                 {
@@ -2684,6 +2692,7 @@ namespace MoonThief
                 PlayIdle(aRig);
                 if (!target.Alive)
                 {
+                    OnFighterDown(target);   // a hero's kill is still a kill to a hungry grave
                     yield return FadeOut(tRig);
                     View.SetMessage(Strings.Get("bt.fainted", target.Name));
                     yield return Fx.Wait(0.6f);
@@ -2709,6 +2718,7 @@ namespace MoonThief
                         if (IsUnrisenSkeleton(actor)) { yield return FriendRise(actor, aRig); }
                         else
                         {
+                            OnFighterDown(actor);   // the riposte's kill feeds the grave-born too
                             yield return FadeOut(aRig, true);
                             View.SetMessage(Strings.Get(actor.Species != null ? "bt.fainted" : "bt.herodown", actor.Name));
                             yield return Fx.Wait(0.6f);
