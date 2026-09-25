@@ -2423,13 +2423,21 @@ namespace MoonThief
 
         bool KeyDown(KeyCode a) => Input.GetKeyDown(a);
 
-        /// <summary>-1 / +1 for menu rows.</summary>
+        float _keyHeldT;      // hold-to-scroll: a kept key walks the list on its own
+        int _keyHeldDir;
+
+        /// <summary>-1 / +1 for menu rows. A held direction repeats after the usual
+        /// pause, so a long journal needs a thumb held down, not twenty taps.</summary>
         int KeyStep()
         {
-            if (KeyDown(KeyCode.UpArrow) || KeyDown(KeyCode.W)) return -1;
-            if (KeyDown(KeyCode.DownArrow) || KeyDown(KeyCode.S)) return 1;
-            if (KeyDown(KeyCode.LeftArrow) || KeyDown(KeyCode.A)) return -1;
-            if (KeyDown(KeyCode.RightArrow) || KeyDown(KeyCode.D)) return 1;
+            int dir = 0;
+            if (Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.W)) dir = -1;
+            else if (Input.GetKey(KeyCode.DownArrow) || Input.GetKey(KeyCode.S)) dir = 1;
+            else if (Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.A)) dir = -1;
+            else if (Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.D)) dir = 1;
+            if (dir == 0 || dir != _keyHeldDir) { _keyHeldT = 0f; _keyHeldDir = dir; return dir; }
+            _keyHeldT += Time.unscaledDeltaTime;
+            if (_keyHeldT >= 0.42f) { _keyHeldT = 0.28f; return dir; }
             return 0;
         }
 
