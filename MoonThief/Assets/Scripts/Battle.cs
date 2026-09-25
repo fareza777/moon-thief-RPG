@@ -3072,6 +3072,7 @@ namespace MoonThief
             _ph = Ph.Card;
             Sfx.Mus.Intensity = 1f;
             Sfx.Mus.Duck = 0.5f;
+            Sfx.Play("boss");   // the dark takes the stage for a breath
             AwaitingInput = false;
             View.SetMenuVisible(false);
             // slinking home costs a handful of gold: standing back up for another
