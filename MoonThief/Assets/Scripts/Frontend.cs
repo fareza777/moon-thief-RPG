@@ -1635,9 +1635,14 @@ namespace MoonThief
                     // opening the book counts as seeing what it holds - same * rule as medals
                     Prefs.BeastsSeen = Game.State.Seen.Count;
                     Prefs.Store();
+                    // an empty stable doesn't get counted: '0 FRIENDS KEPT' reads like a
+                    // warning, so the kept clause only joins the sub once there is one
                     sub = Strings.Get("jr.bestiary.sub", Game.State.Seen.Count,
-                        BattleData.Bestiary.Length + 1, Game.State.Friends.Count,
-                        Game.State.Friends.Count == 1 ? "FRIEND" : "FRIENDS");
+                        BattleData.Bestiary.Length + 1)
+                        + (Game.State.Friends.Count > 0
+                            ? "    " + Strings.Get("jr.bestiary.kept", Game.State.Friends.Count,
+                                Game.State.Friends.Count == 1 ? "FRIEND" : "FRIENDS")
+                            : "");
                     sprites = new List<Sprite>();
                     foreach (var spec in BattleData.Bestiary)
                     {
