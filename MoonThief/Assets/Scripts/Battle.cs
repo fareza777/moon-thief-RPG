@@ -1785,7 +1785,10 @@ namespace MoonThief
             float mw = PixelFont.Measure(morselWord, View.Menu[2].Text.Scale).x;
             View.Menu[2].Text.transform.localScale = Vector3.one * Mathf.Min(1f, 6.1f / Mathf.Max(0.1f, mw));
             View.Menu[2].Text.Set(morselWord);
-            View.SetCellEnabled(1, Game.State.Friends.Count < 2 && !_hasBoss);
+            // a gatekeeper's court is not all its keeper: the squire screens the thane
+            // and the wisp the Guard, and neither carries the Boss flag itself - the
+            // kind word dims only when nothing on the field would take it
+            View.SetCellEnabled(1, Game.State.Friends.Count < 2 && AnyTameable());
             View.SetCellEnabled(3, !_hasBoss);   // the Guard bars every way out
             View.AimStyle = f.Style;
             View.SetTarget(View.Target);
@@ -2460,6 +2463,15 @@ namespace MoonThief
             // a greyed command answers for free: the reason prints on the message
             // line and the party keeps its turn - the dim was the warning, not a toll
             if (View.MenuOff(View.SelectedCell)) { RefuseOffCell(); return; }
+            // an aimed kind word can still miss its mark: the cell stays lit while
+            // any foe on the field could be turned, but pointing it at the keeper
+            // itself only ever earns the telling - a free refusal, like the dim
+            if (View.SelectedCell == 1 && !TameableAim())
+            {
+                View.SetMessage(Strings.Get("bt.notame", TargetName()));
+                Sfx.Play("fail");
+                return;
+            }
             AwaitingInput = false;
             View.SetMenuVisible(false);
             View.ShowHint(false);
@@ -2499,12 +2511,30 @@ namespace MoonThief
             Sfx.Play("fail");
         }
 
-        string TargetName()
+        Fighter Aimed()
         {
             int ti = View.Target;
             if (ti < 0 || ti >= View.Enemies.Length) ti = 0;
-            return View.Enemies.Length > 0 ? View.Enemies[ti].Name : "it";
+            return View.Enemies.Length > 0 ? View.Enemies[ti] : null;
         }
+
+        string TargetName() => Aimed() != null ? Aimed().Name : "it";
+
+        /// <summary>A foe that could still be turned: breathing, not a keeper, and not
+        /// a species the stable already keeps - the same bar the befriend roll uses.
+        /// The squire and the lantern wisp pass it even inside a boss's court.</summary>
+        static bool TameableFoe(Fighter f) => f != null && f.Alive && !f.Boss
+            && (f.Species == null || (!Game.State.Friends.Contains(f.Species)
+                && !Game.State.Friends.Contains("moon." + f.Species)));
+
+        bool AnyTameable()
+        {
+            foreach (var f in View.Enemies)
+                if (TameableFoe(f)) return true;
+            return false;
+        }
+
+        bool TameableAim() => TameableFoe(Aimed());
 
         IEnumerator PlayerAttack(Fighter actor)
         {
