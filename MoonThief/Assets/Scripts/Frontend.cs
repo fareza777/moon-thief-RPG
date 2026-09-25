@@ -584,7 +584,7 @@ namespace MoonThief
             _mapSr = SpriteRendererUtil.Make(_pageRoot, "pgMapImg", null, 6002);
             _mapSr.enabled = false;
             _mapHeroDot = SpriteRendererUtil.Make(_pageRoot, "pgMapHero", TexArt.Dot(), 6005);
-            _mapHeroDot.transform.localScale = Vector3.one * 0.085f;
+            _mapHeroDot.transform.localScale = Vector3.one * 0.12f;
             _mapHeroDot.color = new Color(1f, 0.82f, 0.4f);
             _mapHeroDot.enabled = false;
             _mapQuestDot = SpriteRendererUtil.Make(_pageRoot, "pgMapQuest", TexArt.Spark(), 6005);
@@ -594,7 +594,7 @@ namespace MoonThief
             for (int i = 0; i < 8; i++)
             {
                 _mapChestDots[i] = SpriteRendererUtil.Make(_pageRoot, "pgMapChest" + i, TexArt.Dot(), 6004);
-                _mapChestDots[i].transform.localScale = Vector3.one * 0.055f;
+                _mapChestDots[i].transform.localScale = Vector3.one * 0.075f;
                 _mapChestDots[i].color = new Color(1f, 0.9f, 0.45f);
                 _mapChestDots[i].enabled = false;
             }
@@ -1643,6 +1643,7 @@ namespace MoonThief
                         mapCx + (hp.Value.x - GameMap.W * 0.5f) * upc,
                         mapCy + (hp.Value.y - GameMap.H * 0.5f) * upc, 0f);
                     _mapHeroDot.enabled = true;
+                    if (Application.isPlaying) StartCoroutine(PulseMapDots());
                 }
                 var op = GetObjectivePos != null ? GetObjectivePos() : null;
                 if (op.HasValue)
@@ -1669,6 +1670,21 @@ namespace MoonThief
                 haveMap ? rowsTop - _mapSpr.bounds.size.y - 0.9f : rowsTop, 1, new[] { 14 });
             _pageFoot.transform.localPosition = new Vector3(0f, FootY(bottom), 0f);
             Select(0);
+        }
+
+        /// <summary>The hero's own mark breathes on the map: a static pin at two pixels is a
+        /// speck, not a position - the pulse is what tells the eye 'you are here'. Ends when
+        /// the page closes and the dot hides.</summary>
+        IEnumerator PulseMapDots()
+        {
+            while (_mapHeroDot != null && _mapHeroDot.enabled)
+            {
+                float p = 0.5f + 0.5f * Mathf.Sin(Time.time * 6f);
+                _mapHeroDot.transform.localScale = Vector3.one * (0.11f + p * 0.05f);
+                if (_mapQuestDot.enabled)
+                    _mapQuestDot.transform.localScale = Vector3.one * (0.15f + p * 0.06f);
+                yield return null;
+            }
         }
 
         GameMap _mapObj;
