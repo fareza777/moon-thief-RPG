@@ -2060,19 +2060,24 @@ namespace MoonThief
                     + (runMedals > 0 ? "\n" + Strings.Get("end.medals", runMedals,
                         runMedals == 1 ? "MEDAL" : "MEDALS") : "")
                     + "\n" + Strings.Get("end.again"));
-                // the ledger lives between poem and hint: a fixed y only held for the
-                // shortest telling, so anchor it under the poem's measured bottom and
-                // above the tap hint's band (position = the block's top edge)
+                // the ledger lives between poem and hint - the hint is a FLOOR, the poem
+                // a CEILING (position = the block's top edge). A long telling can leave
+                // no room between them, so the ledger trims its tail lines - the
+                // farewell first, the medal count after - until the story fits
                 {
                     float poemBottom = HalfH - 10f - _endLines.MeasureHeight(_endLines.Text);
-                    // the hint band is a FLOOR and the poem is a CEILING: the block's top
-                    // must sit at or above 'aboveHint' to keep its bottom out of the tap
-                    // hint, and as near under the poem as that allows - min() had it
-                    // backwards and dropped the ledger through the hint whenever the
-                    // company poem ran long
-                    float aboveHint = -HalfH + 3.9f + _endStats.MeasureHeight(_endStats.Text) + 1.6f;
+                    float hintTop = -HalfH + 3.9f;
+                    var statText = _endStats.Text;
+                    while (true)
+                    {
+                        float aboveHint = hintTop + _endStats.MeasureHeight(statText) + 1.2f;
+                        if (poemBottom - 0.5f >= aboveHint || !statText.Contains("\n")) break;
+                        statText = statText.Substring(0, statText.LastIndexOf('\n'));
+                    }
+                    if (statText != _endStats.Text) _endStats.Set(statText);
+                    float above = hintTop + _endStats.MeasureHeight(statText) + 1.2f;
                     _endStats.transform.localPosition =
-                        new Vector3(0f, Fx.Snap(Mathf.Max(aboveHint, poemBottom - 0.8f)), 0f);
+                        new Vector3(0f, Fx.Snap(Mathf.Max(above, poemBottom - 0.5f)), 0f);
                 }
                 // the company walks home on the screen's edge: up to three friends stand
                 // as small silhouettes on the horizon line under the tap hint. Cleared
@@ -2090,8 +2095,11 @@ namespace MoonThief
                         var spr = spec.HasValue ? TexArt.MapMonster(spec.Value.MapSheet, 1) : null;
                         if (spr == null) continue;
                         var fr = SpriteRendererUtil.Make(_endRoot, "endFriend" + shown, spr, 98);
-                        fr.transform.localPosition =
-                            new Vector3((shown - 1f) * 1.9f, -HalfH + 1.4f, 0f);
+                        // one stands middle, a pair flanks it, three spread the width -
+                        // 3.4 apart so the widest monster sheet never piles its edges
+                        fr.transform.localPosition = new Vector3(
+                            (shown - (Mathf.Min(State.Friends.Count, 3) - 1f) / 2f) * 3.4f,
+                            -HalfH + 1.4f, 0f);
                         fr.transform.localScale = Vector3.one * 1.5f;
                         // the first light catches only their shape - not their faces;
                         // a moonlit one still shines a little silver out of the dark
