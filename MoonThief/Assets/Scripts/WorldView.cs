@@ -2762,7 +2762,21 @@ namespace MoonThief
                     {
                         var cell = new Vector2Int(Mathf.RoundToInt(home.x - 0.5f) + Random.Range(-2, 3),
                                                   Mathf.RoundToInt(home.y - 0.5f) + Random.Range(-2, 3));
-                        if (Map.Walkable(cell)) { n.Dest = cell; break; }
+                        // the stroll used to check only the ground, so two villagers could
+                        // pick the same corner and spend the pause stacked in one sprite -
+                        // two heads, two name plates, one tile. A spot is free only while
+                        // nobody else stands there or is already walking to it
+                        if (!Map.Walkable(cell)) continue;
+                        var center = Map.CellCenter(cell);
+                        bool taken = false;
+                        for (int j = 0; j < Npcs.Count; j++)
+                        {
+                            if (j == i || Npcs[j].Root == null) continue;
+                            if (Vector2.Distance(Npcs[j].Root.localPosition, center) < 0.9f
+                                || (Npcs[j].Dest != default && Map.CellCenter(Npcs[j].Dest) == center))
+                            { taken = true; break; }
+                        }
+                        if (!taken) { n.Dest = cell; break; }
                     }
                     if (n.Dest == default) { n.Pause = 1f; continue; }
                 }
