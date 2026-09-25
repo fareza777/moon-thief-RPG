@@ -102,6 +102,7 @@ namespace MoonThief
         public int chestsOpened;
         public int defeats;
         public int ngp;             // how many retellings this save has survived
+        public int easyFights;      // battles fought under kinder difficulty - IRON THIEF needs none
         public bool bossDown;
         public float heroX, heroY;
         public string stamp = "";

@@ -1505,6 +1505,9 @@ namespace MoonThief
             _morselUsed = false;
             _hinted = false;
             _autoTame = false;
+            // the telling counts its mercy: every fight taken on an easier road bars
+            // the iron medal at the door
+            if (!Prefs.Hard) Game.State.EasyFights++;
             _befriended = 0;
             _enraged = false;
             _bossSpoke = false;

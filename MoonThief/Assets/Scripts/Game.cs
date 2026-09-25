@@ -27,6 +27,9 @@ namespace MoonThief
             public static int ChestsOpened;    // the first few drops are always shards
             public static int Defeats;         // wild beasts put down (drives the nightwatch quests)
             public static int NgPlus;          // how many times the tale has been told: each retelling bites deeper
+            // fights settled on a kinder difficulty; IRON THIEF only honours a telling
+            // where every blade was drawn on hard, so the medal cannot be bought at the door
+            public static int EasyFights;
 
             // ---- the journal: the bag, what is worn, what has been seen, what has been done ----
             public static readonly List<string> Bag = new List<string>();          // item keys, repeats allowed
@@ -47,7 +50,7 @@ namespace MoonThief
             public static void NewRun()
             {
                 Chapter = 1; MoonShards = 0; Befriended = 0; HeldItems = 0; MorselsUsed = 0;
-                Gold = 0; Xp = 0; ChestsOpened = 0; Defeats = 0; NgPlus = 0;
+                Gold = 0; Xp = 0; ChestsOpened = 0; Defeats = 0; NgPlus = 0; EasyFights = 0;
                 Bag.Clear(); Worn[0] = Worn[1] = Worn[2] = null;
                 Zones.Clear(); Seen.Clear(); ChestsDone.Clear(); Friends.Clear();
                 Joined.Clear();
@@ -257,6 +260,7 @@ namespace MoonThief
                 gold = Gold, xp = Xp, morsels = MorselsUsed, items = HeldItems,
                 chestsOpened = ChestsOpened, heroX = heroX, heroY = heroY,
                 defeats = Defeats, bossDown = bossDown, ngp = NgPlus,
+                easyFights = EasyFights,
                 bag = Bag.ToArray(), worn = (string[])Worn.Clone(),
                 friends = Friends.ToArray(), joined = JoinedArray(),
                 zones = Zones.ToArray(), quests = Quests.Capture(),
@@ -289,6 +293,7 @@ namespace MoonThief
                 HeldItems = Mathf.Max(0, d.items);
                 ChestsOpened = Mathf.Max(0, d.chestsOpened);
                 Defeats = Mathf.Max(0, d.defeats);
+                EasyFights = Mathf.Max(0, d.easyFights);
                 NgPlus = Mathf.Max(0, d.ngp);
 
                 Bag.Clear();
@@ -2182,7 +2187,9 @@ namespace MoonThief
                 // ENDER and NG+ belong to the retelling's count, not this one's farewell
                 int runMedals = Medals.EarnedThisRun;
                 Medals.Grant("ender");
-                if (Prefs.Hard) Medals.Grant("iron");   // the cruel telling counts itself
+                // the cruel telling counts itself: hard the whole way through, not
+                // just for the last walk to the cristal
+                if (Prefs.Hard && State.EasyFights == 0) Medals.Grant("iron");
                 Phase = St.End;
                 SetCamY(0f);
                 World.gameObject.SetActive(false);
@@ -2279,6 +2286,7 @@ namespace MoonThief
                 Medals.Grant("ngp");
                 Medals.EarnedThisRun = 0;   // the retelling keeps its own ledger
                 State.Chapter = 1; State.MoonShards = 0;
+                State.EasyFights = 0;
                 State.ChestsOpened = 0; State.ChestsDone.Clear();
                 State.Zones.Clear(); State.CurZone = "village"; State.ObjZone = null;
                 Quests.Reset();
