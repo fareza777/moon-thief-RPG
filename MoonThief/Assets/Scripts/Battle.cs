@@ -645,6 +645,23 @@ namespace MoonThief
         {
             _hudRound.Set(Strings.Get("hud.round", round));
             _hudFlow.Set(flow >= 2 ? Strings.Get("hud.roundf", flow) : "");
+            _flow = flow;   // the corner moon charges with it - see Tick's breathing tint
+        }
+
+        int _flow;
+
+        /// <summary>The corner moon reads the moonflow, not just the night: dark and still
+        /// at zero, warming toward gold as momentum builds, and breathing a brighter pulse
+        /// once the MOON* commands are armed (flow >= 4). Sprite never swaps - it is the
+        /// same moon the night number sits under, glowing by the same rules the fight does.</summary>
+        void MoonflowTint()
+        {
+            if (_moonIcon == null) return;
+            float warm = Mathf.Clamp01(_flow / 4f);
+            float pulse = _flow >= 4 ? 0.5f + 0.5f * Mathf.Sin(Time.time * 5f) : 0f;
+            float glow = 0.35f + 0.55f * warm + 0.3f * pulse;
+            _moonIcon.color = new Color(1f, 0.92f - 0.12f * pulse, 0.62f + 0.3f * warm, Mathf.Min(1f, glow));
+            _moonIcon.transform.localScale = Vector3.one * (2f + 0.15f * pulse);
         }
 
         /// <summary>The arena's edge bleeds red for a beat: a hit that lands on the
@@ -905,6 +922,7 @@ namespace MoonThief
         void Update()
         {
             _time += Time.deltaTime;
+            MoonflowTint();
             // foes bob on the spot; the party breathes, so the arena is never a still frame
             foreach (var rig in EnemyRigs)
             {
