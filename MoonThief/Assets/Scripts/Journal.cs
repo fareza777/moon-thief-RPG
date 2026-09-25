@@ -518,7 +518,7 @@ namespace MoonThief
         public static int Progress(QuestDef q)
         {
             if (q == null) return 0;
-            if (q.Kind == QuestKind.Item) return Game.State.BagCount(GoalItem(q));
+            if (q.Kind == QuestKind.Item) return HeldCount(GoalItem(q));
             // a talk errand that names another soul is only half done until that soul
             // has been found and told - step 2 is the found-and-told mark
             if (q.Kind == QuestKind.Talk) return string.IsNullOrEmpty(q.Target) ? 1 : (Step(q.Id) >= 2 ? 1 : 0);
@@ -541,10 +541,19 @@ namespace MoonThief
                 if (q.Kind == QuestKind.Item && Step(q.Id) == 1)
                 {
                     string goal = GoalItem(q);
-                    if (!string.IsNullOrEmpty(goal) && Game.State.BagCount(goal) < q.Need)
+                    if (!string.IsNullOrEmpty(goal) && HeldCount(goal) < q.Need)
                         return goal;
                 }
             return null;
+        }
+
+        /// <summary>A key piece counts whether it rides in the bag or on the belt - the
+        /// thief who straps the found axe on still holds it, and the errand still sees it.</summary>
+        static int HeldCount(string key)
+        {
+            int n = Game.State.BagCount(key);
+            for (int i = 0; i < 3; i++) if (Game.State.Worn[i] == key) n++;
+            return n;
         }
 
         /// <summary>Which key item a quest wants. Carried on the quest itself so the offer can
@@ -575,7 +584,17 @@ namespace MoonThief
             if (!string.IsNullOrEmpty(q.Gift)) Game.State.AddBag(q.Gift);
             string goal = GoalItem(q);
             if (!string.IsNullOrEmpty(goal))
-                for (int i = 0; i < q.Need; i++) Game.State.RemoveBag(goal);
+                for (int i = 0; i < q.Need; i++)
+                {
+                    // the bag gives up its copy first; a piece strapped on still goes
+                    // over the counter with the errand that asked for it
+                    if (Game.State.BagCount(goal) > 0) Game.State.RemoveBag(goal);
+                    else
+                    {
+                        int slot = System.Array.IndexOf(Game.State.Worn, goal);
+                        if (slot >= 0) Game.State.Worn[slot] = null;
+                    }
+                }
         }
 
         /// <summary>The quest this NPC has something to say about right now, if any.</summary>
