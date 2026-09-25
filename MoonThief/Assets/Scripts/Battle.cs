@@ -1591,6 +1591,21 @@ namespace MoonThief
                         break;
                     }
             }
+            // and when the box bites back, somebody in the crew always claims they knew
+            if (fromMimic && Application.isPlaying)
+            {
+                var living = new List<Fighter>();
+                foreach (var pf in View.Party) if (pf.Alive) living.Add(pf);
+                if (living.Count > 0)
+                {
+                    var who = living[UnityEngine.Random.Range(0, living.Count)];
+                    var wrig = View.RigOf(who);
+                    if (wrig != null)
+                        View.FloatNumber(wrig.Home + new Vector3(0f, 2.15f, 0f),
+                            Strings.Get("bk.mim." + UnityEngine.Random.Range(0, 3)),
+                            new Color(1f, 0.8f, 0.55f), 1);
+                }
+            }
             if (Application.isPlaying) StartCoroutine(Timer(1.4f, RoundStart));
         }
 

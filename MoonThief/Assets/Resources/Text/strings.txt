@@ -876,6 +876,9 @@ hint.sneak|The wild hears a heavy step - small tilts slip past, and an unseen st
 bk.amb.0|Softly now.
 bk.amb.1|They never saw us.
 bk.amb.2|From the dark.
+bk.mim.0|I knew that box was wrong!
+bk.mim.1|It had teeth - I saw teeth!
+bk.mim.2|Nobody touch anything!
 bt.sleep|Roused from dreams - the {0} wakes swinging!
 bt.mimic|That's no chest - the {0} was lying in wait!
 dl.hunter.3|Chests out there aren't all chests, boy. The wild learned our shapes - a shimmer that runs cold instead of gold means teeth. Look twice before you touch.
