@@ -84,6 +84,11 @@ namespace MoonThief
                 case "lamia":           pool = new[] { "item.charm.thread", "item.fish", "item.scale" }; break;
                 case "blackmagus":      pool = new[] { "item.charm.rune", "item.charm.star", "item.moonpie" }; break;
                 case "succubus":        pool = new[] { "item.mead", "item.charm.moon", "item.charm.star", "item.thirstfang" }; break;
+                case "slime":           pool = new[] { "item.jam", "item.berry", "item.plum", "item.crumb" }; break;
+                case "mushroom":        pool = new[] { "item.soup", "item.broth", "item.stew", "item.pudding" }; break;
+                case "wasp":            pool = new[] { "item.honey", "item.jam", "item.berry" }; break;
+                case "genius":          pool = new[] { "item.charm.lantern", "item.charm.wisp", "item.charm.bell" }; break;
+                case "minotaur":        pool = new[] { "item.roast", "item.hauberk", "item.moonedge" }; break;
                 default: return null;
             }
             return pool[rng.Next(pool.Length)];

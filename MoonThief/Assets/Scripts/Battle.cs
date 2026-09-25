@@ -2807,6 +2807,9 @@ namespace MoonThief
             int xp = 0, gold = 0;
             foreach (var e in View.Enemies)
             {
+                // a foe that slipped away - or chose you - never fell: no purse, no
+                // nightwatch credit, no share of the spoils
+                if (e.Captured) continue;
                 xp += XpOf(e);
                 gold += UnityEngine.Random.Range(18, 40) * (e.Boss ? 3 : 1);
                 Game.State.Defeats++;   // one step for the nightwatch
@@ -2839,12 +2842,15 @@ namespace MoonThief
             // spoils: the Guard always leaves gear, the wild things sometimes do
             var rng = new System.Random();
             var drops = new List<string>();
-            foreach (var s in _specs)
+            foreach (var e in View.Enemies)
             {
+                if (e.Captured) continue;   // the gone and the joined keep what they carry
+                var spec = e.Species != null ? BattleData.Species(e.Species) : null;
+                if (!spec.HasValue) continue;
                 // a beast may leave what it is - the pudding's kept sword, the graverot's
                 // grave goods - before the wild table ever gets its say
-                var key = s.Boss || s.Rare ? Items.BossDrop(rng)
-                    : Items.SpeciesDrop(BattleData.FamilyOf(s), rng) ?? Items.RollDrop(Game.State.Chapter, rng);
+                var key = e.Boss || e.Rare ? Items.BossDrop(rng)
+                    : Items.SpeciesDrop(BattleData.FamilyOf(spec.Value), rng) ?? Items.RollDrop(Game.State.Chapter, rng);
                 if (key == null) continue;
                 Game.State.AddBag(key);
                 drops.Add(key);
