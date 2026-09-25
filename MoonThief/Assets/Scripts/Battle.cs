@@ -1858,6 +1858,17 @@ namespace MoonThief
             }
             _ph = Ph.Acting;
             View.SetTurnRig(View.RigOf(e), true);
+            // a keeper growls mid-fight: one rare line over its own rig, so the boss
+            // reads as a thinking thing between the taunts, not a damage pump
+            if (e.Boss && UnityEngine.Random.value < 0.3f)
+            {
+                var kRig = View.RigOf(e);
+                if (kRig != null)
+                    View.FloatNumber(kRig.Home + new Vector3(0f, 2.3f, 0f),
+                        Strings.Get("bk.boss." + Mathf.Clamp(Game.State.Chapter, 1, 3)
+                            + "." + UnityEngine.Random.Range(0, 3)),
+                        new Color(1f, 0.75f, 0.7f), 1);
+            }
             // a wasp on its last legs would rather live elsewhere: under a quarter of
             // its bar it may quit the field entirely - dive-bomber, not a martyr
             var fam0 = e.Species != null && BattleData.Species(e.Species).HasValue

@@ -838,3 +838,12 @@ bk.moss.2|don't drop!
 bk.pet.0|chirps!
 bk.pet.1|growls low
 bk.pet.2|hops in!
+bk.boss.1.0|the road is mine
+bk.boss.1.1|no light passes
+bk.boss.1.2|screeches low
+bk.boss.2.0|kneel, little thief
+bk.boss.2.1|the night keeps its tithe
+bk.boss.2.2|your moon is owed
+bk.boss.3.0|the moon stays caged
+bk.boss.3.1|light dies here
+bk.boss.3.2|lanterns all go out
