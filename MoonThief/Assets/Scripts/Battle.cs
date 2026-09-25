@@ -1911,7 +1911,7 @@ namespace MoonThief
             {
                 if (!p.Alive) continue;
                 if (target == null) { target = p; continue; }
-                bool frail = fam == "wasp" || fam == "scorpion";
+                bool frail = fam == "wasp" || fam == "scorpion" || fam == "succubus";
                 if (frail ? p.Hp < target.Hp : p.Hp > target.Hp) target = p;
             }
             if (target == null) { Lose(); yield break; }
@@ -2105,7 +2105,9 @@ namespace MoonThief
             Fighter target = null;
             var fam = e.Species != null && BattleData.Species(e.Species).HasValue
                 ? BattleData.FamilyOf(BattleData.Species(e.Species).Value) : "";
-            bool frail = fam == "wasp" || fam == "scorpion";
+            // the swarm-minded finish the weak, the thirsty take the easiest drink:
+            // wasp, scorpion and thirstling all hunt the lowest bar
+            bool frail = fam == "wasp" || fam == "scorpion" || fam == "succubus";
             foreach (var p in View.Party)
             {
                 if (!p.Alive) continue;
@@ -2819,6 +2821,10 @@ namespace MoonThief
             Game.State.Xp += xp;
             Game.State.Gold += gold;
 
+            // everyone breathes again the moment the field is quiet - the card says so
+            // when the quiet was earned through bandages
+            bool hurt = false;
+            foreach (var p in View.Party) if (p.Hp < p.MaxHp) hurt = true;
             // nobody fell: the night pays a little extra for a clean fight
             bool flawless = true;
             foreach (var p in View.Party) if (!p.Alive) flawless = false;
@@ -2834,6 +2840,7 @@ namespace MoonThief
                 Strings.Get("card.gold", gold),
             };
             if (flawless) lines.Add(Strings.Get("card.flawless"));
+            else if (hurt) lines.Add(Strings.Get("card.healall"));
             if (Game.State.Level > _levelAtStart)
             {
                 lines.Add(Strings.Get("card.levelup", Game.State.Level));
