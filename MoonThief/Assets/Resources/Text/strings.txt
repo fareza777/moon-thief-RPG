@@ -316,6 +316,7 @@ conf.no|KEEP MY SAVE
 conf.reltitle|SET FREE?
 conf.relsub|The {0} returns to the night.
 conf.rel|SET FREE
+conf.relno|KEEP IT
 conf.quittitle|LEAVE THE NIGHT?
 conf.quitsub|The saved night waits where it is.
 conf.quityes|LEAVE

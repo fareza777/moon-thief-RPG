@@ -1901,7 +1901,8 @@ namespace MoonThief
                 acts.Add(() => ShowConfirm(
                     () => { OnReleaseFriend?.Invoke(s2.Name); ShowPage(Page2.Bestiary); },
                     Strings.Get("conf.reltitle"), Strings.Get("conf.relsub", Strings.Get(s2.Name)),
-                    Strings.Get("conf.rel"), () => ShowPage(Page2.Bestiary)));
+                    Strings.Get("conf.rel"), () => ShowPage(Page2.Bestiary),
+                    Strings.Get("conf.relno")));
             else
                 acts.Add(() => ShowToast(known ? Strings.Get(s2.Name + ".d") : Strings.Get("jr.unseen"), 2.6f));
         }

@@ -3016,7 +3016,8 @@ namespace MoonThief
             // the release-a-friend wording is the second card through the same frame: stand it
             // up on demand so the title-fit pass proves both wordings, then cancel back out
             Menus.ShowConfirm(() => { }, Strings.Get("conf.reltitle"),
-                Strings.Get("conf.relsub", Strings.Get("mon.wisp")), Strings.Get("conf.rel"), null);
+                Strings.Get("conf.relsub", Strings.Get("mon.wisp")), Strings.Get("conf.rel"), null,
+                Strings.Get("conf.relno"));
             yield return new WaitForSeconds(0.5f);
             Shot("10c5-setfree");
             Menus.Tick(0.1f, Vector2.zero, false, 0, false, true);   // cancel -> title rows
