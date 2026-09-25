@@ -447,6 +447,7 @@ jr.items.tip|TAP TO EQUIP - * MARKS THE BEST SHELF
 jr.bestiary.tip|FRIENDS YOU KEEP CARRY THEIR FAMILY MARK
 jr.map.tip|SPECKS MARK UNOPENED CHESTS
 jr.sub|LEVEL {0}    {1} GOLD
+jr.ngp|TALE {0}
 jr.character|CHARACTER
 jr.items|BAG
 jr.equip|EQUIPMENT

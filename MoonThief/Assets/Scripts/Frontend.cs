@@ -1401,7 +1401,7 @@ namespace MoonThief
             float rowsTop = LayoutCard(_jrPanel, 16.4f, 8, true);
             _jrTitle.transform.localPosition = new Vector3(0f, _cardTop - 1.9f, 0f);
             _jrSub.transform.localPosition = new Vector3(0f, _cardTop - 3.5f, 0f);
-            _jrSub.Set(Strings.Get("jr.sub", Game.State.Level, Game.State.Gold));
+            _jrSub.Set(SubLine());
             var labels = new[]
             {
                 Strings.Get("jr.character"), Strings.Get("jr.items"), Strings.Get("jr.equip"),
@@ -1432,6 +1432,11 @@ namespace MoonThief
             _jrFoot.Set(Strings.Get("jr.hint"));
             Select(0);
         }
+
+        /// <summary>LEVEL N    N GOLD, plus the telling's number once the night has been
+        /// retold - a second walk through the same dark should read as one.</summary>
+        static string SubLine() => Strings.Get("jr.sub", Game.State.Level, Game.State.Gold)
+            + (Game.State.NgPlus > 0 ? "    " + Strings.Get("jr.ngp", Game.State.NgPlus + 1) : "");
 
         /// <summary>Any errand waiting on a hand-in: drives the * on the hub's quest row -
         /// actionable news, not just unviewed pages like the medal and book marks.</summary>
@@ -1533,7 +1538,7 @@ namespace MoonThief
             {
                 case Page2.Character:
                     title = "jr.character";
-                    sub = Strings.Get("jr.sub", Game.State.Level, Game.State.Gold);
+                    sub = SubLine();
                     AddK(labels, vals, acts, "jr.level", "L" + Game.State.Level);
                     AddK(labels, vals, acts, "jr.xp", Game.State.Xp + "/" + Game.State.NextLevelAt);
                     AddK(labels, vals, acts, "jr.shards", Game.State.MoonShards + "/" + Game.ShardsNeeded);
