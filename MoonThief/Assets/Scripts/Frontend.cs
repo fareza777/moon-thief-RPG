@@ -679,8 +679,9 @@ namespace MoonThief
         float _toastTextY;             // the text's anchor (top of the first line)
         float _toastLift;              // the slide-in offset, in whole-ish pixels, settling at 0
         float _toastRise;              // 0 the frame it appears, 1 once it has settled
-        string _toastHeld;             // a notice that arrived while a dialog box was up
-        float _toastHeldT;
+        // held notices keep order: a parked live toast plus whatever arrives while the
+        // box is up flush out one after another instead of overwriting each other
+        readonly Queue<(string text, float secs)> _toastHeld = new Queue<(string, float)>();
         Transform _cardSlide;          // the card currently dropping in; null once settled
         Transform _setCard, _credCard, _pauseCard, _shopCard, _onbCard;   // card content under the dim
         float _cardSlideT;             // settle progress 0..1
@@ -700,8 +701,7 @@ namespace MoonThief
                 // waits for the box to close, like every other notice.
                 if (value && _toastRoot != null && _toastRoot.gameObject.activeSelf)
                 {
-                    _toastHeld = _toast.Text;
-                    _toastHeldT = Mathf.Max(1.2f, _toastT);
+                    _toastHeld.Enqueue((_toast.Text, Mathf.Max(1.2f, _toastT)));
                     _toastRoot.gameObject.SetActive(false);
                 }
             }
@@ -1789,7 +1789,7 @@ namespace MoonThief
 
         public void ShowToast(string text, float seconds = 3.2f)
         {
-            if (HoldToasts) { _toastHeld = text; _toastHeldT = seconds; return; }
+            if (HoldToasts) { if (_toastHeld.Count < 3) _toastHeld.Enqueue((text, seconds)); return; }
             DrawToast(text, seconds);
         }
 
@@ -1798,7 +1798,7 @@ namespace MoonThief
         /// shares, so the two are never up together).</summary>
         public void HideToast()
         {
-            _toastHeld = null;
+            _toastHeld.Clear();
             _toastT = 0f;
             if (_toastRoot != null) _toastRoot.gameObject.SetActive(false);
         }
@@ -1807,10 +1807,8 @@ namespace MoonThief
         /// the moment the box closes, so nothing a player earned is silently dropped.</summary>
         public void FlushToast()
         {
-            if (string.IsNullOrEmpty(_toastHeld)) return;
-            var text = _toastHeld;
-            var secs = _toastHeldT;
-            _toastHeld = null;
+            if (_toastHeld.Count == 0) return;
+            var (text, secs) = _toastHeld.Dequeue();
             DrawToast(text, secs);
         }
 
@@ -2119,7 +2117,7 @@ namespace MoonThief
                 float a = Mathf.Clamp01(_toastT * 1.4f) * Mathf.Min(1f, _toastRise * 3f);
                 var c = _toastPanel.color; c.a = a * 0.92f; _toastPanel.color = c;
                 var t = _toast.Tint; t.a = a; _toast.SetColor(t);
-                if (_toastT <= 0f) _toastRoot.gameObject.SetActive(false);
+                if (_toastT <= 0f) { _toastRoot.gameObject.SetActive(false); if (!HoldToasts) FlushToast(); }
             }
 
             _t += dt;
