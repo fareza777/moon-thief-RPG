@@ -537,7 +537,7 @@ namespace MoonThief
             foreach (var rig in PartyRigs)
             {
                 rig.Root.localPosition = rig.Home + new Vector3(-2.5f, 0f, 0f);
-                StartCoroutine(Fx.MoveLocal(rig.Root, rig.Home, 0.35f));
+                Co(Fx.MoveLocal(rig.Root, rig.Home, 0.35f));
             }
             for (int i = 0; i < EnemyRigs.Length; i++)
             {
@@ -545,8 +545,18 @@ namespace MoonThief
                 EnemyRigs[i].Root.localPosition = EnemyRigs[i].Home + off;
                 // a pack arrives in order, not as a wall: each wild thing lands a
                 // breath after the last
-                StartCoroutine(SlideLate(EnemyRigs[i].Root, EnemyRigs[i].Home, 0.4f, i * 0.13f));
+                Co(SlideLate(EnemyRigs[i].Root, EnemyRigs[i].Home, 0.4f, i * 0.13f));
             }
+        }
+
+        /// <summary>View-side routine gate: a queued battle callback (a float, a spark, a
+        /// slide) can land after the ending or a teardown has already switched this stage
+        /// off, and Unity logs an engine error for a coroutine started on a dead object.
+        /// The coroutine never starts, so callers that spawned a visual must clean it up
+        /// themselves when the gate says no.</summary>
+        public Coroutine Co(System.Collections.IEnumerator r)
+        {
+            return gameObject.activeSelf ? StartCoroutine(r) : null;
         }
 
         IEnumerator SlideLate(Transform t, Vector3 to, float dur, float delay)
@@ -574,7 +584,7 @@ namespace MoonThief
                 sr.sprite = TexArt.Spark();
                 sr.color = new Color(1f, 0.95f, 0.7f, 1f);
                 sr.sortingOrder = 90;
-                StartCoroutine(CardSparkRoutine(go.transform, UnityEngine.Random.Range(0.9f, 1.6f)));
+                Co(CardSparkRoutine(go.transform, UnityEngine.Random.Range(0.9f, 1.6f)));
             }
         }
 
@@ -617,7 +627,7 @@ namespace MoonThief
         public void HurtPulse()
         {
             if (_bvig == null || !Application.isPlaying) return;
-            StartCoroutine(Fx.Tween(0.3f, k =>
+            Co(Fx.Tween(0.3f, k =>
             {
                 if (_bvig != null)
                     _bvig.color = Color.Lerp(new Color(1f, 0.3f, 0.26f, 0.92f), new Color(1f, 1f, 1f, 0.7f), k);
@@ -1056,7 +1066,7 @@ namespace MoonThief
             if (Application.isPlaying && _ovCard != null)
             {
                 _ovCard.localPosition = new Vector3(0f, 0.6f, 0f);
-                StartCoroutine(Fx.MoveLocal(_ovCard, Vector3.zero, 0.22f));
+                Co(Fx.MoveLocal(_ovCard, Vector3.zero, 0.22f));
             }
         }
 
@@ -1168,7 +1178,6 @@ namespace MoonThief
         {
             var go = new GameObject("floatn");
             go.transform.SetParent(Stage, false);
-            go.transform.localPosition = new Vector3(pos.x, pos.y, 0f);
             var label = go.AddComponent<PixelLabel>();
             // above the burst sparks (42): "WARDED" used to render behind its own shower
             label.Configure(scale, color, TextAlign.Center, 48);
@@ -1177,7 +1186,13 @@ namespace MoonThief
             // vanish into the light patches
             label.Shadow = true;
             label.Set(text, true);
+            // a fighter at the frame's edge used to spill the tail of a long word
+            // ("PHASED THROUGH!") off-screen: centered text only needs half its width
+            float halfW = label.MeasureWidth(text) * 0.5f;
+            go.transform.localPosition = new Vector3(
+                Mathf.Clamp(pos.x, Left + halfW + 0.1f, Right - halfW - 0.1f), pos.y, 0f);
             if (!Application.isPlaying) return;
+            if (!gameObject.activeSelf) { UtilDestroy(go); return; }   // stage went dark mid-callback
             StartCoroutine(FloatRoutine(go.transform, label, color));
         }
 
@@ -1216,6 +1231,7 @@ namespace MoonThief
                 sr.color = color;
                 sr.sortingOrder = 42;
                 float ang = Mathf.PI * 2f * i / count + UnityEngine.Random.Range(-0.2f, 0.2f);
+                if (!gameObject.activeSelf) { UtilDestroy(go); continue; }   // stage went dark mid-callback
                 StartCoroutine(SparkRoutine(go.transform, sr, new Vector3(Mathf.Cos(ang), Mathf.Sin(ang) * 0.85f, 0f) * 1.7f, color));
             }
         }
