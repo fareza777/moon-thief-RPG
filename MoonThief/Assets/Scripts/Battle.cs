@@ -1679,8 +1679,9 @@ namespace MoonThief
             View.Menu[0].Icon.sprite = TexArt.MenuIcon(style == 1 ? 13 : style == 2 ? 29 : 0);
             // commands that cannot fire go grey: morsel needs bag food and a fresh
             // portion, befriend needs room in the two-heart stable. The morsel cell
-            // counts the portion it would serve - 'MORSEL x3' answers 'how many left'
-            var food = Game.State.BestFood();
+            // names the very dish it would serve - cure first, feast last - so the
+            // '+12 x2' it advertises is the plate the table actually gets
+            var food = PickMorselFood();
             View.SetCellEnabled(2, !_morselUsed && food != null);
             var morselWord = Strings.Get("menu.morsel")
                 + (food != null ? " +" + Items.Get(food).Power + " x" + Game.State.BagCount(food) : "");
@@ -2842,8 +2843,26 @@ namespace MoonThief
             return n;
         }
 
-        /// <summary>Morsel: the party shares the best food in the bag. It used to be a line of
-        /// flavour text with no effect at all, which made the whole item list pointless.</summary>
+        /// <summary>The dish tonight's table calls for: a cleanse when the company is stung,
+        /// a wake-up when someone is dazed, otherwise the smallest plate that covers the
+        /// deepest wound - so one cell and one coroutine always agree on the serving.</summary>
+        string PickMorselFood()
+        {
+            bool poisoned = false, dazed = false;
+            float missing = 0f;
+            foreach (var p in View.Party)
+            {
+                if (!p.Alive) continue;
+                if (p.Poison > 0) poisoned = true;
+                if (p.Dazed) dazed = true;
+                missing = Mathf.Max(missing, p.MaxHp - p.Hp);
+            }
+            return Game.State.FoodFor(poisoned, dazed, missing);
+        }
+
+        /// <summary>Morsel: the party shares whatever dish the table calls for tonight. It
+        /// used to be a line of flavour text with no effect at all, which made the whole
+        /// item list pointless.</summary>
         IEnumerator PlayerMorsel(Fighter actor)
         {
             _ph = Ph.Acting;
@@ -2854,7 +2873,7 @@ namespace MoonThief
                 EndTurn();
                 yield break;
             }
-            string food = Game.State.BestFood();
+            string food = PickMorselFood();
             if (food == null)
             {
                 View.SetMessage(Strings.Get("bt.nofood"));

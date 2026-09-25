@@ -126,6 +126,26 @@ namespace MoonThief
                 return best;
             }
 
+            /// <summary>Which dish the table should pass around: the cure before the feast.
+            /// A stung company wants the honey that draws out venom, a dazed one the tea that
+            /// wakes it; a merely hungry one gets the smallest plate that covers the deepest
+            /// wound, so the pie is not spent on a scratch.</summary>
+            public static string FoodFor(bool poisoned, bool dazed, float missing)
+            {
+                string best = null, small = null;
+                int bestPow = 0, smallPow = int.MaxValue;
+                foreach (var b in Bag)
+                {
+                    var d = Items.Get(b);
+                    if (d.Kind != ItemKind.Food) continue;
+                    if (poisoned && (b == "item.honey" || b == "item.starlight")) return b;
+                    if (dazed && (b == "item.tea" || b == "item.mead")) return b;
+                    if (d.Power > bestPow) { best = b; bestPow = d.Power; }
+                    if (d.Power >= missing && d.Power < smallPow) { small = b; smallPow = d.Power; }
+                }
+                return small ?? best;
+            }
+
             /// <summary>Records a species in the book - true only the first time it is met this
             /// telling. The guide itself is a lifelong book: every species it has ever named is
             /// kept beside the medals, so a beast met in an earlier night is never a stranger
