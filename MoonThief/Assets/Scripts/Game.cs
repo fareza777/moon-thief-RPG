@@ -1660,6 +1660,8 @@ namespace MoonThief
             if (State.Joined.Contains(npc.JoinKey)) return;
             State.Joined.Add(npc.JoinKey);
             World.SyncParty();
+            // the welcome gets the same golden flecks a chest earns - a companion is a find
+            World.BurstLoot(npc.Pos);
             Menus.ShowToast(Strings.Get("jr.join", Strings.Get(npc.NameKey)), 3.6f);
             Sfx.Play("befriend");
             RefreshQuest();

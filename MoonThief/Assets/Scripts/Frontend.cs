@@ -1376,6 +1376,16 @@ namespace MoonThief
             return n.ToString();
         }
 
+        /// <summary>Who walks with the hero now - the company line on the character sheet.</summary>
+        string CompanyWord()
+        {
+            if (Game.State.Joined.Count == 0) return Strings.Get("jr.alone");
+            var names = "";
+            foreach (var k in Game.State.Joined)
+                names += (names.Length == 0 ? "" : ", ") + Strings.Get(k);
+            return names;
+        }
+
         string WornWord(int slot) => string.IsNullOrEmpty(Game.State.Worn[slot])
             ? Strings.Get("jr.none") : Strings.Get(Game.State.Worn[slot]);
 
@@ -1432,6 +1442,7 @@ namespace MoonThief
                     AddK(labels, vals, acts, "jr.befriended", Game.State.Befriended.ToString());
                     AddK(labels, vals, acts, "jr.felled", Game.State.Defeats.ToString());
                     AddK(labels, vals, acts, "jr.chests", Game.State.ChestsOpened.ToString());
+                    AddK(labels, vals, acts, "jr.company", CompanyWord());
                     AddK(labels, vals, acts, "jr.gold", Game.State.Gold.ToString());
                     AddK(labels, vals, acts, "jr.atk", "+" + Game.State.BonusAtk);
                     AddK(labels, vals, acts, "jr.maxhp", "+" + Game.State.BonusHp);

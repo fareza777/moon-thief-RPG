@@ -427,6 +427,8 @@ jr.slot.cloth|CLOTH
 jr.slot.charm|CHARM
 jr.none|nothing
 jr.worn|WORN
+jr.company|COMPANY
+jr.alone|ALONE
 jr.empty|Bag empty.
 jr.keyitem|A keepsake for somebody in the village.
 jr.usefight|Save it for a hard fight.
