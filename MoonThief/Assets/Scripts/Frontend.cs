@@ -18,6 +18,7 @@ namespace MoonThief
         public static int MusicLevel = 4;      // 0 off .. 4 full
         public static bool OnbSeen;            // the three onboarding cards only run once
         public static bool Auto;               // the party's standing battle stance
+        public static int MedalsSeen;          // how many medals the case has shown - drives the * on the hub
 
         public static float RevealSpeed => SpeedIndex switch
         {
@@ -46,6 +47,7 @@ namespace MoonThief
             MusicLevel = Mathf.Clamp(PlayerPrefs.GetInt("mt.muslvl", PlayerPrefs.GetInt("mt.music", 1) * 4), 0, 4);
             OnbSeen = PlayerPrefs.GetInt("mt.onb", 0) == 1;
             Auto = PlayerPrefs.GetInt("mt.auto", 0) == 1;
+            MedalsSeen = PlayerPrefs.GetInt("mt.medals.seen", 0);
             Sfx.Volume = SoundLevel * 0.25f;
             Sfx.Muted = SoundLevel <= 0;
             Sfx.Mus.Volume = MusicLevel * 0.25f;
@@ -62,6 +64,7 @@ namespace MoonThief
             PlayerPrefs.SetInt("mt.muslvl", MusicLevel);
             PlayerPrefs.SetInt("mt.onb", OnbSeen ? 1 : 0);
             PlayerPrefs.SetInt("mt.auto", Auto ? 1 : 0);
+            PlayerPrefs.SetInt("mt.medals.seen", MedalsSeen);
             PlayerPrefs.Save();
             Sfx.Volume = SoundLevel * 0.25f;
             Sfx.Muted = SoundLevel <= 0;
@@ -1418,7 +1421,7 @@ namespace MoonThief
                 Game.State.Seen.Count + "/" + (BattleData.Bestiary.Length + 1),
                 Quests.DoneCount + "/" + Quests.All.Length,
                 Strings.Get("zone.short." + Game.State.CurZone),
-                Medals.Count + "/" + Medals.All.Length, "",
+                Medals.Count + "/" + Medals.All.Length + (Medals.Count > Prefs.MedalsSeen ? " *" : ""), "",
             };
             float bottom = LayRows(_jrRows, labels, acts, vals, rowsTop, 8, new[] { 16, 17, 18, 19, 20, 24, 21, 14 });
             _jrFoot.transform.localPosition = new Vector3(0f, FootY(bottom), 0f);
@@ -1604,6 +1607,10 @@ namespace MoonThief
                     title = "jr.medals";
                     foot = "jr.medals.tip";
                     sub = Strings.Get("jr.medals.sub", Medals.Count, Medals.All.Length);
+                    // opening the case counts as seeing what it holds: the * on the hub
+                    // clears the next time the journal home draws
+                    Prefs.MedalsSeen = Medals.Count;
+                    Prefs.Store();
                     icons = new List<int>();
                     foreach (var md in Medals.All)
                     {
