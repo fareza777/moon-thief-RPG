@@ -3256,6 +3256,16 @@ namespace MoonThief
                     + " quests=" + Quests.DoneCount + " joined=" + State.Joined.Count
                     + " phase=" + Phase);
                 Shot("19-ngplus");
+
+                // the case by now: three keepers felled, the ending earned, the tale
+                // retold - the medal page should read won icons, not '?????'. This is
+                // the only shot in the pass that sees a medal as it is meant to look.
+                Menus.EditorJournal(6);
+                yield return new WaitForSecondsRealtime(0.5f);
+                Shot("29-medals-earned");
+                Debug.Log("[selftest] medals earned=" + Medals.Count);
+                ClosePause();
+                yield return new WaitForSecondsRealtime(0.3f);
             }
 
             Debug.Log("[selftest] done");
