@@ -634,6 +634,9 @@ namespace MoonThief
             float e = 0f;
             while (e < dur)
             {
+                // a stage sweep (ClearFloats at card time) can pull the node out from
+                // under the routine mid-flight - a dead transform ends the dance quietly
+                if (t == null || sr == null) yield break;
                 e += Time.deltaTime;
                 float k = e / dur;
                 t.localPosition = start + new Vector3(Mathf.Sin(k * 9f) * 0.3f, -2.5f * k, 0f);
@@ -1338,6 +1341,9 @@ namespace MoonThief
             var y0 = t.localPosition.y;
             while (e < 0.9f)
             {
+                // a stage sweep (ClearFloats at card time) can pull the node out from
+                // under the routine mid-flight - a dead transform ends the drift quietly
+                if (t == null || label == null) yield break;
                 e += Time.deltaTime;
                 float k = 1f - (1f - Mathf.Clamp01(e / 0.9f)) * (1f - Mathf.Clamp01(e / 0.9f));
                 t.localPosition = new Vector3(t.localPosition.x, y0 + 1.5f * k, 0f);
@@ -1378,6 +1384,9 @@ namespace MoonThief
             float e = 0f;
             while (e < 0.55f)
             {
+                // a stage sweep (ClearFloats at card time) can pull the node out from
+                // under the routine mid-flight - a dead transform ends the shower quietly
+                if (t == null || sr == null) yield break;
                 e += Time.deltaTime;
                 float k = Mathf.Clamp01(e / 0.55f);
                 t.localPosition = start + off * (1f - (1f - k) * (1f - k));
