@@ -487,6 +487,7 @@ jr.bestiary.kept|{0} {1} KEPT
 jr.beast|HP {0}   ATK {1}-{2}   WEAK {3}
 jr.unknown|?????
 jr.friend|FRIEND
+jr.down| - DOWN
 jr.unseen|Nobody has met this one yet.
 jr.quests.sub|MAIN {0}   SIDE {1}
 jr.map|MAP

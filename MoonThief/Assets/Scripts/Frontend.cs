@@ -1771,8 +1771,11 @@ namespace MoonThief
                 _mapSr.transform.localPosition = new Vector3(mapCx, mapCy, 0f);
                 _mapSr.enabled = true;
 
-                // zone names ride the left gutter, each level with its stretch of the road
-                string boss = Strings.Get(BattleData.BossNameKey(Game.State.Chapter));
+                // zone names ride the left gutter, each level with its stretch of the road;
+                // a keeper that already fell reads as felled, not as something still waiting
+                string boss = Strings.Get(BattleData.BossNameKey(Game.State.Chapter))
+                    + (Medals.Has("boss" + Mathf.Clamp(Game.State.Chapter, 1, 3))
+                        ? Strings.Get("jr.down") : "");
                 string[] zNames =
                 {
                     Strings.Get("zone.name.village"), Strings.Get("zone.name.fields"),
