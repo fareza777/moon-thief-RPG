@@ -84,7 +84,13 @@ namespace MoonThief
                 case "blackmagus":      pool = new[] { "item.charm.rune", "item.charm.star", "item.moonpie" }; break;
                 case "succubus":        pool = new[] { "item.mead", "item.charm.moon", "item.charm.star", "item.thirstfang" }; break;
                 case "slime":           pool = new[] { "item.jam", "item.berry", "item.plum", "item.crumb" }; break;
-                case "mushroom":        pool = new[] { "item.soup", "item.broth", "item.stew", "item.pudding" }; break;
+                case "mushroom":
+                    // the grandmother's broth errand is fed by the very beasts it names: while
+                    // her ask runs and the bag still wants caps, the caps are the drop. Without
+                    // this the only source was a coin-flip chest roll and the quest could starve.
+                    if (Quests.Step("sq.mushroom") == 1 && Game.State.BagCount("item.mushroom") < 3)
+                        return "item.mushroom";
+                    pool = new[] { "item.soup", "item.broth", "item.stew", "item.pudding" }; break;
                 case "wasp":            pool = new[] { "item.honey", "item.jam", "item.berry" }; break;
                 case "genius":          pool = new[] { "item.charm.lantern", "item.charm.wisp", "item.charm.bell", "item.honey" }; break;
                 case "minotaur":        pool = new[] { "item.roast", "item.hauberk", "item.moonedge" }; break;

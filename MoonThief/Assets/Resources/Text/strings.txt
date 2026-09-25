@@ -711,7 +711,7 @@ q.axe.offer|I lent my axe to a neighbour, and then the neighbour went out into t
 q.axe.done|That is my axe. Take the thread charm - it never snaps.
 q.mush.title|MUSHROOMS
 q.mush.step|Gather night mushrooms. {0} left.
-q.mush.offer|Three mushrooms, dear. The ones that grow under the trees and glow a little.
+q.mush.offer|Three mushrooms, dear. The ones that glow a little. The cap-folk in the fields carry them, if you're quick.
 q.mush.done|Now sit down, and no arguing about the soup.
 q.doll.title|RED DOLL
 q.doll.step|Look for the doll. {0} left.
