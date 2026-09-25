@@ -3088,7 +3088,9 @@ namespace MoonThief
                 if (!spec.HasValue) continue;
                 // a beast may leave what it is - the pudding's kept sword, the graverot's
                 // grave goods - before the wild table ever gets its say
-                var key = e.Boss || e.Rare ? Items.BossDrop(rng)
+                // a sprung mimic carries what its victims carried - the eaten looters'
+                // goods are boss-table spoils, not field scraps
+                var key = e.Boss || e.Rare || _fromMimic ? Items.BossDrop(rng)
                     : Items.SpeciesDrop(BattleData.FamilyOf(spec.Value), rng) ?? Items.RollDrop(Game.State.Chapter, rng);
                 if (key == null) continue;
                 Game.State.AddBag(key);
