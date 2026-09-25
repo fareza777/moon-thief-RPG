@@ -2071,7 +2071,11 @@ namespace MoonThief
             foreach (var x in _dust)
                 if (x.Sr.enabled && (x.Sr.transform.localPosition - new Vector3(land.x, land.y, 0f)).sqrMagnitude < 0.14f)
                     return;
-            var c = new Color(0.95f, 0.9f, 0.74f, 0.55f);
+            // a kick reads the ground it lands on: warm village dirt, greener field
+            // chalk, a colder blue-grey stirring up the deep wood
+            var c = HeroPos.y > 58f ? new Color(0.6f, 0.66f, 0.78f, 0.55f)
+                : HeroPos.y > 26f ? new Color(0.82f, 0.86f, 0.6f, 0.55f)
+                : new Color(0.95f, 0.9f, 0.74f, 0.55f);
             SpawnPuff(land, Vector2.up * 0.5f, TexArt.Glow(), 0.62f, c, 0.42f);
         }
 
