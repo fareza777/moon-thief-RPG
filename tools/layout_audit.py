@@ -210,7 +210,8 @@ def audit_frame(f, rows):
                 # Only a prop drawn OVER the chest counts: everything in the world sorts by its
                 # own row, so a barrel one row behind the chest is a barrel behind a chest, which
                 # is depth. A crown on the row below covers the lid, which is the defect.
-                if other["order"] > chest["order"] and ov / small > LOOT_RATIO:
+                if other["order"] > chest["order"] and ov / small > LOOT_RATIO \
+                        and not any(k in other["name"] for k in FLOATERS):
                     out.append(("LOOT", chest["name"], "<covered by> " + other["name"]))
                 continue
             if family(a["name"]) != family(b["name"]):
