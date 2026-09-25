@@ -1687,7 +1687,7 @@ namespace MoonThief
             {
                 int sip = Mathf.Max(1, (hpBefore - target.Hp) / 2);
                 f.Hp = Mathf.Min(f.MaxHp, f.Hp + sip);
-                View.FloatNumber(fRig.Home + new Vector3(0f, 1.7f, 0f),
+                if (aRig != null) View.FloatNumber(aRig.Home + new Vector3(0f, 1.7f, 0f),
                     "+" + sip, new Color(0.55f, 1f, 0.6f));
             }
             View.Refresh();
