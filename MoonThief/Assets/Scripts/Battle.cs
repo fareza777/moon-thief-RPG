@@ -1882,7 +1882,7 @@ namespace MoonThief
             }
             yield return Lunge(aRig, tRig != null ? tRig.Home : aRig.Home, 0.3f);
             bool crit = UnityEngine.Random.value < 0.18f;
-            bool weakHit = WeakTo(0, target);
+            bool weakHit = WeakTo(f.Style, target);
             int dmg = Mathf.RoundToInt(UnityEngine.Random.Range(f.AtkMin, f.AtkMax + 1) * (crit ? 1.6f : 1f) * (weakHit ? 1.5f : 1f) * FlowMul());
             // a hex saps the arm it fell on: blows come out dull until it lifts
             if (f.Weaken > 0) { dmg = Mathf.Max(1, dmg - 4); f.Weaken--; }
