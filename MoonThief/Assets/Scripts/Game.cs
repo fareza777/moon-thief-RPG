@@ -126,10 +126,13 @@ namespace MoonThief
                 return best;
             }
 
-            public static void MarkSeen(string monKey)
+            /// <summary>Records a species in the book - true only the first time it is met.</summary>
+            public static bool MarkSeen(string monKey)
             {
-                if (string.IsNullOrEmpty(monKey)) return;
-                Seen[monKey] = (Seen.TryGetValue(monKey, out var v) ? v : 0) + 1;
+                if (string.IsNullOrEmpty(monKey)) return false;
+                bool first = !Seen.ContainsKey(monKey);
+                Seen[monKey] = first ? 1 : Seen[monKey] + 1;
+                return first;
             }
 
             /// <summary>Equipment bonuses, read by the battle so the journal is not decoration.</summary>

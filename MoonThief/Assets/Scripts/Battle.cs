@@ -2945,8 +2945,11 @@ namespace MoonThief
                 Game.State.Defeats++;   // one step for the nightwatch
                 if (e.Rare) Medals.Grant("moonlit");
             }
-            // the bestiary is keyed by the species, not its printed name
-            foreach (var s in _specs) Game.State.MarkSeen(s.Name);
+            // the bestiary is keyed by the species, not its printed name - and the card
+            // gets a line for whichever of them the book meets tonight for the first time
+            var firsts = new List<string>();
+            foreach (var s in _specs)
+                if (Game.State.MarkSeen(s.Name)) firsts.Add(Strings.Get(s.Name));
             Game.State.Xp += xp;
             Game.State.Gold += gold;
 
@@ -2970,6 +2973,8 @@ namespace MoonThief
                 Strings.Get("card.xp", xp),
                 Strings.Get("card.gold", gold),
             };
+            if (firsts.Count > 0)
+                lines.Add(Strings.Get("card.newseen", string.Join(", ", firsts)));
             if (flawless) lines.Add(Strings.Get(hurt ? "card.flawless" : "card.untouch"));
             else if (hurt) lines.Add(Strings.Get("card.healall"));
             if (Game.State.Level > _levelAtStart)

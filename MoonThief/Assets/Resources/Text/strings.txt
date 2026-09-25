@@ -295,6 +295,7 @@ card.levelup|LEVEL UP - LV {0}!
 card.flawless|FLAWLESS - NOBODY FELL!
 card.untouch|UNTOUCHED - NOT A SCRATCH!
 card.healall|The party breathes easier.
+card.newseen|NEW IN THE BOOK: {0}
 card.befriended|FRIENDS {0}/{1}
 card.joined|They wanted to come.
 card.moon|The moon stays gone.
