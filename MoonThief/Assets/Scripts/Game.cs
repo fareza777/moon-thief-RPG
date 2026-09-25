@@ -1671,6 +1671,8 @@ namespace MoonThief
                 int shardsBefore = State.MoonShards;
                 World.OpenChest(chestAt);
                 Sfx.Play(State.MoonShards > shardsBefore ? "shard" : "chest");
+                // a shard is the night's heartbeat: the hand should feel it land
+                if (State.MoonShards > shardsBefore) Fx.Buzz();
                 ShowZoneBanner(World.LastLootText);
                 CheckMains();
                 RefreshHud();
