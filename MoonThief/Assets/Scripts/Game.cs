@@ -3242,6 +3242,16 @@ namespace MoonThief
                     World.PlaceHero(new Vector2(World.Map.BossPos.x + 0.5f, World.Map.BossPos.y - 1.5f));
                     yield return null;
                 }
+                // a stray ambusher can still be mid-fight at the gate: let its card fall
+                // and the fades clear before the keeper rises - else its verdict
+                // masquerades as his (this once hid the whole night-2 fight: a field
+                // battle's card was tapped as the boss's and the chapter never moved)
+                for (int bw = 0; bw < 1400 && (Phase == St.Battle || FadeAlpha > 0.04f); bw++)
+                {
+                    if (Phase == St.Battle && BattleViewRef.OverlayButtonCount > 0)
+                        BattleViewRef.CardButtonAt(0)?.Invoke();
+                    yield return null;
+                }
                 Shot("15-bosszone-n" + night);
                 Debug.Log("[selftest] boss zone night " + night + " at y=" + World.HeroPos.y + " nearBoss=" + World.NearBoss);
 
