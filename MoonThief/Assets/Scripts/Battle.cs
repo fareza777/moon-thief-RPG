@@ -1441,6 +1441,9 @@ namespace MoonThief
             // the stage came down - must not build rigs on a dead view: every coroutine it
             // launches would error against the inactive game object
             if (!View.gameObject.activeSelf) return;
+            // every coroutine here belongs to the fight that was: a stale EnemyTurn resuming
+            // after the roster is swapped dereferences rigs that no longer exist
+            StopAllCoroutines();
             _specs = specs;
             _ph = Ph.Intro;
             _round = 1;
@@ -1801,6 +1804,11 @@ namespace MoonThief
         IEnumerator EnemyTurn(Fighter e)
         {
             if (_ph == Ph.Card) yield break;
+            // a turn queued by a retired encounter must not act in this one - its fighter
+            // is not on the roster, so its rig lookups come back null
+            bool current = false;
+            foreach (var f in View.Enemies) if (f == e) { current = true; break; }
+            if (!current) yield break;
             // venom works on the wild things too: a befriended stinger turns
             // their own trick on them, ticking before the creature can act
             if (e.Poison > 0 && Application.isPlaying)
