@@ -2479,6 +2479,9 @@ namespace MoonThief
                         {
                             var d = (t.position - _joyCenter) / Mathf.Min(Screen.width, Screen.height) * 2.2f;
                             vec = Vector2.ClampMagnitude(d, 1f);
+                            // a resting thumb trembles in millimetres; the mouse path below has
+                            // always zeroed that jitter - the finger deserves the same floor
+                            if (vec.sqrMagnitude < 0.003f) vec = Vector2.zero;
                         }
                     }
                 }
