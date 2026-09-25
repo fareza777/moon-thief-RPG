@@ -531,7 +531,9 @@ namespace MoonThief
             _ciPlate = SpriteRendererUtil.Make(_ciRoot, "ciPlate", TexArt.Panel(), 7003);
             _ciPlate.drawMode = SpriteDrawMode.Sliced;
             _ciPlate.size = new Vector2(16f, 4f);
-            _ciPlate.color = new Color(1f, 1f, 1f, 0.82f);
+            // the tale's lines must hold over busy painted frames: a near-opaque,
+            // night-tinted plate - 0.82 of the pale sheet let the forest show through
+            _ciPlate.color = new Color(0.78f, 0.84f, 1f, 0.94f);
 
             // two hairline bars top and bottom: the cheapest way to say "this is a film, not a
             // menu", and they also hide the tops of the backdrop art where it stretches
@@ -2219,7 +2221,7 @@ namespace MoonThief
             var c = _ciText.Tint; c.a = Application.isPlaying ? 0f : 1f; _ciText.SetColor(c);
             if (_ciPlate != null)
             {
-                var p = _ciPlate.color; p.a = Application.isPlaying ? 0f : 0.82f; _ciPlate.color = p;
+                var p = _ciPlate.color; p.a = Application.isPlaying ? 0f : 0.94f; _ciPlate.color = p;
             }
 
             // each slide gets its own backdrop so the sequence is not one flat colour
@@ -2319,7 +2321,7 @@ namespace MoonThief
                         if (_ciPlate != null)
                         {
                             var p = _ciPlate.color;
-                            p.a = Mathf.Clamp01(p.a + dt * 1.2f) * 0.82f;
+                            p.a = Mathf.Clamp01(p.a + dt * 1.2f) * 0.94f;
                             _ciPlate.color = p;
                         }
                         // the backdrop drifts by whole pixels only: a sub-pixel step resamples all
