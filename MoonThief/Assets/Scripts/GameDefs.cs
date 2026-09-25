@@ -394,7 +394,8 @@ namespace MoonThief
                     m.AddRoomProp("Rug", "", 9, 12, 1f);
                     m.AddRoomProp("Shelf", "", 4, 21, 1f);
                     m.AddRoomProp("Bed", "", 13, 18, 1f);
-                    m.AddRoomProp("", "Crates/crate_0" + (5 + v), 4, 10, 1f);
+                    // the pack ships eight crates - the index wraps, never crate_09
+                    m.AddRoomProp("", "Crates/crate_0" + (1 + v % 8), 4, 10, 1f);
                     break;
                 default:  // grandma's: a crowded kitchen
                     m.AddRoomProp("Bed", "", 4, 12, 1f);
