@@ -78,6 +78,11 @@ namespace MoonThief
         // throws when it pops. Same loop, different sprites and velocities.
         class Dust { public SpriteRenderer Sr; public Vector2 V; public float T; public float MaxT; public float A; }
         readonly List<Dust> _dust = new List<Dust>();
+        // a loud step's tell: a thin ring that peels off the heel and fades before it
+        // reaches the ears it would wake - only ever shown when a beast is near enough
+        // to hear it, so the ripple is a warning, not wallpaper
+        class Ripple { public SpriteRenderer Sr; public float T; }
+        readonly List<Ripple> _ripples = new List<Ripple>();
         SpriteRenderer _touchCue;
         // One direction strip per sheet and facing. A turn swaps to an array that already
         // exists, so actors of the same kind share sprites and no walk cycle is built twice.
@@ -2079,7 +2084,13 @@ namespace MoonThief
                     Mathf.RoundToInt(HeroPos.x), Mathf.RoundToInt(HeroPos.y))) : Ground.Grass;
                 float surf = g == Ground.Floor ? 1.28f : g == Ground.Path ? 1.12f : 1f;
                 Sfx.Play("step", (0.9f + UnityEngine.Random.value * 0.2f) * surf * (sneak ? 0.62f : 1f));
-                if (!sneak) SpawnDust((Vector2)Hero.Root.localPosition - input.normalized * 0.35f);
+                if (!sneak)
+                {
+                    SpawnDust((Vector2)Hero.Root.localPosition - input.normalized * 0.35f);
+                    // a heavy foot within earshot peels a warning ring off the heel -
+                    // the hearing band made visible exactly when it matters
+                    if (NearWild(HeroPos, 5.5f)) SpawnRipple(Hero.Root.localPosition);
+                }
                 _stepSfxT = sneak ? 0.34f : 0.24f;
             }
 
@@ -2155,6 +2166,46 @@ namespace MoonThief
             d.V = vel;
             d.T = life; d.MaxT = life; d.A = tint.a;
             d.Sr.color = tint;
+        }
+
+        /// <summary>Any unwarned beast within earshot - the ripple only exists to warn
+        /// about these; village feet and already-chasing monsters get no rings.</summary>
+        bool NearWild(Vector2 pos, float r)
+        {
+            foreach (var m in Monsters)
+                if (m.Root != null && !m.Aggro
+                    && Vector2.Distance((Vector2)m.Root.localPosition, pos) < r) return true;
+            return false;
+        }
+
+        void SpawnRipple(Vector3 at)
+        {
+            Ripple r = null;
+            foreach (var x in _ripples) if (!x.Sr.enabled) { r = x; break; }
+            if (r == null)
+            {
+                if (_ripples.Count >= 6) return;
+                r = new Ripple { Sr = SpriteRendererUtil.Make(_root, "ripple" + _ripples.Count, TexArt.Ring(), 1950) };
+                _ripples.Add(r);
+            }
+            r.Sr.enabled = true;
+            r.Sr.transform.localPosition = new Vector3(at.x, at.y, 0f);
+            r.Sr.transform.localScale = Vector3.one * 0.16f;
+            r.Sr.color = new Color(0.78f, 0.84f, 1f, 0.5f);
+            r.T = 0.7f;
+        }
+
+        void DriveRipples(float dt)
+        {
+            foreach (var r in _ripples)
+            {
+                if (!r.Sr.enabled) continue;
+                r.T -= dt;
+                if (r.T <= 0f) { r.Sr.enabled = false; continue; }
+                float f = 1f - r.T / 0.7f;
+                r.Sr.transform.localScale = Vector3.one * (0.16f + f * 1.4f);
+                var c = r.Sr.color; c.a = 0.5f * (1f - f); r.Sr.color = c;
+            }
         }
 
         void DriveDust(float dt)
@@ -2658,6 +2709,7 @@ namespace MoonThief
             // the friends keep their slots on the breadcrumb line
             DriveFriends(dt);
             DriveDust(dt);
+            DriveRipples(dt);
             DriveTouchCue();
 
             // respawn tickets: a felled monster comes back after its delay, and only while
