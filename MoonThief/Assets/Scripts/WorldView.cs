@@ -1113,7 +1113,6 @@ namespace MoonThief
         {
             _chests[i].Opened = true;
             var chest = _chests[i];
-            BurstLoot(chest.Pos);
             // every cache remembers it was spent - field chests by night and cell,
             // house chests by the room they stand in - so no larder refills on a reload
             if (Map.Interior)
@@ -1121,6 +1120,9 @@ namespace MoonThief
             else Game.State.MarkChest(MapChapter, chest.Cell);
             bool shard = !Map.Interior && Game.State.ChestsOpened < 3;
             if (!Map.Interior) Game.State.ChestsOpened++;
+            // moonlight out of a shard cache, gold out of the rest - the burst used to
+            // paint every chest the same warm spray whatever it held
+            BurstLoot(chest.Pos, shard);
             if (shard)
             {
                 Game.State.MoonShards++;
@@ -2079,17 +2081,18 @@ namespace MoonThief
             SpawnPuff(land, Vector2.up * 0.5f, TexArt.Glow(), 0.62f, c, 0.42f);
         }
 
-        /// <summary>Gold flecks fan out over an opened chest and fall away - the loot
-        /// banner tells you what you got; this sells the pop.</summary>
-        public void BurstLoot(Vector2 at)
+        /// <summary>Flecks fan out over an opened chest and fall away - gold for purse and
+        /// ware, silver-blue for moonlight; the banner says what, the spray says it too.</summary>
+        public void BurstLoot(Vector2 at, bool moon = false)
         {
+            var tint = moon ? new Color(0.7f, 0.85f, 1f, 0.9f)
+                            : new Color(1f, 0.9f, 0.45f, 0.85f);
             for (int i = 0; i < 9; i++)
             {
                 float ang = i * (Mathf.PI * 2f / 9f) + UnityEngine.Random.Range(-0.25f, 0.25f);
                 var v = new Vector2(Mathf.Cos(ang), Mathf.Abs(Mathf.Sin(ang)) * 0.7f + 0.6f)
                     * UnityEngine.Random.Range(0.8f, 1.5f);
-                SpawnPuff(at + new Vector2(0f, 0.25f), v, Tex.Spark(),
-                    0.34f, new Color(1f, 0.9f, 0.45f, 0.85f), 0.62f);
+                SpawnPuff(at + new Vector2(0f, 0.25f), v, Tex.Spark(), 0.34f, tint, 0.62f);
             }
         }
 
