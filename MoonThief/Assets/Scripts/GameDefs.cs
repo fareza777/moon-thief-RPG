@@ -1252,7 +1252,7 @@ namespace MoonThief
                     Lines=new[]{ "dl.prune.1", "dl.prune.2" } },
                 // Marn keeps the stall: gold finally has somewhere to go
                 new NpcDef{ Chara=0, Sheet="Pack/Chara/chara_14", Pos=new Vector2(24.5f,9.5f), NameKey="npc.marn",
-                    Lines=new[]{ "dl.marn.1", "dl.marn.2" }, Shop=true },
+                    Lines=new[]{ "dl.marn.1", "dl.marn.2", "dl.marn.3" }, Shop=true },
                 // the grandmother has always lived here - her mushroom errand is a first-night
                 // task, so she cannot wait for the third night to exist. The white bonnet is
                 // her own face: atlas slot 0 is the same sheet house five's resident wears,

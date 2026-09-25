@@ -429,6 +429,7 @@ dl.prune.1|I am the queen of this square. Four days now. Nobody argued.
 dl.prune.2|When the moon comes back I will knight the first person who finds it.
 dl.marn.1|Wares for the dark. Gold keeps the lantern lit.
 dl.marn.2|You look like trouble. My favourite kind of customer.
+dl.marn.3|Every night the stock gets braver. So must you.
 
 # ---- battle messages, part two
 bt.morsel2|{0} is shared out. +{1} HP. Wild things sniff closer.
