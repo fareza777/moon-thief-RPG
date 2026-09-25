@@ -1283,8 +1283,17 @@ namespace MoonThief
             return r == null ? Vector2.zero : new Vector2(r.Home.x, r.Home.y + r.BodyHeight * 0.6f);
         }
 
+        readonly List<(Vector2 pos, float t)> _floatSpots = new List<(Vector2, float)>();
+
         public void FloatNumber(Vector2 pos, string text, Color color, int scale = 2)
         {
+            // a beat that earns two words (a crit that also dazes, a ward over a
+            // venom tick) used to print them on top of each other; floats live
+            // under a second, so a small upward stagger keeps each one legible
+            foreach (var fr in _floatSpots)
+                if (Time.time - fr.t < 0.9f && Vector2.Distance(fr.pos, pos) < 1.1f) pos.y += 0.62f;
+            _floatSpots.Add((pos, Time.time));
+            if (_floatSpots.Count > 8) _floatSpots.RemoveAt(0);
             var go = new GameObject("floatn");
             go.transform.SetParent(Stage, false);
             var label = go.AddComponent<PixelLabel>();
