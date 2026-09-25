@@ -1057,7 +1057,7 @@ namespace MoonThief
             // chests only carry three of the four shards - once those are found, the night's
             // gate is its boss, and pointing the compass at loot would walk the hero backwards
             int shardChests = Mathf.Max(0, 3 - State.ChestsOpened);
-            if (State.Chapter < 3 && shardChests > 0)
+            if (shardChests > 0)
             {
                 int chestAt = World.NearestChest(World.HeroPos, 999f);
                 if (chestAt >= 0) return World.ChestPos(chestAt);

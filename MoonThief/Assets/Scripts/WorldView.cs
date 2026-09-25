@@ -1032,12 +1032,15 @@ namespace MoonThief
         /// callers trade in indexes - a returned copy could never flip Opened for real.</summary>
         public int NearestChest(Vector2 pos, float maxDist = 1.2f)
         {
+            int best = -1;
+            float bestD = maxDist;
             for (int i = 0; i < _chests.Length; i++)
             {
                 if (_chests[i].Opened) continue;
-                if (Vector2.Distance(_chests[i].Pos, pos) <= maxDist) return i;
+                float d = Vector2.Distance(_chests[i].Pos, pos);
+                if (d <= bestD) { best = i; bestD = d; }
             }
-            return -1;
+            return best;
         }
 
         public Vector2 ChestPos(int i) => _chests[i].Pos;
