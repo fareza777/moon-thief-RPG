@@ -482,7 +482,7 @@ namespace MoonThief
                 // shortens a fight instead of making it meaningless; a retold night
                 // (CONTINUE after the ending) bites a little deeper on top of that
                 int elv = (Game.State.Level - 1) * 2;
-                float nmul = 1f + 0.45f * Game.State.NgPlus;
+                float nmul = (1f + 0.45f * Game.State.NgPlus) * (Prefs.Hard ? 1.25f : 1f);
                 var f = new Fighter
                 {
                     Id = "e" + i,
@@ -2059,7 +2059,7 @@ namespace MoonThief
             yield return Lunge(eRig, tRig.Home, 0.3f);
 
             int dmg = Mathf.RoundToInt(UnityEngine.Random.Range(e.AtkMin, e.AtkMax + 1)
-                * (slam ? 1.6f : 1f) * (_enraged ? 1.25f : 1f) * (Prefs.Story ? 0.65f : 1f));
+                * (slam ? 1.6f : 1f) * (_enraged ? 1.25f : 1f) * Prefs.DmgIn());
             // a hexed enemy strikes dull too: a tame magus's mark works both ways
             if (e.Weaken > 0) { dmg = Mathf.Max(1, dmg - 4); e.Weaken--; }
             if (e.Corrode > 0) dmg = Mathf.Max(1, dmg - e.Corrode);
@@ -2249,7 +2249,7 @@ namespace MoonThief
             if (target != null)
             {
                 int dmg = UnityEngine.Random.Range(e.AtkMin, e.AtkMax + 1);
-                if (Prefs.Story) dmg = Mathf.Max(1, Mathf.RoundToInt(dmg * 0.65f));
+                if (Prefs.Story || Prefs.Hard) dmg = Mathf.Max(1, Mathf.RoundToInt(dmg * Prefs.DmgIn()));
                 target.Hp = Mathf.Max(0, target.Hp - dmg);
                 _flow = 0;
             }
@@ -2974,7 +2974,7 @@ namespace MoonThief
             var firsts = new List<string>();
             foreach (var s in _specs)
                 if (Game.State.MarkSeen(s.Name)) firsts.Add(Strings.Get(s.Name));
-            Game.State.Xp += xp;
+            Game.State.Xp += Prefs.Hard ? Mathf.RoundToInt(xp * 1.25f) : xp;
             Game.State.Gold += gold;
 
             // everyone breathes again the moment the field is quiet - the card says so

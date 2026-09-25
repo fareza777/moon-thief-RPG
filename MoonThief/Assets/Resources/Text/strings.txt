@@ -52,6 +52,7 @@ set.haptics|HAPTICS
 set.difficulty|DIFFICULTY
 set.diff.story|STORY
 set.diff.normal|NORMAL
+set.diff.hard|HARD
 
 # ---- onboarding (first boot, three cards)
 onb.title.1|WALK

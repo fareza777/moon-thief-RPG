@@ -14,6 +14,7 @@ namespace MoonThief
         public static int SoundLevel = 4;      // 0 off .. 4 full; the settings row steps it
         public static bool Shake = true;
         public static bool Story;               // story difficulty: hits land softer
+        public static bool Hard;                // hard difficulty: the wild bites back
         public static bool IntroSeen;
         public static int MusicLevel = 4;      // 0 off .. 4 full
         public static bool OnbSeen;            // the three onboarding cards only run once
@@ -30,6 +31,11 @@ namespace MoonThief
             _ => SpeedNormal,
         };
 
+        /// <summary>How hard the wild side hits, by chosen difficulty. STORY softens every
+        /// blow; HARD sharpens the wild's edge instead - the same three settings-row
+        /// words the card shows.</summary>
+        public static float DmgIn() => Story ? 0.65f : Hard ? 1.35f : 1f;
+
         public static string SpeedName => Strings.Get(SpeedIndex switch
         {
             0 => "set.speed.slow",
@@ -45,6 +51,7 @@ namespace MoonThief
             SoundLevel = Mathf.Clamp(PlayerPrefs.GetInt("mt.soundlvl", PlayerPrefs.GetInt("mt.sound", 1) * 4), 0, 4);
             Shake = PlayerPrefs.GetInt("mt.shake", 1) == 1;
             Story = PlayerPrefs.GetInt("mt.story", 0) == 1;
+            Hard = PlayerPrefs.GetInt("mt.hard", 0) == 1;
             IntroSeen = PlayerPrefs.GetInt("mt.intro", 0) == 1;
             MusicLevel = Mathf.Clamp(PlayerPrefs.GetInt("mt.muslvl", PlayerPrefs.GetInt("mt.music", 1) * 4), 0, 4);
             OnbSeen = PlayerPrefs.GetInt("mt.onb", 0) == 1;
@@ -64,6 +71,7 @@ namespace MoonThief
             PlayerPrefs.SetInt("mt.soundlvl", SoundLevel);
             PlayerPrefs.SetInt("mt.shake", Shake ? 1 : 0);
             PlayerPrefs.SetInt("mt.story", Story ? 1 : 0);
+            PlayerPrefs.SetInt("mt.hard", Hard ? 1 : 0);
             PlayerPrefs.SetInt("mt.intro", IntroSeen ? 1 : 0);
             PlayerPrefs.SetInt("mt.muslvl", MusicLevel);
             PlayerPrefs.SetInt("mt.onb", OnbSeen ? 1 : 0);
@@ -938,7 +946,13 @@ namespace MoonThief
                 () => { Prefs.Shake = !Prefs.Shake; Prefs.Store(); RefreshSettingsRows(); Select(_sel); },
                 () => { Prefs.Auto = !Prefs.Auto; Prefs.Store(); RefreshSettingsRows(); Select(_sel); },
                 () => { Prefs.Haptics = !Prefs.Haptics; Prefs.Store(); Fx.Buzz(); RefreshSettingsRows(); Select(_sel); },
-                () => { Prefs.Story = !Prefs.Story; Prefs.Store(); RefreshSettingsRows(); Select(_sel); },
+                () =>
+                {
+                    if (Prefs.Story) { Prefs.Story = false; Prefs.Hard = false; }
+                    else if (!Prefs.Hard) Prefs.Hard = true;
+                    else { Prefs.Story = true; Prefs.Hard = false; }
+                    Prefs.Store(); RefreshSettingsRows(); Select(_sel);
+                },
             };
             var vals = new List<string>
             {
@@ -948,7 +962,7 @@ namespace MoonThief
                 Prefs.Shake ? Strings.Get("set.on") : Strings.Get("set.off"),
                 Prefs.Auto ? Strings.Get("set.on") : Strings.Get("set.off"),
                 Prefs.Haptics ? Strings.Get("set.on") : Strings.Get("set.off"),
-                Prefs.Story ? Strings.Get("set.diff.story") : Strings.Get("set.diff.normal"),
+                Prefs.Story ? Strings.Get("set.diff.story") : Prefs.Hard ? Strings.Get("set.diff.hard") : Strings.Get("set.diff.normal"),
             };
 
             var icons = new List<int> { 9, 10, 11, 12, 13, 25, 18 };
