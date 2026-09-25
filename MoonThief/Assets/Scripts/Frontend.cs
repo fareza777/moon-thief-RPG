@@ -1495,8 +1495,11 @@ namespace MoonThief
             return names;
         }
 
+        // the slot's value names the piece and what it lends - a row reading
+        // "STEEL BLADE" alone made the rider (+5 ATK) a question only the bag could answer
         string WornWord(int slot) => string.IsNullOrEmpty(Game.State.Worn[slot])
-            ? Strings.Get("jr.none") : Strings.Get(Game.State.Worn[slot]);
+            ? Strings.Get("jr.none") : Strings.Get(Game.State.Worn[slot])
+                + " " + Items.Effect(Items.Get(Game.State.Worn[slot]));
 
         bool IsWorn(string key)
         {
