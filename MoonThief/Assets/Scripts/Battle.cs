@@ -1471,6 +1471,7 @@ namespace MoonThief
             _autoTame = false;
             _befriended = 0;
             _enraged = false;
+            _bossSpoke = false;
             _flow = 0;
             _levelAtStart = Game.State.Level;
             AwaitingInput = false;
@@ -1860,8 +1861,11 @@ namespace MoonThief
             View.SetTurnRig(View.RigOf(e), true);
             // a keeper growls mid-fight: one rare line over its own rig, so the boss
             // reads as a thinking thing between the taunts, not a damage pump
-            if (e.Boss && UnityEngine.Random.value < 0.3f)
+            // every keeper opens its mouth once: the first turn always carries a line,
+            // after that a growl lands one time in three
+            if (e.Boss && (!_bossSpoke || UnityEngine.Random.value < 0.3f))
             {
+                _bossSpoke = true;
                 var kRig = View.RigOf(e);
                 if (kRig != null)
                     View.FloatNumber(kRig.Home + new Vector3(0f, 2.3f, 0f),
@@ -2269,6 +2273,7 @@ namespace MoonThief
 
         bool _enraged;
         bool _hasBoss;
+        bool _bossSpoke;   // the keeper's guaranteed first line is spent
 
         public void Confirm()
         {
