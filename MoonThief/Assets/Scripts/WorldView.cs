@@ -1070,7 +1070,9 @@ namespace MoonThief
                     msr.transform.localPosition = new Vector3(mpos.x, mpos.y - 0.5f, 0f);
                     var manim = msr.gameObject.AddComponent<Anim>();
                     manim.Setup(msr, false, 0f);
-                    manim.Play(new[] { mframes.Length > 0 ? mframes[0] : null }, 1f, true);
+                    // a wreck holds its lid-up frame; an unspoiled trap sits closed -
+                    // through the anim, or the loop writes frame 0 back over the wreck
+                    manim.Play(new[] { mframes.Length > 0 ? (sprung ? mframes[mframes.Length - 1] : mframes[0]) : null }, 1f, true);
                     if (sprung)
                     {
                         // the sprung wreck: lid thrown wide, wood gone grey, tilted like
@@ -1212,7 +1214,11 @@ namespace MoonThief
             if (chest.Sr != null)
             {
                 var fr = TexArt.ChestFrames(ChestSheet(chest.Variant));
-                if (fr.Length > 0) chest.Sr.sprite = fr[fr.Length - 1];
+                // the reveal itself: the lid throws open in one step, like the real
+                // lid-flip a spent chest plays - only this one keeps teeth behind it
+                if (chest.Anim != null && fr.Length >= 4)
+                    chest.Anim.Play(new[] { fr[0], fr[fr.Length - 1] }, 9f, false);
+                else if (fr.Length > 0) chest.Sr.sprite = fr[fr.Length - 1];
                 chest.Sr.color = new Color(0.5f, 0.46f, 0.44f, 0.9f);
                 chest.Sr.transform.localRotation = Quaternion.Euler(0f, 0f, 13f);
             }
