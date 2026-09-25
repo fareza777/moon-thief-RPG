@@ -2048,7 +2048,7 @@ namespace MoonThief
                 // above the tap hint's band (position = the block's top edge)
                 {
                     float poemBottom = HalfH - 10f - _endLines.MeasureHeight(_endLines.Text);
-                    float aboveHint = -HalfH + 3.9f + _endStats.MeasureHeight(_endStats.Text) + 0.85f;
+                    float aboveHint = -HalfH + 3.9f + _endStats.MeasureHeight(_endStats.Text) + 1.6f;
                     _endStats.transform.localPosition =
                         new Vector3(0f, Fx.Snap(Mathf.Min(poemBottom - 0.5f, aboveHint)), 0f);
                 }
