@@ -1657,7 +1657,7 @@ namespace MoonThief
             var food = Game.State.BestFood();
             View.SetCellEnabled(2, !_morselUsed && food != null);
             var morselWord = Strings.Get("menu.morsel")
-                + (food != null ? " x" + Game.State.BagCount(food) : "");
+                + (food != null ? " +" + Items.Get(food).Power + " x" + Game.State.BagCount(food) : "");
             float mw = PixelFont.Measure(morselWord, View.Menu[2].Text.Scale).x;
             View.Menu[2].Text.transform.localScale = Vector3.one * Mathf.Min(1f, 6.1f / Mathf.Max(0.1f, mw));
             View.Menu[2].Text.Set(morselWord);
