@@ -752,6 +752,10 @@ namespace MoonThief
             SetSelected(_selCell);
         }
 
+        /// <summary>True while a command cell is greyed - the dim is a warning the
+        /// controller honours with a free refusal instead of a burned turn.</summary>
+        public bool MenuOff(int i) => i >= 0 && i < Menu.Count && Menu[i].Off;
+
         public void SetSelected(int cell)
         {
             _selCell = Mathf.Clamp(cell, 0, Menu.Count - 1);
@@ -2450,6 +2454,9 @@ namespace MoonThief
         public void Confirm()
         {
             if (!AwaitingInput) return;
+            // a greyed command answers for free: the reason prints on the message
+            // line and the party keeps its turn - the dim was the warning, not a toll
+            if (View.MenuOff(View.SelectedCell)) { RefuseOffCell(); return; }
             AwaitingInput = false;
             View.SetMenuVisible(false);
             View.ShowHint(false);
@@ -2461,6 +2468,39 @@ namespace MoonThief
                 case 2: StartCoroutine(PlayerMorsel(actor)); break;
                 default: StartCoroutine(PlayerFlee(actor)); break;
             }
+        }
+
+        /// <summary>A dimmed cell's refusal: the flat blip plus the reason on the message
+        /// line - the full stable, the empty bag, the keeper who bars the road home.</summary>
+        void RefuseOffCell()
+        {
+            string msg;
+            switch (View.SelectedCell)
+            {
+                case 1:
+                    msg = Game.State.Friends.Count >= 2
+                        ? Strings.Get("bt.stablefull")
+                        : Strings.Get("bt.notame", TargetName());
+                    break;
+                case 2:
+                    msg = Strings.Get(_morselUsed ? "bt.nomore" : "bt.nofood");
+                    break;
+                case 3:
+                    msg = Strings.Get("bt.noflee");
+                    break;
+                default:
+                    msg = "";
+                    break;
+            }
+            if (msg != "") View.SetMessage(msg);
+            Sfx.Play("fail");
+        }
+
+        string TargetName()
+        {
+            int ti = View.Target;
+            if (ti < 0 || ti >= View.Enemies.Length) ti = 0;
+            return View.Enemies.Length > 0 ? View.Enemies[ti].Name : "it";
         }
 
         IEnumerator PlayerAttack(Fighter actor)
