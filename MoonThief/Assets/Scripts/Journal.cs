@@ -237,16 +237,44 @@ namespace MoonThief
             }
         }
 
-        /// <summary>Where a wild chest's loot comes from: better gear the further north you are.</summary>
+        /// <summary>What a sealed cache holds. Chests are the night's promised find, so they
+        /// draw from a wider shelf than a stray kill: roughly half gear, half fare, and the
+        /// pick deepens with the night - a night-three box can hide the catalog's best steel.</summary>
         public static string RollLoot(int chapter, System.Random rng)
         {
-            var pool = new List<string>();
-            pool.Add("item.berry");
-            pool.Add("item.morsel");
-            if (chapter >= 1) { pool.Add("item.honey"); pool.Add("item.cloak"); pool.Add("item.spoon"); }
-            if (chapter >= 2) { pool.Add("item.knife"); pool.Add("item.vest"); pool.Add("item.soup"); pool.Add("item.charm.thread"); }
-            if (chapter >= 3) { pool.Add("item.sickle"); pool.Add("item.mail"); pool.Add("item.charm.leaf"); pool.Add("item.tea"); }
-            return pool[rng.Next(pool.Count)];
+            string[] pool;
+            switch (Mathf.Clamp(chapter, 1, 3))
+            {
+                case 1:
+                    pool = rng.Next(100) < 45
+                        ? new[] { "item.fork", "item.spoon", "item.shiv", "item.dagger",
+                                  "item.scarf", "item.apron", "item.cloak", "item.charm.acorn",
+                                  "item.charm.bell", "item.charm.bead" }
+                        : new[] { "item.crumb", "item.berry", "item.plum", "item.morsel",
+                                  "item.nut", "item.apple", "item.bread", "item.toast",
+                                  "item.honey" };
+                    break;
+                case 2:
+                    pool = rng.Next(100) < 48
+                        ? new[] { "item.knife", "item.machete", "item.cutter", "item.handaxe",
+                                  "item.tunic", "item.jerkin", "item.vest", "item.pelt",
+                                  "item.charm.leaf", "item.charm.thread", "item.charm.coin",
+                                  "item.charm.feather" }
+                        : new[] { "item.morsel", "item.soup", "item.roll", "item.biscuit",
+                                  "item.jam", "item.pudding", "item.cheese", "item.broth",
+                                  "item.cider", "item.pie" };
+                    break;
+                default:
+                    pool = rng.Next(100) < 50
+                        ? new[] { "item.saber", "item.glaive", "item.pike", "item.scale",
+                                  "item.brigandine", "item.hauberk", "item.charm.lantern",
+                                  "item.charm.rune", "item.charm.star", "item.charm.owl" }
+                        : new[] { "item.stew", "item.fish", "item.cake", "item.mead",
+                                  "item.roast", "item.chowder", "item.moonpie",
+                                  "item.dumpling", "item.honey" };
+                    break;
+            }
+            return pool[rng.Next(pool.Length)];
         }
     }
 
