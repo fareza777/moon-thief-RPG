@@ -2227,9 +2227,9 @@ namespace MoonThief
                     // the hearing band made visible exactly when it matters
                     // the ring must tell the truth about the hearing band: it used to
                     // warn at 5.5 paces while the wild only heard at 3.6 - rings for
-                    // footsteps nothing could hear taught the wrong lesson
-                    float warnR = Prefs.Hard ? 4.6f : Prefs.Story ? 3.0f : 3.6f;
-                    if (NearWild(HeroPos, warnR + 0.8f)) SpawnRipple(Hero.Root.localPosition);
+                    // footsteps nothing could hear taught the wrong lesson. The moonlit's
+                    // keener ears get their own warning distance inside AnyCanHear.
+                    if (AnyCanHear(HeroPos)) SpawnRipple(Hero.Root.localPosition);
                 }
                 _stepSfxT = sneak ? 0.34f : 0.24f;
             }
@@ -2308,13 +2308,19 @@ namespace MoonThief
             d.Sr.color = tint;
         }
 
-        /// <summary>Any unwarned beast within earshot - the ripple only exists to warn
-        /// about these; village feet and already-chasing monsters get no rings.</summary>
-        bool NearWild(Vector2 pos, float r)
+        /// <summary>Any unwarned beast that would hear a footfall right now - the ripple
+        /// only exists to warn about these; village feet and already-chasing monsters
+        /// get no rings, and a moonlit beast's keener ears warn a step sooner.</summary>
+        bool AnyCanHear(Vector2 pos)
         {
             foreach (var m in Monsters)
-                if (m.Root != null && !m.Aggro
-                    && Vector2.Distance((Vector2)m.Root.localPosition, pos) < r) return true;
+            {
+                if (m.Root == null || m.Aggro) continue;
+                float hearR = m.Spec.Rare
+                    ? (Prefs.Hard ? 5.4f : Prefs.Story ? 3.8f : 4.4f)
+                    : (Prefs.Hard ? 4.6f : Prefs.Story ? 3.0f : 3.6f);
+                if (Vector2.Distance((Vector2)m.Root.localPosition, pos) < hearR) return true;
+            }
             return false;
         }
 
