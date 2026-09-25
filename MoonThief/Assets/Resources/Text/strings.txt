@@ -779,7 +779,6 @@ jr.medals|MEDALS
 jr.medals.sub|{0} OF {1} EARNED
 jr.medals.tip|TAP A MEDAL TO READ IT - THEY STAY WON FOREVER
 md.locked|??????
-md.hint|A feat the night has not seen yet. Keep walking.
 md.earn|MEDAL EARNED: {0}
 md.friend|FIRST HEART
 md.friend.d|A wild beast chose your hand over the dark.
@@ -836,3 +835,6 @@ bk.sea.2|wide open!
 bk.moss.0|hold together
 bk.moss.1|patches first!
 bk.moss.2|don't drop!
+bk.pet.0|chirps!
+bk.pet.1|growls low
+bk.pet.2|hops in!
