@@ -1051,36 +1051,50 @@ namespace MoonThief
                     var mc = new Vector2Int(mrng.Next(5, GameMap.W - 5), mrng.Next(yMin, yMax));
                     if (!Map.Walkable(mc)) continue;
                     if (Vector2.Distance(mc, new Vector2(30, 6)) < 14f) continue;
-                    if (Game.State.HasChestKey("mimic:" + MapChapter + ":" + mc.x + "," + mc.y)) continue;
+                    // a trap the thief already sprung leaves its wreck on the field -
+                    // the splintered lid is the only gravestone a fake box gets
+                    bool sprung = Game.State.HasChestKey("mimic:" + MapChapter + ":" + mc.x + "," + mc.y);
                     var mpos = Map.CellCenter(mc);
-                    bool tooClose = false;
-                    foreach (var d in defs)
-                        if (Vector2.Distance(d.Pos, mpos) < 4f) { tooClose = true; break; }
-                    if (tooClose) continue;
+                    if (!sprung)
+                    {
+                        bool tooClose = false;
+                        foreach (var d in defs)
+                            if (Vector2.Distance(d.Pos, mpos) < 4f) { tooClose = true; break; }
+                        if (tooClose) continue;
+                    }
                     int mvar = 2 + (defs.Count % 6);
                     var mframes = TexArt.ChestFrames(ChestSheet(mvar));
                     var msr = SpriteRendererUtil.Make(_root, "chestM" + defs.Count,
-                        mframes.Length > 0 ? mframes[0] : null, WorldOrder(mc.y));
+                        mframes.Length > 0 ? (sprung ? mframes[mframes.Length - 1] : mframes[0]) : null,
+                        WorldOrder(mc.y));
                     msr.transform.localPosition = new Vector3(mpos.x, mpos.y - 0.5f, 0f);
                     var manim = msr.gameObject.AddComponent<Anim>();
                     manim.Setup(msr, false, 0f);
                     manim.Play(new[] { mframes.Length > 0 ? mframes[0] : null }, 1f, true);
+                    if (sprung)
+                    {
+                        // the sprung wreck: lid thrown wide, wood gone grey, tilted like
+                        // it fell mid-lunge - no halo, no touch, no second bite
+                        msr.color = new Color(0.5f, 0.46f, 0.44f, 0.9f);
+                        msr.transform.localRotation = Quaternion.Euler(0f, 0f, 13f);
+                    }
                     var mglow = SpriteRendererUtil.Make(_root, "cglowM" + defs.Count, TexArt.Glow(), 2005);
                     mglow.transform.localPosition = new Vector3(mpos.x, mpos.y - 0.15f, 0f);
                     mglow.transform.localScale = Vector3.one * 3.4f;
                     // a shimmer a shade colder than honest gold: the only warning it gives
                     mglow.color = new Color(0.7f, 0.85f, 1f, 0.3f);
-                    AddGlow(mglow, 0.22f);
+                    mglow.enabled = !sprung;
+                    if (!sprung) AddGlow(mglow, 0.22f);
                     var msh = SpriteRendererUtil.Make(_root, "cshM" + defs.Count, TexArt.Shadow(), 45);
                     msh.transform.localPosition = new Vector3(mpos.x, mpos.y - 0.46f, 0f);
                     msh.transform.localScale = new Vector3(0.8f, 0.66f, 1f);
                     defs.Add(new ChestDef
                     {
                         Pos = mpos, Cell = mc, Sr = msr, Glow = mglow, Anim = manim,
-                        Variant = mvar, Opened = false, LootKey = null,
+                        Variant = mvar, Opened = sprung, LootKey = null,
                         IsMimic = true, Mimic = mimicSpec,
                     });
-                    want--;
+                    if (!sprung) want--;
                 }
             }
             _chests = defs.ToArray();
@@ -1193,7 +1207,15 @@ namespace MoonThief
         {
             var chest = _chests[i];
             chest.Opened = true;
-            if (chest.Sr != null) chest.Sr.enabled = false;
+            // the box doesn't vanish - it dies where it stood: lid thrown wide, wood
+            // gone grey, tilted like it fell mid-lunge. The wreck outlasts the fight.
+            if (chest.Sr != null)
+            {
+                var fr = TexArt.ChestFrames(ChestSheet(chest.Variant));
+                if (fr.Length > 0) chest.Sr.sprite = fr[fr.Length - 1];
+                chest.Sr.color = new Color(0.5f, 0.46f, 0.44f, 0.9f);
+                chest.Sr.transform.localRotation = Quaternion.Euler(0f, 0f, 13f);
+            }
             if (chest.Glow != null) chest.Glow.enabled = false;
             Game.State.MarkChestKey("mimic:" + MapChapter + ":" + chest.Cell.x + "," + chest.Cell.y);
             _chests[i] = chest;
