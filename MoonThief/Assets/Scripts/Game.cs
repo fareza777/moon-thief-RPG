@@ -2153,6 +2153,7 @@ namespace MoonThief
 
         public void StartBattle(MonsterSpec[] specs, bool ambush, bool fromSleep, bool fromMimic)
         {
+            DialogOpen = false;   // a fight begun from inside a talk unwinds it for real
             // a fight queued before the ending was called must not land after it: its
             // transition middle re-activates the stage over the dawn - caught on film by
             // the audit, party rigs standing under the ending prose
