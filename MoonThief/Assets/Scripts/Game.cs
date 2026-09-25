@@ -3279,6 +3279,11 @@ namespace MoonThief
                         }
                         if (BattleViewRef.OverlayButtonCount > 0)
                         {
+                            // the buttons list and the pixels share a frame boundary: the
+                            // card exists the frame it is built, but the screen still shows
+                            // the kill log. Wait one rendered frame or the shot is stale
+                            yield return null;
+                            yield return null;
                             Shot("16-bosscard-n" + night);
                             var cr = BattleViewRef.CardButtonRect(0);
                             if (cr.width > 0f) Director.TapAt(cr.center);
