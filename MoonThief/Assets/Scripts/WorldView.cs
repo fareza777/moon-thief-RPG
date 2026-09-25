@@ -1433,6 +1433,10 @@ namespace MoonThief
                     if (Npcs[i].Name != null) Npcs[i].Name.gameObject.SetActive(false);
                     if (Npcs[i].NameChip != null) Npcs[i].NameChip.enabled = false;
                 }
+                // a bark mid-flight is world text too: a card opening under it would leave
+                // the last word printed over the rows
+                if (_bark != null) _bark.enabled = false;
+                if (_barkChip != null) _barkChip.enabled = false;
             }
         }
 
@@ -2394,6 +2398,9 @@ namespace MoonThief
 
         void TickBarks(float dt)
         {
+            // world text hidden means a card owns the screen: no bubble keeps talking over it,
+            // and none is born under it - the tongue rests while the panel is up
+            if (!_textOn) return;
             if (_barkCd > 0f) _barkCd -= dt;
             if (_barkT > 0f)
             {
