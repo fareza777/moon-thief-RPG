@@ -3070,12 +3070,23 @@ namespace MoonThief
                 }
                 if (m.Dest == default || Vector2.Distance((Vector2)m.Root.localPosition, Map.CellCenter(m.Dest)) < 0.15f)
                 {
-                    // choose a new nearby walkable destination, biased home
+                    // choose a new nearby walkable destination, biased home - and not one
+                    // already claimed: a pair of beasts paused on the same tile reads as a
+                    // single fat sprite until one of them lunges
                     for (int t = 0; t < 8; t++)
                     {
                         int dx = Random.Range(-3, 4), dy = Random.Range(-3, 4);
                         var cell = new Vector2Int(Mathf.RoundToInt(m.HomeCell.x) + dx, Mathf.RoundToInt(m.HomeCell.y) + dy);
-                        if (Map.Walkable(cell)) { m.Dest = cell; break; }
+                        if (!Map.Walkable(cell)) continue;
+                        var center = Map.CellCenter(cell);
+                        bool taken = false;
+                        for (int j = 0; j < Monsters.Count; j++)
+                        {
+                            if (Monsters[j] == m || Monsters[j].Root == null) continue;
+                            if (Vector2.Distance(Monsters[j].Root.localPosition, center) < 0.9f)
+                            { taken = true; break; }
+                        }
+                        if (!taken) { m.Dest = cell; break; }
                     }
                     if (Random.value < 0.45f) { m.Pause = Random.Range(0.8f, 2.4f); continue; }
                 }
