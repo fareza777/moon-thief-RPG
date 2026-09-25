@@ -1557,8 +1557,9 @@ namespace MoonThief
             if (ac > _aggroWas && _aggroBarkT <= 0f && !World.BannerUp)
             {
                 _aggroBarkT = 14f;
-                if (State.Joined.Count > 0)
-                    Menus.ShowToast(Strings.Get("bark.spot." + Random.Range(0, 3)), 3.2f);
+                // solo the thief mutters to himself; with company the warning is spoken
+                Menus.ShowToast(Strings.Get(State.Joined.Count > 0
+                    ? "bark.spot." + Random.Range(0, 3) : "bark.spot.solo"), 3.2f);
             }
             _aggroWas = ac;
             _aggroBarkT -= Time.deltaTime;
