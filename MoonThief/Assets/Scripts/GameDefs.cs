@@ -549,7 +549,14 @@ namespace MoonThief
             // the dressers were free to plant a tree or a boulder on top of it (a chest cut in
             // half by a crown was the "clipping" in every field shot), and the hero could walk
             // straight through the lid.
-            foreach (var c in m.Chests) m.Blocked.Add(c);
+            foreach (var c in m.Chests)
+            {
+                m.Blocked.Add(c);
+                // a chest is small but its lid is at eye height - register it in the tree
+                // registry like a class-2 crown so no tree stands close enough for its own
+                // crown to hang over the lid (the chest-under-crown PILE the audit caught)
+                m.ClaimTree(c.x, c.y, 2);
+            }
 
             // the crystal of dawn sits in the village, west of the plaza
             m.CristalPos = new Vector2(11.5f, 7.5f);
