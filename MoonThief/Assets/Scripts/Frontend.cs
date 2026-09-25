@@ -768,7 +768,9 @@ namespace MoonThief
         List<Row> BuildRows(Transform parent)
         {
             var rows = new List<Row>();
-            for (int i = 0; i < 9; i++)
+            // the pool outruns the longest card: a short pool eats a card's last rows
+            // silently - a card that cannot reach its own back row is a locked room
+            for (int i = 0; i < 12; i++)
             {
                 var r = new Row();
                 r.Panel = SpriteRendererUtil.Make(parent, "row" + i, TexArt.Panel(), 6004);
@@ -940,7 +942,6 @@ namespace MoonThief
                 Strings.Get("set.autobattle"),
                 Strings.Get("set.haptics"),
                 Strings.Get("set.difficulty"),
-                Strings.Get("set.howto"),
             };
             var acts = new List<Action>
             {
@@ -957,14 +958,6 @@ namespace MoonThief
                     else { Prefs.Story = true; Prefs.Hard = false; }
                     Prefs.Store(); RefreshSettingsRows(); Select(_sel);
                 },
-                // the lessons are a card, not a life sentence: replaying them drops the
-                // player back on whatever card sent them here, not on the title screen
-                () =>
-                {
-                    bool backToPause = _settingsFromPause;
-                    OnboardReturn = () => { if (backToPause) ShowPause(); else ShowSettings(false); };
-                    ShowOnboard();
-                },
             };
             var vals = new List<string>
             {
@@ -975,10 +968,9 @@ namespace MoonThief
                 Prefs.Auto ? Strings.Get("set.on") : Strings.Get("set.off"),
                 Prefs.Haptics ? Strings.Get("set.on") : Strings.Get("set.off"),
                 Prefs.Story ? Strings.Get("set.diff.story") : Prefs.Hard ? Strings.Get("set.diff.hard") : Strings.Get("set.diff.normal"),
-                "",
             };
 
-            var icons = new List<int> { 9, 10, 11, 12, 13, 25, 18, 5 };
+            var icons = new List<int> { 9, 10, 11, 12, 13, 25, 18 };
             // the wipe lives only on the title-side card: erasing mid-run would be
             // rewritten by the next autosave, which reads as the button doing nothing
             if (!_settingsFromPause)
@@ -1363,7 +1355,7 @@ namespace MoonThief
             {
                 Strings.Get("pause.resume"), Strings.Get("pause.journal"),
                 Strings.Get("pause.save"), Strings.Get("pause.settings"),
-                Strings.Get("pause.totitle"),
+                Strings.Get("set.howto"), Strings.Get("pause.totitle"),
             };
             var acts = new Action[]
             {
@@ -1371,17 +1363,20 @@ namespace MoonThief
                 () => ShowJournal(),
                 () => { OnSaveGame?.Invoke(); _pauseSub.Set(Strings.Get("set.saved")); },
                 () => ShowSettings(true),
+                // the lessons are a card, not a life sentence: replaying them hands
+                // the player back to this same pause card, run still frozen
+                () => { OnboardReturn = ShowPause; ShowOnboard(); },
                 () => OnLeaveToTitle?.Invoke(),
             };
             // just the count: "QUESTS 0/10" in the value column forced the value down a size while
             // its neighbours stayed at 2, and the row it labels is already called JOURNAL
             var vals = new string[]
             {
-                "", Quests.DoneCount + "/" + Quests.All.Length + (QuestReady() ? " *" : ""), "", "", "",
+                "", Quests.DoneCount + "/" + Quests.All.Length + (QuestReady() ? " *" : ""), "", "", "", "",
             };
-            float rowsTop = LayoutCard(_pausePanel, 16.4f, 5, true);
+            float rowsTop = LayoutCard(_pausePanel, 16.4f, 6, true);
             _pauseTitle.transform.localPosition = new Vector3(0f, _cardTop - 2.15f, 0f);
-            float bottom = LayRows(_pauseRows, labels, acts, vals, rowsTop, 5, new[] { 4, 5, 6, 7, 8 });
+            float bottom = LayRows(_pauseRows, labels, acts, vals, rowsTop, 6, new[] { 4, 5, 6, 7, 5, 8 });
             _pauseSub.transform.localPosition = new Vector3(0f, FootY(bottom), 0f);
             Select(0);
         }
