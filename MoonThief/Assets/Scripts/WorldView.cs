@@ -2289,7 +2289,9 @@ namespace MoonThief
         {
             foreach (var r in _ripples)
             {
-                if (!r.Sr.enabled) continue;
+                // the ring's sprite hangs under the world content root - a house
+                // enter/exit wipes it mid-drift, leaving the pool holding a ghost
+                if (r.Sr == null || !r.Sr.enabled) continue;
                 r.T -= dt;
                 if (r.T <= 0f) { r.Sr.enabled = false; continue; }
                 float f = 1f - r.T / 0.7f;
