@@ -2275,6 +2275,21 @@ namespace MoonThief
                     done();
                     yield break;
                 }
+                // the grave-dirt doesn't always let go the first time: one fall in
+                // three, a zombi drags itself upright again - once, never twice
+                if (pfam == "zombi" && !f.Boss && !f.Risen && UnityEngine.Random.value < 0.3f)
+                {
+                    f.Risen = true;
+                    f.Hp = Mathf.Max(1, Mathf.RoundToInt(f.MaxHp * 0.3f));
+                    if (rig != null)
+                        View.FloatNumber(rig.Home + new Vector3(0f, 1.9f, 0f),
+                            Strings.Get("bt.shambles"), new Color(0.75f, 0.85f, 0.7f));
+                    Sfx.Play("enemy");
+                    View.Refresh();
+                    yield return Fx.Wait(0.7f);
+                    done();
+                    yield break;
+                }
                 OnFighterDown(f);
                 if (rig != null) yield return FadeOut(rig, true);
                 Sfx.Play("faint");
