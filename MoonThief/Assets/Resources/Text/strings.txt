@@ -293,6 +293,7 @@ card.xp|XP {0}
 card.gold|GOLD {0}
 card.levelup|LEVEL UP - LV {0}!
 card.flawless|FLAWLESS - NOBODY FELL!
+card.untouch|UNTOUCHED - NOT A SCRATCH!
 card.healall|The party breathes easier.
 card.befriended|FRIENDS {0}/{1}
 card.joined|They wanted to come.

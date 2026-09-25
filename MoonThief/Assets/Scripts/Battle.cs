@@ -2860,13 +2860,15 @@ namespace MoonThief
                 int bonus = 20 + Game.State.Chapter * 10;
                 Game.State.Gold += bonus;
                 gold += bonus;
+                // and nobody even bled: a clean read pays half again in experience
+                if (!hurt) { int xb = Mathf.Max(6, xp / 2); Game.State.Xp += xb; xp += xb; }
             }
             var lines = new List<string>
             {
                 Strings.Get("card.xp", xp),
                 Strings.Get("card.gold", gold),
             };
-            if (flawless) lines.Add(Strings.Get("card.flawless"));
+            if (flawless) lines.Add(Strings.Get(hurt ? "card.flawless" : "card.untouch"));
             else if (hurt) lines.Add(Strings.Get("card.healall"));
             if (Game.State.Level > _levelAtStart)
             {
