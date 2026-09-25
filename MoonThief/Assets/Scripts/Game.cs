@@ -135,8 +135,8 @@ namespace MoonThief
             /// wound, so the pie is not spent on a scratch.</summary>
             public static string FoodFor(bool poisoned, bool dazed, float missing)
             {
-                string best = null, small = null;
-                int bestPow = 0, smallPow = int.MaxValue;
+                string best = null, small = null, soup = null;
+                int bestPow = 0, smallPow = int.MaxValue, soupPow = int.MaxValue;
                 foreach (var b in Bag)
                 {
                     var d = Items.Get(b);
@@ -144,8 +144,14 @@ namespace MoonThief
                     if (poisoned && (b == "item.honey" || b == "item.starlight")) return b;
                     if (dazed && (b == "item.tea" || b == "item.mead")) return b;
                     if (d.Power > bestPow) { best = b; bestPow = d.Power; }
-                    if (d.Power >= missing && d.Power < smallPow) { small = b; smallPow = d.Power; }
+                    if (d.Power < missing) continue;
+                    if (d.Power < smallPow) { small = b; smallPow = d.Power; }
+                    // a bowl that covers the wound AND feeds the moonflow beats plain fare at
+                    // the same table - the morsel's pick should play the whole kitchen
+                    if (Items.SoupKeys.Contains(b) && d.Power < soupPow) { soup = b; soupPow = d.Power; }
                 }
+                // the family pot only wins when it heals as well as the plain pick would have
+                if (soup != null && (small == null || soupPow <= smallPow)) return soup;
                 return small ?? best;
             }
 
