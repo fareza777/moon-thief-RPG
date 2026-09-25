@@ -1643,8 +1643,11 @@ namespace MoonThief
             // counts the portion it would serve - 'MORSEL x3' answers 'how many left'
             var food = Game.State.BestFood();
             View.SetCellEnabled(2, !_morselUsed && food != null);
-            View.Menu[2].Text.Set(Strings.Get("menu.morsel")
-                + (food != null ? " x" + Game.State.BagCount(food) : ""));
+            var morselWord = Strings.Get("menu.morsel")
+                + (food != null ? " x" + Game.State.BagCount(food) : "");
+            float mw = PixelFont.Measure(morselWord, View.Menu[2].Text.Scale).x;
+            View.Menu[2].Text.transform.localScale = Vector3.one * Mathf.Min(1f, 6.1f / Mathf.Max(0.1f, mw));
+            View.Menu[2].Text.Set(morselWord);
             View.SetCellEnabled(1, Game.State.Friends.Count < 2 && !_hasBoss);
             View.SetCellEnabled(3, !_hasBoss);   // the Guard bars every way out
             View.AimStyle = f.Style;
