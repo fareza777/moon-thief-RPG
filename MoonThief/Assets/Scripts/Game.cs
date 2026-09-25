@@ -879,6 +879,11 @@ namespace MoonThief
             _bossDown = false;
             _ending = false;
 
+            // the main line accepts itself - nobody hands you these errands, so nothing
+            // else ever set their step and the journal read NEW on all three all run long
+            if (Quests.Step("mq.1") == 0) Quests.Accept(Quests.Find("mq.1"));
+            if (chapter >= 3 && Quests.Step("mq.3") == 0) Quests.Accept(Quests.Find("mq.3"));
+
             if (SelfTestMode || EditorMode || !Application.isPlaying)
             {
                 BuildChapterNow(chapter);
@@ -1013,6 +1018,19 @@ namespace MoonThief
         }
 
         string _questText;
+
+        /// <summary>Counter errands on the main line settle themselves the moment the count is
+        /// met - there is no giver to hand them to, so without this the journal would read
+        /// ACTIVE on them forever after the work was done.</summary>
+        void CheckMains()
+        {
+            foreach (var q in Quests.All)
+                // the Pale Guard settles its own account in OnBossDefeated - a field slime
+                // must not close the last rung early
+                if (q.Main && q.Kind != QuestKind.Talk && q.Id != "mq.3"
+                    && Quests.Step(q.Id) == 1 && Quests.Progress(q) >= q.Need)
+                    Quests.Complete(q);
+        }
 
         /// <summary>Where the compass arrow points tonight. It follows the same ladder the HUD's
         /// quest line does: find Mira, find the chests, find the boss, find the cristal.
@@ -1406,6 +1424,13 @@ namespace MoonThief
             {
                 if (npc.NameKey == "npc.elder") _metMira = true;   // the quest giver
                 TalkTo(npc);
+                // meeting Mira is the first rung itself - once the words pass, the chest
+                // errand is live without a second signature
+                if (npc.NameKey == "npc.elder" && Quests.Step("mq.1") == 1)
+                {
+                    Quests.Complete(Quests.Find("mq.1"));
+                    Quests.Accept(Quests.Find("mq.2"));
+                }
                 RefreshQuest();
                 return;
             }
@@ -1415,6 +1440,7 @@ namespace MoonThief
                 World.OpenChest(chestAt);
                 Sfx.Play(State.MoonShards > shardsBefore ? "shard" : "chest");
                 ShowZoneBanner(World.LastLootText);
+                CheckMains();
                 RefreshHud();
                 SaveRun();
                 return;
@@ -1813,6 +1839,9 @@ namespace MoonThief
         {
             Sfx.Mus.Duck = 1f; Sfx.Mus.Play("explore");
             _bossDown = true;
+            // the last rung of the main line is this kill itself
+            if (State.Chapter >= 3 && Quests.Step("mq.3") == 1)
+                Quests.Complete(Quests.Find("mq.3"));
             if (World != null) World.RemoveBoss();
             BattleViewRef.gameObject.SetActive(false);
             BattleViewRef.HideCard();
