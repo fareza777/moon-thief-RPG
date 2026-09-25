@@ -278,6 +278,7 @@ namespace MoonThief
         PixelLabel _onbTitle, _onbBody, _shopTitle, _shopSub, _shopFoot;
         SpriteRenderer _onbPanel, _shopPanel;
         readonly List<SpriteRenderer> _onbDots = new List<SpriteRenderer>();
+        const int OnbPages = 4;
         int _onbPage;
         SpriteRenderer _ciPlate;
         SpriteRenderer _ciArt, _ciDim, _splashBg, _splashMoon, _ccDim, _pauseDim, _pausePanel, _setPanel, _credPanel;
@@ -623,10 +624,10 @@ namespace MoonThief
             _onbBody = PixelLabelUtil.Make(_onbCard, "onbBody", 1, new Color(0.93f, 0.95f, 1f), TextAlign.Center, 6006);
             _onbBody.MaxWidthUnits = 14.2f;
             _onbBody.transform.localPosition = new Vector3(0f, 0.4f, 0f);
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < OnbPages; i++)
             {
                 var dot = SpriteRendererUtil.Make(_onbCard, "onbDot" + i, TexArt.Dot(), 6006);
-                dot.transform.localPosition = new Vector3((i - 1) * 1.1f, -2.6f, 0f);
+                dot.transform.localPosition = new Vector3((i - (OnbPages - 1) * 0.5f) * 1.1f, -2.6f, 0f);
                 dot.transform.localScale = Vector3.one * 0.35f;
                 _onbDots.Add(dot);
             }
@@ -969,7 +970,7 @@ namespace MoonThief
                 _onbDots[i].color = i == _onbPage
                     ? new Color(1f, 0.93f, 0.55f)
                     : new Color(0.5f, 0.55f, 0.8f, 0.45f);
-            bool last = _onbPage >= 2;
+            bool last = _onbPage >= OnbPages - 1;
             LayRows(_onbRows, new[] { Strings.Get(last ? "onb.start" : "onb.next") },
                 new Action[] { NextOnboard }, new[] { "" }, -4.2f, 1);
             Select(0);
@@ -978,7 +979,7 @@ namespace MoonThief
         void NextOnboard()
         {
             Sfx.Play("ui");
-            if (_onbPage < 2) { _onbPage++; RefreshOnboard(); return; }
+            if (_onbPage < OnbPages - 1) { _onbPage++; RefreshOnboard(); return; }
             OnOnboardDone?.Invoke();
         }
 

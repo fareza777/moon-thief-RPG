@@ -61,6 +61,8 @@ onb.title.2|FIGHT & BEFRIEND
 onb.body.2|Wild beasts chase you in the dark.\nIn a fight: ATTACK, BEFRIEND,\nshare a MORSEL, or LET GO.\nAUTO fights for you.
 onb.title.3|THE QUEST
 onb.body.3|Your goal is written in the corner.\nFollow the moon-chevron.\nGather shards. Raise the moon.
+onb.title.4|GEAR UP
+onb.body.4|MARN the trader sells swords,\ncloth and charms. Equip them\nfrom your bag to grow stronger.
 onb.next|NEXT
 onb.start|BEGIN
 
