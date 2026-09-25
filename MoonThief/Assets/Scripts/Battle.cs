@@ -1489,7 +1489,9 @@ namespace MoonThief
             }
         }
 
-        public void StartBattle(MonsterSpec[] specs)
+        public void StartBattle(MonsterSpec[] specs) => StartBattle(specs, false);
+
+        public void StartBattle(MonsterSpec[] specs, bool ambush)
         {
             // a stale invocation - a ghost card's TRY AGAIN, a queued callback landing after
             // the stage came down - must not build rigs on a dead view: every coroutine it
@@ -1524,6 +1526,9 @@ namespace MoonThief
             View.RebuildParty();
             View.ResetPartyHp();
             View.SetEncounter(specs);
+            // struck from the dark: a roster that never saw the thief opens the fight
+            // reeling, every one of them - the stun stars land in the intro slide
+            if (ambush) foreach (var e in View.Enemies) e.Dazed = true;
             View.HideCard();
             View.SetMenuVisible(false);
             Auto = Prefs.Auto;
@@ -1535,7 +1540,8 @@ namespace MoonThief
             bool anyRare = false;
             foreach (var en in View.Enemies) if (en.Rare) anyRare = true;
             string introKey;
-            if (hasBoss) introKey = "bt.boss";
+            if (ambush) introKey = "bt.ambush";
+            else if (hasBoss) introKey = "bt.boss";
             else if (anyRare) introKey = "bt.moonlit";
             else if (specs.Length > 2) introKey = "bt.three";
             else if (specs.Length > 1) introKey = "bt.two";

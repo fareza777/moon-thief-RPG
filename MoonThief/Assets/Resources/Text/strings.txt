@@ -145,6 +145,7 @@ menu.morsel|MORSEL
 menu.run|FLEE
 
 # ---- battle messages
+bt.ambush|Struck from the dark - the {0} reels!
 bt.one|A wild {0} blocks the way!
 bt.two|{0} and a friend appear!
 bt.three|{0} answers the dark with its pack!

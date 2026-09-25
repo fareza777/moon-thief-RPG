@@ -1520,8 +1520,11 @@ namespace MoonThief
             if (touched != null && _encounterCooldown <= 0f)
             {
                 var spec = touched.Spec;
+                // a beast that never saw you is struck flat-footed: the whole roster
+                // opens the fight reeling - the prowl's payoff, not a free pass
+                bool ambush = !touched.Aggro;
                 World.RemoveMonster(touched);
-                StartBattle(new[] { spec });
+                StartBattle(new[] { spec }, ambush);
                 return;
             }
             if (_encounterCooldown <= 0f && move.sqrMagnitude > 0.01f && World.HeroPos.y > 20f
@@ -2065,7 +2068,9 @@ namespace MoonThief
 
         // ------------------------------------------------------------ battles
 
-        public void StartBattle(MonsterSpec[] specs)
+        public void StartBattle(MonsterSpec[] specs) => StartBattle(specs, false);
+
+        public void StartBattle(MonsterSpec[] specs, bool ambush)
         {
             // a fight queued before the ending was called must not land after it: its
             // transition middle re-activates the stage over the dawn - caught on film by
@@ -2090,7 +2095,7 @@ namespace MoonThief
                 if (_hudZone != null) _hudZone.enabled = false;
                 SetHudQuestVisible(false);
                 BattleViewRef.gameObject.SetActive(true);
-                Director.StartBattle(specs);
+                Director.StartBattle(specs, ambush);
             }, 0.16f, 0.3f);
             bool boss = false;
             foreach (var s in specs) if (s.Boss) boss = true;
@@ -2807,7 +2812,7 @@ namespace MoonThief
             FollowHero();
         }
 
-        public void EditorBattle()
+        public void EditorBattle(bool ambush = false)
         {
             Phase = St.Battle;
             Menus.Hide();
@@ -2816,7 +2821,7 @@ namespace MoonThief
             SetHudQuestVisible(false);
             SetCamY(0f);
             BattleViewRef.gameObject.SetActive(true);
-            Director.StartBattle(BattleData.Roll(State.Chapter, new System.Random(7)));
+            Director.StartBattle(BattleData.Roll(State.Chapter, new System.Random(7)), ambush);
             Director.EditorTick();   // edit mode: coroutines are dead, drive the round start by hand
         }
 
@@ -3443,6 +3448,28 @@ namespace MoonThief
                     if (BattleViewRef.OverlayButtonCount > 0)
                         // CONTINUE on a win card, FLEE HOME on a loss: both land on Explore
                         BattleViewRef.CardButtonAt(BattleViewRef.OverlayButtonCount - 1)?.Invoke();
+                    else TickWorldForTest();
+                    yield return null;
+                }
+            }
+
+            // the prowl's payoff staged on film: a fight the dark never saw coming opens
+            // with the whole roster reeling - stun stars over flat-footed rigs, then the
+            // walk loop's own battle branch plays it out like any other stray fight
+            if (Phase == St.Explore)
+            {
+                EditorBattle(true);
+                yield return new WaitForSeconds(1.2f);
+                Debug.Log("[selftest] ambush dazed=" + (BattleViewRef.Enemies.Length > 0 && BattleViewRef.Enemies[0].Dazed));
+                Shot("13d-ambush");
+                // and out again: the boss walk below only runs from Explore, so the staged
+                // fight must pay its way home first - AUTO settles a reeling pack in seconds
+                if (!Director.Auto) Director.ToggleAuto();
+                int asweep = 0;
+                while (Phase == St.Battle && asweep++ < 3000)
+                {
+                    if (BattleViewRef.OverlayButtonCount > 0)
+                        BattleViewRef.CardButtonAt(0)?.Invoke();
                     else TickWorldForTest();
                     yield return null;
                 }
