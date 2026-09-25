@@ -3002,6 +3002,15 @@ namespace MoonThief
             Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);   // STAY -> title rows
             yield return new WaitForSeconds(0.3f);
 
+            // the release-a-friend wording is the second card through the same frame: stand it
+            // up on demand so the title-fit pass proves both wordings, then cancel back out
+            Menus.ShowConfirm(() => { }, Strings.Get("conf.reltitle"),
+                Strings.Get("conf.relsub", Strings.Get("mon.wisp")), Strings.Get("conf.rel"), null);
+            yield return new WaitForSeconds(0.5f);
+            Shot("10c5-setfree");
+            Menus.Tick(0.1f, Vector2.zero, false, 0, false, true);   // cancel -> title rows
+            yield return new WaitForSeconds(0.3f);
+
             // the chapter card only plays inside the night-2/night-3 dissolve - too fast
             // to catch live, so the editor hook stands it up on demand instead
             Menus.ShowChapterCard(2);
@@ -3090,6 +3099,15 @@ namespace MoonThief
             Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);
             yield return new WaitForSecondsRealtime(0.4f);
             Shot("21b-shop-sell");
+            // back to buying, then one page deeper: BUY MODE is the sell card's last row,
+            // and MORE sits after the six wares on the buy card, before SELL and BACK
+            for (int s = 0; s < Menus.ActiveRowCount - 1; s++) Menus.Tick(0.05f, Vector2.zero, false, 1, false, false);
+            Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);   // BUY MODE -> buy card
+            yield return new WaitForSecondsRealtime(0.3f);
+            for (int s = 0; s < Menus.ActiveRowCount - 3; s++) Menus.Tick(0.05f, Vector2.zero, false, 1, false, false);
+            Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);   // MORE -> page two
+            yield return new WaitForSecondsRealtime(0.3f);
+            Shot("21c-shop-p2");
             ClosePause();
             yield return new WaitForSeconds(0.3f);
 
@@ -3106,6 +3124,15 @@ namespace MoonThief
             yield return new WaitForSecondsRealtime(0.5f);
             Shot("20-settings");
             Debug.Log("[selftest] settings rows=" + Menus.ActiveRowCount);
+
+            // the wipe row lives only on the title-side card: stand that card up, arm the row
+            // once, photograph the armed label, and leave it armed - a second tap would erase
+            Menus.ShowSettings(false);
+            yield return new WaitForSecondsRealtime(0.4f);
+            for (int s = 0; s < Menus.ActiveRowCount - 2; s++) Menus.Tick(0.05f, Vector2.zero, false, 1, false, false);
+            Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);   // first tap arms it
+            yield return new WaitForSecondsRealtime(0.2f);
+            Shot("20b-erase");
 
             // the journal the pause card opens: hub, then a real page. Same reason as above -
             // the rows are built per page and a shared list made every page after the first draw
