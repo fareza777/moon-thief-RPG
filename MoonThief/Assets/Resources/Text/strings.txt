@@ -878,3 +878,4 @@ bk.amb.1|They never saw us.
 bk.amb.2|From the dark.
 bt.sleep|Roused from dreams - the {0} wakes swinging!
 bt.mimic|That's no chest - the {0} was lying in wait!
+dl.hunter.3|Chests out there aren't all chests, boy. The wild learned our shapes - a shimmer that runs cold instead of gold means teeth. Look twice before you touch.

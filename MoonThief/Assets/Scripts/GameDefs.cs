@@ -1264,7 +1264,7 @@ namespace MoonThief
             if (chapter >= 2)
             {
                 all.Add(new NpcDef{ Chara=4, Pos=new Vector2(24.5f,11.5f), NameKey="npc.hunter",
-                    Lines=new[]{ "dl.hunter.1", "dl.hunter.2" } });
+                    Lines=new[]{ "dl.hunter.1", "dl.hunter.2", "dl.hunter.3" } });
                 all.Add(new NpcDef{ Chara=0, Sheet="Pack/Chara/chara_10", Pos=new Vector2(26.5f,13.5f), NameKey="npc.oda",
                     Lines=new[]{ "dl.oda.1", "dl.oda.2" } });
                 // the bard walks out once the fields open - her rhyme errand is a second-night
