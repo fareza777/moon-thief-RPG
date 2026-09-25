@@ -270,10 +270,10 @@ mon.swarrior|BONE WARDEN
 mon.magus.d|Traded its face for one more spell. Its mark saps the arm it lands on.
 mon.lamia.d|Half the dark, half the river. It holds its mark past a turn or two.
 mon.worm.d|The field's own hunger. Its bite rusts the arm it takes.
-mon.zombi.d|Walks out of every grave it ever filled. Feeds on whatever falls.
+mon.zombi.d|Walks out of every grave it ever filled. One fall in three, it stands back up.
 mon.sword.d|Ate the swordsman, kept the sword. Turns steel aside with steel.
 mon.worm2.d|It outgrew the furrows. The rot in its bite never did.
-mon.zombi2.d|The grave's own landlord. Every fall is rent paid.
+mon.zombi2.d|The grave's own landlord. One fall in three it collects again - rises once more.
 mon.sword2.d|Kept the swordsman too, this time. Two edges answer one.
 mon.thirst.d|It kisses with teeth. Whatever it takes, it keeps.
 mon.swarrior.d|A knight out of the bone pile. Its plate drinks part of every blow.
