@@ -911,6 +911,7 @@ namespace MoonThief
         public int Poison;          // rounds of venom left - scorpion stings leave it
         public int Weaken;          // blows left at half strength - a magus's hex saps the arm
         public int Snare;           // turns held fast - a lamia's coil does not let go quickly
+        public int Corrode;         // stacks of a worm's rot on the arm - each one dulls a blow
         public string BattlerPath;      // Resources path of the battler sprite
         public string Species;          // monster string key - set on wild foes and befriended allies
         public string ColorDir;         // party only: "color_1"
@@ -1009,9 +1010,13 @@ namespace MoonThief
             // so the fields keep a face the player has not already befriended twice
             new MonsterSpec{ Name="mon.palebell",Battler="Art/Battlers/GhostA",    MapSheet="Pack/Monsters/Monsters_02_5", Tier=3, Chapter=3, Hp=30, AtkMin=5, AtkMax=8, Speed=5.0f },
             new MonsterSpec{ Name="mon.thick",   Battler="Art/Battlers/MushroomB", MapSheet="Pack/Monsters/Monsters_04_3", Tier=2, Chapter=2, Hp=36, AtkMin=6, AtkMax=9, Speed=3.4f },
-            // the last dark learns new shapes: a warlock who hexes the strong arm,
-            // a serpent that holds its mark fast, a knight whose plate drinks blows
+            // the later dark learns new shapes: a serpent that holds its mark fast, a
+            // worm whose bite rusts the arm it takes, and still stranger things in the
+            // last night - a dead thing that feeds on the fallen, a pudding that parries
             new MonsterSpec{ Name="mon.lamia",   Battler="Art/Battlers/LamiaA",    MapSheet="Pack/Monsters/Monsters_03_6", Tier=2, Chapter=2, Hp=28, AtkMin=5, AtkMax=9, Speed=4.6f },
+            new MonsterSpec{ Name="mon.worm",    Battler="Art/Battlers/WormA",     MapSheet="Pack/Monsters/Monsters_04_6", Tier=2, Chapter=2, Hp=26, AtkMin=4, AtkMax=7, Speed=4.0f },
+            new MonsterSpec{ Name="mon.zombi",   Battler="Art/Battlers/ZombiA",    MapSheet="Pack/Monsters/Monsters_05_1", Tier=3, Chapter=3, Hp=50, AtkMin=6, AtkMax=9, Speed=2.6f },
+            new MonsterSpec{ Name="mon.sword",   Battler="Art/Battlers/SlimeswordA", MapSheet="Pack/Monsters/Monsters_03_1", Tier=3, Chapter=3, Hp=44, AtkMin=8, AtkMax=12, Speed=4.2f },
             new MonsterSpec{ Name="mon.magus",   Battler="Art/Battlers/BlackMagusA", MapSheet="Pack/Monsters/Monsters_02_6", Tier=3, Chapter=3, Hp=38, AtkMin=7, AtkMax=12, Speed=4.4f },
             new MonsterSpec{ Name="mon.swarrior",Battler="Art/Battlers/SkeletonwarriorA", MapSheet="Pack/Monsters/Monsters_05_4", Tier=3, Chapter=3, Hp=48, AtkMin=7, AtkMax=10, Speed=3.0f },
             // the gatekeepers live in the bestiary so the journal can picture them, but they
@@ -1057,10 +1062,13 @@ namespace MoonThief
             switch (FamilyOf(foe))
             {
                 case "slime":
+                case "slimesword":
                 case "mushroom": return style == 0;
                 case "wasp":
                 case "scorpion":
-                case "lamia": return style == 1;        // sea's arc parts sting and coil alike
+                case "lamia":
+                case "worm": return style == 1;          // the field's own hunger parts the same
+                case "zombi": return style == 2;         // dead flesh folds to the moon's fold
                 case "ghost":
                 case "skeleton":
                 case "skeletonwarrior":

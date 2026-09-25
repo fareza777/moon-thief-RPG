@@ -156,6 +156,9 @@ bt.fam.ghost|A {0} drifts out of the treeline.
 bt.fam.skeleton|A {0} drags itself upright.
 bt.fam.scorpion|A {0} skitters out, tail high!
 bt.fam.genius|A {0} floats down, lantern-bright.
+bt.fam.worm|A {0} bursts from under the furrows!
+bt.fam.zombi|A {0} drags itself out of the grave-dirt!
+bt.fam.slimesword|A {0} levels a rusty edge!
 bt.fam.lamia|A {0} uncoils from the reeds!
 bt.fam.blackmagus|A {0} raises its hollow hand.
 bt.fam.skeletonwarrior|A {0} lowers its plated helm.
@@ -166,6 +169,9 @@ bt.tripped|TRIPPED
 bt.hexed|HEXED
 bt.coiled|COILED
 bt.plated|PLATED
+bt.fed|FED!
+bt.corroded|CORRODED
+bt.parried|PARRIED!
 bt.cleansed|CLEANSED
 bt.warmed|WARM
 bt.poison|POISON
@@ -248,9 +254,15 @@ mon.stalker.d|It ate the dusk patrol. Now it eats the road.
 mon.squire.d|A page that outlived its knight.
 mon.magus|HOLLOW MAGUS
 mon.lamia|COIL SISTER
+mon.worm|TUNNEL WORM
+mon.zombi|GRAVEROT
+mon.sword|BLADE PUDDING
 mon.swarrior|BONE WARDEN
 mon.magus.d|Traded its face for one more spell. Its mark saps the arm it lands on.
 mon.lamia.d|Half the dark, half the river. It holds its mark past a turn or two.
+mon.worm.d|The field's own hunger. Its bite rusts the arm it takes.
+mon.zombi.d|Walks out of every grave it ever filled. Feeds on whatever falls.
+mon.sword.d|Ate the swordsman, kept the sword. Turns steel aside with steel.
 mon.swarrior.d|A knight out of the bone pile. Its plate drinks part of every blow.
 
 # ---- result cards

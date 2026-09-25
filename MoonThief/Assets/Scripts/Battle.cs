@@ -517,6 +517,7 @@ namespace MoonThief
                 rig.F.Dazed = false;
                 rig.F.Weaken = 0;
                 rig.F.Snare = 0;
+                rig.F.Corrode = 0;
                 rig.Root.gameObject.SetActive(true);
                 rig.Root.localPosition = rig.Home;
                 rig.Body.localPosition = Vector3.zero;
@@ -1624,7 +1625,9 @@ namespace MoonThief
             int dmg = Mathf.RoundToInt(UnityEngine.Random.Range(f.AtkMin, f.AtkMax + 1) * (crit ? 1.6f : 1f) * (weakHit ? 1.5f : 1f) * FlowMul());
             // a hex saps the arm it fell on: blows come out dull until it lifts
             if (f.Weaken > 0) { dmg = Mathf.Max(1, dmg - 4); f.Weaken--; }
-            HitFoe(target, dmg, crit, weakHit);
+            // a worm's rot keeps rusting the arm it bit: each stack stays until the fight ends
+            if (f.Corrode > 0) dmg = Mathf.Max(1, dmg - f.Corrode);
+            HitFoe(target, dmg, crit, weakHit, f);
             View.Refresh();
             // a scorpion friend carries its sting over to your side: its bite
             // can leave the same venom the wild ones leave in you
@@ -1635,6 +1638,13 @@ namespace MoonThief
                 target.Poison = 3;
                 View.FloatNumber(tRig.Home + new Vector3(0f, 1.75f, 0f),
                     Strings.Get("bt.poisoned"), new Color(0.55f, 1f, 0.5f));
+            }
+            // a tame worm's fangs still rust: its bite rots the foe's arm the same way
+            if (fFam == "worm" && target.Alive && UnityEngine.Random.value < 0.35f)
+            {
+                target.Corrode++;
+                View.FloatNumber(tRig.Home + new Vector3(0f, 1.9f, 0f),
+                    Strings.Get("bt.corroded"), new Color(0.8f, 0.55f, 0.3f));
             }
             // a tame slime still smothers: its goo can take the foe's footing too
             if (fFam == "slime" && target.Alive && !target.Dazed && UnityEngine.Random.value < 0.2f)
@@ -1691,6 +1701,7 @@ namespace MoonThief
                 yield return FadeOut(tRig);
                 View.SetMessage(Strings.Get("bt.fainted", target.Name));
                 yield return Fx.Wait(0.6f);
+                OnFighterDown(target);
                 TrySpore(f, target);   // pets get the same lungful of spores as heroes
             }
             EndTurn();
@@ -1861,11 +1872,27 @@ namespace MoonThief
                 * (slam ? 1.6f : 1f) * (_enraged ? 1.25f : 1f) * (Prefs.Story ? 0.65f : 1f));
             // a hexed enemy strikes dull too: a tame magus's mark works both ways
             if (e.Weaken > 0) { dmg = Mathf.Max(1, dmg - 4); e.Weaken--; }
+            if (e.Corrode > 0) dmg = Mathf.Max(1, dmg - e.Corrode);
             if (UnityEngine.Random.value < (tFam == "ghost" ? 0.2f : 0.06f))
             {
                 // the hero slips aside: the lunge lands on empty air
                 View.FloatNumber(tRig.Home + new Vector3(0f, 1.4f, 0f),
                     Strings.Get(tFam == "ghost" ? "bt.phased" : "bt.miss"), new Color(0.8f, 0.85f, 0.95f));
+                Sfx.Play("whoosh");
+                yield return Fx.Wait(0.35f);
+                yield return Lunge(eRig, eRig.Home, 0.3f);
+                EndTurn();
+                yield break;
+            }
+            // a befriended blade pudding keeps its swordsman's edge: now and then it
+            // turns the whole blow aside and nicks the striker back
+            if (tFam == "slimesword" && UnityEngine.Random.value < 0.22f)
+            {
+                e.Hp = Mathf.Max(1, e.Hp - 2);   // a graze, never a kill
+                if (eRig != null) View.FloatNumber(eRig.Home + new Vector3(0f, 1.6f, 0f),
+                    "-2", new Color(0.85f, 0.9f, 1f));
+                View.FloatNumber(tRig.Home + new Vector3(0f, 1.4f, 0f),
+                    Strings.Get("bt.parried"), new Color(0.85f, 0.9f, 1f));
                 Sfx.Play("whoosh");
                 yield return Fx.Wait(0.35f);
                 yield return Lunge(eRig, eRig.Home, 0.3f);
@@ -1927,6 +1954,14 @@ namespace MoonThief
                 View.FloatNumber(tRig.Home + new Vector3(0f, 1.9f, 0f),
                     Strings.Get("bt.coiled"), new Color(0.75f, 0.95f, 0.6f));
             }
+            // a tunnel worm's fangs rust what they pierce: each stack dulls the victim's
+            // blows until the fight is done
+            if (fam == "worm" && target.Alive && UnityEngine.Random.value < 0.35f)
+            {
+                target.Corrode++;
+                View.FloatNumber(tRig.Home + new Vector3(0f, 1.9f, 0f),
+                    Strings.Get("bt.corroded"), new Color(0.8f, 0.55f, 0.3f));
+            }
             View.FloatNumber(tRig.Home + new Vector3(0f, 1.4f, 0f), "-" + dmg,
                 slam ? new Color(1f, 0.45f, 0.3f) : new Color(1f, 0.6f, 0.55f));
             Sfx.Play("hurt");
@@ -1940,6 +1975,7 @@ namespace MoonThief
                 if (IsUnrisenSkeleton(target)) { yield return FriendRise(target, tRig); }
                 else
                 {
+                    OnFighterDown(target);
                     yield return FadeOut(tRig, true);
                     Sfx.Play("faint");
                     View.SetMessage(Strings.Get(target.Species != null ? "bt.fainted" : "bt.herodown", target.Name));
@@ -1986,6 +2022,7 @@ namespace MoonThief
                     done();
                     yield break;
                 }
+                OnFighterDown(f);
                 if (rig != null) yield return FadeOut(rig, true);
                 Sfx.Play("faint");
                 View.SetMessage(Strings.Get(f.Species != null ? "bt.fainted" : "bt.herodown", f.Name));
@@ -2171,7 +2208,7 @@ namespace MoonThief
                 yield return Lunge(aRig, tRig.Home, 0.3f);
                 bool weakHit = WeakTo(2, target);
                 int pebble = Mathf.Max(1, Mathf.RoundToInt(UnityEngine.Random.Range(actor.AtkMin, actor.AtkMax + 1) * (weakHit ? 0.75f : 0.5f) * FlowMul()));
-                HitFoe(target, pebble, false, weakHit);
+                HitFoe(target, pebble, false, weakHit, actor);
                 yield return Fx.Wait(0.4f);
                 yield return Lunge(aRig, aRig.Home, 0.3f);
                 PlayIdle(aRig);
@@ -2196,7 +2233,7 @@ namespace MoonThief
                 {
                     if (!View.Enemies[i].Alive) continue;
                     bool weakHit = WeakTo(1, View.Enemies[i]);
-                    HitFoe(View.Enemies[i], Mathf.Max(1, Mathf.RoundToInt(roll * (weakHit ? 0.975f : 0.65f) * FlowMul())), false, weakHit);
+                    HitFoe(View.Enemies[i], Mathf.Max(1, Mathf.RoundToInt(roll * (weakHit ? 0.975f : 0.65f) * FlowMul())), false, weakHit, actor);
                 }
                 View.Refresh();
                 yield return Fx.Wait(0.5f);
@@ -2233,7 +2270,7 @@ namespace MoonThief
                 int dmg = Mathf.RoundToInt(UnityEngine.Random.Range(actor.AtkMin, actor.AtkMax + 1) * (crit ? 1.7f : 1f) * (weakHit ? 1.5f : 1f) * FlowMul());
                 View.SetMessage(crit ? Strings.Get("bt.attack.crit", actor.Name, dmg) : Strings.Get("bt.attack.0", actor.Name));
                 int hpBefore = target.Hp;
-                HitFoe(target, dmg, crit, weakHit);
+                HitFoe(target, dmg, crit, weakHit, actor);
                 View.Refresh();
                 yield return Fx.Wait(0.45f);
                 yield return Lunge(aRig, aRig.Home, 0.3f);
@@ -2316,7 +2353,7 @@ namespace MoonThief
 
         /// <summary>Damage + feedback for one foe: tint flash, shake, the floating number.
         /// A weakness hit earns its own banner above the number so the table is learnable.</summary>
-        void HitFoe(Fighter target, int dmg, bool crit, bool weak = false)
+        void HitFoe(Fighter target, int dmg, bool crit, bool weak = false, Fighter striker = null)
         {
             var tRig = View.RigOf(target);
             if (tRig == null) return;
@@ -2337,6 +2374,20 @@ namespace MoonThief
             {
                 View.FloatNumber(tRig.Home + new Vector3(0f, 1.2f, 0f),
                     Strings.Get(fam == "ghost" ? "bt.phased" : "bt.miss"), new Color(0.8f, 0.85f, 0.95f));
+                Sfx.Play("whoosh");
+                return;
+            }
+            // a pudding that kept a swordsman's edge answers steel with steel: now and
+            // then the whole blow is turned aside and nicked back
+            if (fam == "slimesword" && striker != null && striker.Alive
+                && UnityEngine.Random.value < 0.22f)
+            {
+                striker.Hp = Mathf.Max(1, striker.Hp - 2);   // a graze, never a kill
+                var sRig2 = View.RigOf(striker);
+                if (sRig2 != null) View.FloatNumber(sRig2.Home + new Vector3(0f, 1.6f, 0f),
+                    "-2", new Color(0.85f, 0.9f, 1f));
+                View.FloatNumber(tRig.Home + new Vector3(0f, 1.2f, 0f),
+                    Strings.Get("bt.parried"), new Color(0.85f, 0.9f, 1f));
                 Sfx.Play("whoosh");
                 return;
             }
@@ -2408,6 +2459,28 @@ namespace MoonThief
             if (sRig != null)
                 View.FloatNumber(sRig.Home + new Vector3(0f, 1.75f, 0f),
                     Strings.Get("bt.poisoned"), new Color(0.55f, 1f, 0.5f));
+        }
+
+        /// <summary>Feeding time for the grave-born: every graverot left standing swells
+        /// a little when anything falls - friend, foe, or its own kin.</summary>
+        void OnFighterDown(Fighter fallen)
+        {
+            if (fallen.Alive) return;
+            FeedZombis(View.Enemies);
+            FeedZombis(View.Party);
+        }
+
+        void FeedZombis(System.Collections.Generic.IEnumerable<Fighter> side)
+        {
+            foreach (var z in side)
+            {
+                if (!z.Alive || FamOf(z) != "zombi") continue;
+                z.Hp = Mathf.Min(z.MaxHp, z.Hp + 5);
+                var zr = View.RigOf(z);
+                if (zr != null)
+                    View.FloatNumber(zr.Home + new Vector3(0f, 1.9f, 0f),
+                        Strings.Get("bt.fed"), new Color(0.6f, 1f, 0.55f));
+            }
         }
 
         /// <summary>What a fighter is worth at the moment it falls: gatekeepers pay four
