@@ -719,6 +719,11 @@ namespace MoonThief
         static readonly Queue<string> _pending = new Queue<string>();
         static bool _loaded;
 
+        /// <summary>Medals won in the current telling - reset at every fresh run and every
+        /// retelling, so the dawn card can name what this one earned without counting the
+        /// medals it hangs on the wall itself.</summary>
+        public static int EarnedThisRun;
+
         public static int Count { get { Load(); return _set.Count; } }
         public static bool Has(string id) { Load(); return _set.Contains(id); }
 
@@ -729,6 +734,7 @@ namespace MoonThief
             Load();
             if (!_set.Add(id)) return false;
             _pending.Enqueue(id);
+            EarnedThisRun++;
             PlayerPrefs.SetString("mt.medals", JoinedSet());
             PlayerPrefs.Save();
             return true;

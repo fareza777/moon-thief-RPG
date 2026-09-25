@@ -1344,7 +1344,7 @@ namespace MoonThief
             // its neighbours stayed at 2, and the row it labels is already called JOURNAL
             var vals = new string[]
             {
-                "", Quests.DoneCount + "/" + Quests.All.Length, "", "", "",
+                "", Quests.DoneCount + "/" + Quests.All.Length + (QuestReady() ? " *" : ""), "", "", "",
             };
             float rowsTop = LayoutCard(_pausePanel, 16.4f, 5, true);
             _pauseTitle.transform.localPosition = new Vector3(0f, _cardTop - 2.15f, 0f);
@@ -1682,7 +1682,7 @@ namespace MoonThief
                         vals.Add(q.Kind == QuestKind.Talk || step != 1 ? Quests.StateWord(step)
                             : Strings.Get("jr.prog", Mathf.Min(Quests.Progress(q), Quests.EffectiveNeed(q)),
                                 Quests.EffectiveNeed(q)));
-                        icons.Add(step == 3 ? 26 : 20);
+                        icons.Add(step == 3 ? 26 : step == 2 ? 25 : 20);
                         var quest = q;
                         acts.Add(() => ShowToast(Quests.Line(quest), 4.2f));
                     }

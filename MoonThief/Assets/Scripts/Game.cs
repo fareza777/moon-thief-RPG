@@ -892,6 +892,7 @@ namespace MoonThief
         void BeginRun()
         {
             State.NewRun();
+            Medals.EarnedThisRun = 0;
 
             _hintTalk = true;
             _hintChest = true;
@@ -1983,6 +1984,9 @@ namespace MoonThief
             DoTransition(() =>
             {
                 _ending = true;
+                // the ledger is snapped before the dawn hangs its own medals on the wall -
+                // ENDER and NG+ belong to the retelling's count, not this one's farewell
+                int runMedals = Medals.EarnedThisRun;
                 Medals.Grant("ender");
                 Phase = St.End;
                 SetCamY(0f);
@@ -2021,6 +2025,8 @@ namespace MoonThief
                     : Strings.Get("end.stats", State.Level, company,
                         company == 1 ? "FRIEND" : "FRIENDS", State.Gold,
                         State.Defeats, State.Defeats == 1 ? "BEAST" : "BEASTS"))
+                    + (runMedals > 0 ? "\n" + Strings.Get("end.medals", runMedals,
+                        runMedals == 1 ? "MEDAL" : "MEDALS") : "")
                     + "\n" + Strings.Get("end.again"));
                 // the ledger lives between poem and hint: a fixed y only held for the
                 // shortest telling, so anchor it under the poem's measured bottom and
@@ -2036,6 +2042,7 @@ namespace MoonThief
                 // its errands unwritten - every retelling of the night bites deeper
                 State.NgPlus++;
                 Medals.Grant("ngp");
+                Medals.EarnedThisRun = 0;   // the retelling keeps its own ledger
                 State.Chapter = 1; State.MoonShards = 0;
                 State.ChestsOpened = 0; State.ChestsDone.Clear();
                 State.Zones.Clear(); State.CurZone = "village"; State.ObjZone = null;
