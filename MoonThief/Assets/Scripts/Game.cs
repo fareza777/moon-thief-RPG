@@ -2070,14 +2070,14 @@ namespace MoonThief
                     var statText = _endStats.Text;
                     while (true)
                     {
-                        float aboveHint = hintTop + _endStats.MeasureHeight(statText) + 1.2f;
-                        if (poemBottom - 0.5f >= aboveHint || !statText.Contains("\n")) break;
+                        float aboveHint = hintTop + _endStats.MeasureHeight(statText) + 0.7f;
+                        if (poemBottom - 0.3f >= aboveHint || !statText.Contains("\n")) break;
                         statText = statText.Substring(0, statText.LastIndexOf('\n'));
                     }
                     if (statText != _endStats.Text) _endStats.Set(statText);
-                    float above = hintTop + _endStats.MeasureHeight(statText) + 1.2f;
+                    float above = hintTop + _endStats.MeasureHeight(statText) + 0.7f;
                     _endStats.transform.localPosition =
-                        new Vector3(0f, Fx.Snap(Mathf.Max(above, poemBottom - 0.5f)), 0f);
+                        new Vector3(0f, Fx.Snap(Mathf.Max(above, poemBottom - 0.3f)), 0f);
                 }
                 // the company walks home on the screen's edge: up to three friends stand
                 // as small silhouettes on the horizon line under the tap hint. Cleared
