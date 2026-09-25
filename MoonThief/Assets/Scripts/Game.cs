@@ -1749,6 +1749,8 @@ namespace MoonThief
                 {
                     var ms = World.SpringMimic(chestAt);
                     Sfx.Play("enemy");
+                    StartCoroutine(Fx.Shake(World.transform, 0.2f, 0.3f));   // the lid lunges
+                    Fx.Buzz();
                     StartBattle(new[] { ms }, false, false, true);
                     return;
                 }
