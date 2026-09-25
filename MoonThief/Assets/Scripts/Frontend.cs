@@ -1571,7 +1571,7 @@ namespace MoonThief
                         // case reads as a trophy wall, not a checklist of failures
                         icons.Add(got ? md.Icon : 27);
                         var m = md; var g = got;
-                        acts.Add(() => ShowToast(Strings.Get(g ? "md." + m.Id + ".d" : "md.hint"), 4f));
+                        acts.Add(() => ShowToast(Strings.Get(g ? "md." + m.Id + ".d" : "md." + m.Id + ".h"), 4f));
                     }
                     break;
 

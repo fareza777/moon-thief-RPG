@@ -809,3 +809,19 @@ md.fleet|OPEN HAND
 md.fleet.d|You wished a friend back to the wild. That is its own mercy.
 md.warden|VILLAGE WARDEN
 md.warden.d|Every errand in Quiet Hollow finished. Nobody waited on you.
+
+# locked medals keep their name but tell you the feat to chase
+md.friend.h|Unearned: a wild beast has not yet said yes.
+md.army.h|Unearned: two tamed hearts on one road.
+md.moonlit.h|Unearned: the silver beasts hide among the herd.
+md.luck.h|Unearned: try BEFRIEND on a silver beast - if you dare.
+md.hoard.h|Unearned: chests sparkle along the road - open ten.
+md.rich.h|Unearned: sell Marn your surplus - hold three hundred.
+md.boss1.h|Unearned: the night one's keeper crouches on the north road.
+md.boss2.h|Unearned: the second night walls its keeper behind a squire.
+md.boss3.h|Unearned: the pale guard waits at the last shard.
+md.keeper.h|Unearned: three keepers, one telling.
+md.ender.h|Unearned: walk the moon home.
+md.ngp.h|Unearned: when the credits end, the night offers a retelling.
+md.fleet.h|Unearned: a friend can be wished back to the wild, from its page.
+md.warden.h|Unearned: the villagers' errand list, emptied.
