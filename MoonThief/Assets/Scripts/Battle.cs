@@ -158,7 +158,9 @@ namespace MoonThief
             _autoChip = Sliced("bauto", TexArt.Panel(), 55);
             Box(_autoChip, Right - 4.5f, Top - 2.28f, 3.6f, 1.5f, new Color(1f, 1f, 1f, 0.5f));
             _autoLabel = Label("bautoLabel", 1, new Color(0.8f, 0.83f, 1f), TextAlign.Center, 56);
-            _autoLabel.transform.localPosition = new Vector3(Right - 2.7f, Top - 2.13f, 0f);
+            // clear of the moon icon: at Right-2.7 the label's top-right letter bled under
+            // the icon's bottom-left rim and the O read as an 8
+            _autoLabel.transform.localPosition = new Vector3(Right - 3.3f, Top - 2.13f, 0f);
             _autoLabel.Set("AUTO");
 
             _menuPanel = Sliced("bmenu", TexArt.Panel(), 54);

@@ -905,7 +905,7 @@ namespace MoonThief
             _cristalAnim.Play(frames, 6f, true);
         }
 
-        class EventSpot { public string Id; public SpriteRenderer Sr; }
+        class EventSpot { public string Id; public SpriteRenderer Sr, Sr2; }
         readonly List<EventSpot> _eventSpots = new List<EventSpot>();
         float _evTick;
 
@@ -918,13 +918,23 @@ namespace MoonThief
             foreach (var ev in Quests.Events)
             {
                 if (ev.Chapter > MapChapter || Quests.FiredAlready(ev.Id)) continue;
+                // halo + a bright hovering spark: the halo alone peaked at ~0.3 alpha and
+                // vanished under canopy - the cue is meant to be seen from across the map
+                var halo = ev.Tragic ? new Color(0.62f, 0.76f, 1f, 0.42f)
+                    : new Color(1f, 0.84f, 0.42f, 0.48f);
+                var spark = ev.Tragic ? new Color(0.82f, 0.88f, 1f, 0.7f)
+                    : new Color(1f, 0.95f, 0.62f, 0.75f);
                 var g = SpriteRendererUtil.Make(_root, "evGlow" + ev.Id, TexArt.Glow(), 2006);
                 g.transform.localPosition = new Vector3(ev.Pos.x, ev.Pos.y + 0.15f, 0f);
-                g.transform.localScale = Vector3.one * 2.2f;
-                g.color = ev.Tragic ? new Color(0.62f, 0.76f, 1f, 0.42f)
-                    : new Color(1f, 0.84f, 0.42f, 0.48f);
-                _eventSpots.Add(new EventSpot { Id = ev.Id, Sr = g });
-                AddGlow(g, 0.3f);
+                g.transform.localScale = Vector3.one * 2.8f;
+                g.color = halo;
+                var c = SpriteRendererUtil.Make(_root, "evCore" + ev.Id, TexArt.Glow(), 2007);
+                c.transform.localPosition = new Vector3(ev.Pos.x, ev.Pos.y + 0.45f, 0f);
+                c.transform.localScale = Vector3.one * 0.85f;
+                c.color = spark;
+                _eventSpots.Add(new EventSpot { Id = ev.Id, Sr = g, Sr2 = c });
+                AddGlow(g, 0.5f);
+                AddGlow(c, 0.9f);
             }
         }
 
@@ -2516,6 +2526,7 @@ namespace MoonThief
                     foreach (var s in _eventSpots)
                         if (s.Sr != null && s.Sr.enabled && Quests.FiredAlready(s.Id))
                         {
+                            if (s.Sr2 != null) s.Sr2.enabled = false;
                             // a last bright sigh, then nothing - a poof would read as a
                             // pickup, and the event itself already paid out its toast
                             s.Sr.color = new Color(1f, 0.95f, 0.75f, 0.8f);
