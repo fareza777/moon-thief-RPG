@@ -574,7 +574,7 @@ namespace MoonThief
             Menus.OnOnboardDone = OnboardDone;
             Menus.OnShopClosed = ClosePause;
             Menus.OnStory = ReplayStory;
-            Menus.OnReleaseFriend = key => { if (World != null) World.ReleaseFriend(key); SaveRun(); };
+            Menus.OnReleaseFriend = key => { if (World != null) World.ReleaseFriend(key); Medals.Grant("fleet"); SaveRun(); };
             // the journal's world map reads the live overworld through these three hooks;
             // indoors they hand back nothing and the card falls back to its last picture
             Menus.GetMap = () => World != null && World.Map != null && !World.Map.Interior ? World.Map : null;
@@ -865,6 +865,28 @@ namespace MoonThief
             // while its owner was off screen (or sit on the hero's head after a walk).
             World.UiBlock = Menus != null ? Menus.ToastRect : new Rect(0f, 0f, 0f, 0f);
             World.RefreshNamePlates();
+        }
+
+        /// <summary>The medal case's pulse: any system can Grant() into the queue (battle,
+        /// chests, the ending); each frame drains one announcement into the toast lane so a
+        /// fight that earns three medals reads as three moments, not a stack. The count-led
+        /// medals (caches, coin, company, the full errand book) are judged here where the
+        /// numbers live.</summary>
+        void MedalTick()
+        {
+            string m;
+            while ((m = Medals.Dequeue()) != null)
+            {
+                Menus.ShowToast(Strings.Get("md.earn", Strings.Get("md." + m)), 4f);
+                Sfx.Play("questdone");
+            }
+            if (State.ChestsOpened >= 10) Medals.Grant("hoard");
+            if (State.Gold >= 300) Medals.Grant("rich");
+            if (State.Friends.Count >= 2) Medals.Grant("army");
+            if (Medals.Has("boss1") && Medals.Has("boss2") && Medals.Has("boss3")) Medals.Grant("keeper");
+            int sideLeft = 0;
+            foreach (var q in Quests.All) if (!q.Main && Quests.Step(q.Id) != 3) sideLeft++;
+            if (sideLeft == 0) Medals.Grant("warden");
         }
 
         void BeginRun()
@@ -1257,6 +1279,7 @@ namespace MoonThief
             // camera follows the hero on both axes, clamped to the map; the HUD layer follows too
             FollowHero();
             World.SetObjective(ObjectivePos());
+            MedalTick();
 
             // company banter: the people you walk with occasionally say what they see -
             // slow enough to stay flavor, never in a house and never while you are talking
@@ -1960,6 +1983,7 @@ namespace MoonThief
             DoTransition(() =>
             {
                 _ending = true;
+                Medals.Grant("ender");
                 Phase = St.End;
                 SetCamY(0f);
                 World.gameObject.SetActive(false);
@@ -2011,6 +2035,7 @@ namespace MoonThief
                 // company's strength kept, its beasts grown bolder, its caches shut again,
                 // its errands unwritten - every retelling of the night bites deeper
                 State.NgPlus++;
+                Medals.Grant("ngp");
                 State.Chapter = 1; State.MoonShards = 0;
                 State.ChestsOpened = 0; State.ChestsDone.Clear();
                 State.Zones.Clear(); State.CurZone = "village"; State.ObjZone = null;
@@ -2802,6 +2827,11 @@ namespace MoonThief
             Menus.EditorJournal(3);
             yield return new WaitForSecondsRealtime(0.5f);
             Shot("28f-bestiary");
+            // the medal case: mostly "?????" this early - the trophy wall needs checking
+            // for both its earned rows and its locked ones
+            Menus.EditorJournal(6);
+            yield return new WaitForSecondsRealtime(0.5f);
+            Shot("28g-medals");
             ClosePause();
 
             // the real run comes back before a single world leg touches it - the fake

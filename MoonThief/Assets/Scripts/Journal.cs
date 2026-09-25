@@ -688,4 +688,68 @@ namespace MoonThief
             }
         }
     }
+
+    /// <summary>The medal case: feats the night remembers across every telling. They are
+    /// meta-progress, not journal state - a medal stays won through NEW GAME+ and fresh
+    /// runs alike, kept in PlayerPrefs beside the settings rather than in the save slot.
+    /// Grants queue; Game's tick drains the queue and toasts each name, so any system can
+    /// award without touching UI code.</summary>
+    public static class Medals
+    {
+        public class Def { public string Id; public int Icon; }
+        public static readonly Def[] All =
+        {
+            new Def{ Id="friend",  Icon=1  },   // a wild heart said yes
+            new Def{ Id="army",    Icon=19 },   // two tamed beasts at once
+            new Def{ Id="moonlit", Icon=21 },   // a moonlit beast felled
+            new Def{ Id="luck",    Icon=24 },   // a moonlit beast befriended
+            new Def{ Id="hoard",   Icon=17 },   // ten night chests opened
+            new Def{ Id="rich",    Icon=28 },   // 300 gold held at once
+            new Def{ Id="boss1",   Icon=0  },   // the dusk stalker felled
+            new Def{ Id="boss2",   Icon=18 },   // the night thane felled
+            new Def{ Id="boss3",   Icon=31 },   // the pale guard felled
+            new Def{ Id="keeper",  Icon=26 },   // all three keepers down in one tale
+            new Def{ Id="ender",   Icon=29 },   // the moon hung back up
+            new Def{ Id="ngp",     Icon=30 },   // the tale retold (NEW GAME+)
+            new Def{ Id="fleet",   Icon=32 },   // a friend wished back to the wild
+            new Def{ Id="warden",  Icon=20 },   // every villager errand finished
+        };
+
+        static readonly HashSet<string> _set = new HashSet<string>();
+        static readonly Queue<string> _pending = new Queue<string>();
+        static bool _loaded;
+
+        public static int Count { get { Load(); return _set.Count; } }
+        public static bool Has(string id) { Load(); return _set.Contains(id); }
+
+        /// <summary>Earns the medal once, ever. Returns true the first time so callers can
+        /// note fresh wins; every later call is a no-op.</summary>
+        public static bool Grant(string id)
+        {
+            Load();
+            if (!_set.Add(id)) return false;
+            _pending.Enqueue(id);
+            PlayerPrefs.SetString("mt.medals", JoinedSet());
+            PlayerPrefs.Save();
+            return true;
+        }
+
+        /// <summary>The next medal waiting to be announced, or null.</summary>
+        public static string Dequeue() => _pending.Count > 0 ? _pending.Dequeue() : null;
+
+        static string JoinedSet()
+        {
+            var s = "";
+            foreach (var m in _set) s += (s.Length == 0 ? "" : ",") + m;
+            return s;
+        }
+
+        static void Load()
+        {
+            if (_loaded) return;
+            _loaded = true;
+            foreach (var s in PlayerPrefs.GetString("mt.medals", "").Split(','))
+                if (s.Length > 0) _set.Add(s);
+        }
+    }
 }

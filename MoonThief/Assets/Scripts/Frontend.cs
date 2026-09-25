@@ -171,7 +171,7 @@ namespace MoonThief
 
         /// <summary>Everything the pause card can open. One enum keeps the hub, the back stack
         /// and the self-test in agreement about what is on screen.</summary>
-        public enum Page2 { Character, Items, Equipment, Bestiary, Quests, Map }
+        public enum Page2 { Character, Items, Equipment, Bestiary, Quests, Map, Medals }
 
         public float HalfH = 16f;
 
@@ -1346,7 +1346,7 @@ namespace MoonThief
             _t = 0f;
             _jrRoot.gameObject.SetActive(true);
             SlideIn(_jrRoot);
-            float rowsTop = LayoutCard(_jrPanel, 16.4f, 7, true);
+            float rowsTop = LayoutCard(_jrPanel, 16.4f, 8, true);
             _jrTitle.transform.localPosition = new Vector3(0f, _cardTop - 1.9f, 0f);
             _jrSub.transform.localPosition = new Vector3(0f, _cardTop - 3.5f, 0f);
             _jrSub.Set(Strings.Get("jr.sub", Game.State.Level, Game.State.Gold));
@@ -1354,13 +1354,14 @@ namespace MoonThief
             {
                 Strings.Get("jr.character"), Strings.Get("jr.items"), Strings.Get("jr.equip"),
                 Strings.Get("jr.bestiary"), Strings.Get("jr.quests"), Strings.Get("jr.map"),
-                Strings.Get("menu.back"),
+                Strings.Get("jr.medals"), Strings.Get("menu.back"),
             };
             var acts = new Action[]
             {
                 () => ShowPage(Page2.Character), () => ShowPage(Page2.Items),
                 () => ShowPage(Page2.Equipment), () => ShowPage(Page2.Bestiary),
-                () => ShowPage(Page2.Quests), () => ShowPage(Page2.Map), () => ShowPause(),
+                () => ShowPage(Page2.Quests), () => ShowPage(Page2.Map),
+                () => ShowPage(Page2.Medals), () => ShowPause(),
             };
             // the value column is a column of counts and short states, matching the shape of the
             // rows: a worn blade's name ("KITCHEN KNIFE") forced both cells down a size and the
@@ -1370,9 +1371,10 @@ namespace MoonThief
                 "L" + Game.State.Level, Game.State.Bag.Count.ToString(), WornCount() + "/3",
                 Game.State.Seen.Count + "/" + (BattleData.Bestiary.Length + 1),
                 Quests.DoneCount + "/" + Quests.All.Length,
-                Strings.Get("zone.short." + Game.State.CurZone), "",
+                Strings.Get("zone.short." + Game.State.CurZone),
+                Medals.Count + "/" + Medals.All.Length, "",
             };
-            float bottom = LayRows(_jrRows, labels, acts, vals, rowsTop, 7, new[] { 16, 17, 18, 19, 20, 24, 14 });
+            float bottom = LayRows(_jrRows, labels, acts, vals, rowsTop, 8, new[] { 16, 17, 18, 19, 20, 24, 21, 14 });
             _jrFoot.transform.localPosition = new Vector3(0f, FootY(bottom), 0f);
             _jrFoot.Set(Strings.Get("jr.hint"));
             Select(0);
@@ -1543,6 +1545,24 @@ namespace MoonThief
                         ? TexArt.MapMonster(BattleData.Boss.MapSheet, 1) : null);
                     break;
 
+                case Page2.Medals:
+                    title = "jr.medals";
+                    foot = "jr.medals.tip";
+                    sub = Strings.Get("jr.medals.sub", Medals.Count, Medals.All.Length);
+                    icons = new List<int>();
+                    foreach (var md in Medals.All)
+                    {
+                        bool got = Medals.Has(md.Id);
+                        labels.Add(got ? Strings.Get("md." + md.Id) : Strings.Get("md.locked"));
+                        vals.Add(got ? Strings.Get("jr.done") : "");
+                        // won medals wear their own mark; the un-won wear the cross so the
+                        // case reads as a trophy wall, not a checklist of failures
+                        icons.Add(got ? md.Icon : 27);
+                        var m = md; var g = got;
+                        acts.Add(() => ShowToast(Strings.Get(g ? "md." + m.Id + ".d" : "md.hint"), 4f));
+                    }
+                    break;
+
                 default:
                     title = "jr.quests";
                     sub = Strings.Get("jr.quests.sub", Quests.MainLeft, Quests.SideActive);
@@ -1593,7 +1613,7 @@ namespace MoonThief
         {
             if (page < 0) { HideAll(); ShowJournal(); return; }
             HideAll();
-            ShowPage((Page2)Mathf.Clamp(page, 0, 5));
+            ShowPage((Page2)Mathf.Clamp(page, 0, 6));
         }
 
         // ---------------------------------------------------------------- world map card

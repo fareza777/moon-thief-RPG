@@ -2703,6 +2703,8 @@ namespace MoonThief
                 _befriended++;
                 Game.State.Befriended++;
                 Game.State.Friends.Add(target.Rare ? "moon." + target.Species : target.Species);
+                Medals.Grant("friend");
+                if (target.Rare) Medals.Grant("luck");
                 View.Sparkle(tRig.Home + new Vector3(0f, tRig.BodyHeight * 0.5f, 0f), new Color(1f, 0.95f, 0.6f), 14);
                 Sfx.Play("befriend");
                 View.SetMessage(Strings.Get(target.Rare ? "bt.befriended.rare" : "bt.befriended", target.Name));
@@ -2857,6 +2859,7 @@ namespace MoonThief
                 xp += XpOf(e);
                 gold += UnityEngine.Random.Range(18, 40) * (e.Boss ? 3 : 1);
                 Game.State.Defeats++;   // one step for the nightwatch
+                if (e.Rare) Medals.Grant("moonlit");
             }
             // the bestiary is keyed by the species, not its printed name
             foreach (var s in _specs) Game.State.MarkSeen(s.Name);
@@ -2921,6 +2924,7 @@ namespace MoonThief
             {
                 // each night's keeper falls to its own card
                 int ch = Mathf.Clamp(Game.State.Chapter, 1, 3);
+                Medals.Grant("boss" + ch);
                 lines.Add(Strings.Get("card.bossline." + ch));
                 View.ShowCard(Strings.Get("card.bosstitle." + ch), lines.ToArray(),
                     new[] { Strings.Get("btn.continue") },

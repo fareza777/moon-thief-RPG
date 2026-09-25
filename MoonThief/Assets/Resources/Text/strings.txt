@@ -773,3 +773,39 @@ end.stats.lone|LEVEL {0}    {1} GOLD\n{2} {3} FACED THE NIGHT
 end.text|The shards rise\nfrom your hands and\nclimb the sky.\n\nThe moon takes\nits old place over\nthe fields.\nYour new friends\nwalk home beside\nyou.\n\nThe village wakes\nto its first gold\nmorning.
 end.text.one|The shards rise\nfrom your hands and\nclimb the sky.\n\nThe moon takes\nits old place over\nthe fields.\nYour new friend\nwalks home beside\nyou.\n\nThe village wakes\nto its first gold\nmorning.
 end.text.lone|The shards rise\nfrom your hands and\nclimb the sky.\n\nThe moon takes\nits old place over\nthe fields.\nYou walk home\nunder its watch.\n\nThe village wakes\nto its first gold\nmorning.
+
+# ---- the medal case: feats the night remembers across every telling
+jr.medals|MEDALS
+jr.medals.sub|{0} OF {1} EARNED
+jr.medals.tip|TAP A MEDAL TO READ IT - THEY STAY WON FOREVER
+md.locked|??????
+md.hint|A feat the night has not seen yet. Keep walking.
+md.earn|MEDAL EARNED: {0}
+md.friend|FIRST HEART
+md.friend.d|A wild beast chose your hand over the dark.
+md.army|TWO DEEP
+md.army.d|Two tamed hearts walk your road at once.
+md.moonlit|SILVER SLAYER
+md.moonlit.d|You felled a moonlit beast - the silver ones fight hardest.
+md.luck|SILVER SOUL
+md.luck.d|A moonlit beast said yes to you. That almost never happens.
+md.hoard|CACHE KEEPER
+md.hoard.d|Ten night chests opened. The road knows you now.
+md.rich|DEEP POCKETS
+md.rich.d|Three hundred gold held at once - Marn sends her regards.
+md.boss1|DUSK BREAKER
+md.boss1.d|The dusk stalker crouched on the road. It does not crouch now.
+md.boss2|THANE BREAKER
+md.boss2.d|The night thane held the wall. The wall holds nothing now.
+md.boss3|PALE BREAKER
+md.boss3.d|The pale guard wore the last shard. You took it back.
+md.keeper|NIGHT'S END
+md.keeper.d|All three keepers felled inside one telling of the night.
+md.ender|MOON HANGER
+md.ender.d|The moon hangs back where it belongs. You put it there.
+md.ngp|TALE RETOLD
+md.ngp.d|The night began again - harder - and you walked back in.
+md.fleet|OPEN HAND
+md.fleet.d|You wished a friend back to the wild. That is its own mercy.
+md.warden|VILLAGE WARDEN
+md.warden.d|Every errand in Quiet Hollow finished. Nobody waited on you.
