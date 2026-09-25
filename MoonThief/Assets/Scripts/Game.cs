@@ -361,6 +361,7 @@ namespace MoonThief
         bool _hintTalk = true, _hintChest = true, _hintSneak = true;
         int _aggroWas;          // hunters with the scent last frame - the rising edge speaks
         float _aggroBarkT;      // the company's nerves take a breath between warnings
+        float _sneakDuck = 1f;  // the band's volume while the thief holds his breath
         float _hintT;                                            // countdown for the deferred chapter toast
         string _hintKey;
         float _barkT = 30f;                                      // companion banter: first quip half a minute in
@@ -1413,6 +1414,10 @@ namespace MoonThief
             // a gentle push already walks softly - the view reads either one the same way
             World.SneakHeld = EditorSneak || Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
             World.DriveHero(move, Time.deltaTime);
+            // the world goes quiet when the thief does: a held breath hushes the band
+            // to a whisper, then lets it swell back as the gait opens up again
+            _sneakDuck = Mathf.MoveTowards(_sneakDuck, World.Sneaking ? 0.7f : 1f, Time.deltaTime * 2.2f);
+            Sfx.Mus.Duck = _sneakDuck;
             UpdateJoyVisual(true);
             PollWorldTap();
 
