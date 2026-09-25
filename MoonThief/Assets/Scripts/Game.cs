@@ -2701,6 +2701,12 @@ namespace MoonThief
             if (_inHouse) LeaveHouse();
             yield return new WaitForSeconds(0.6f);
 
+            // the menu pages fake a rich run so their shots have something to show -
+            // EditorJournal's NewRun() alone would poison every later leg (it leaves
+            // chapter 2, chestsOpened 5, quests re-seeded). Keep the real run: capture
+            // now, apply after the last page, resync the world to it.
+            var stash = State.Capture(World.HeroPos.x, World.HeroPos.y, _bossDown);
+
             // Marn's stall: open the shop card for real, buy one thing, leave
             State.Gold = 40;
             OpenShop();
@@ -2762,6 +2768,12 @@ namespace MoonThief
             yield return new WaitForSecondsRealtime(0.5f);
             Shot("28f-bestiary");
             ClosePause();
+
+            // the real run comes back before a single world leg touches it - the fake
+            // journal state was only ever meant for the frames above
+            State.Apply(stash);
+            if (World != null && World.Ready) World.ResetForChapter();
+            RefreshHud();
 
             // the company forms before the hunt, the same way a player forms it: find the
             // wanderer, take the talk, and let the talk's close run the join. After this the
