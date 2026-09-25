@@ -527,7 +527,7 @@ namespace MoonThief
             }
         }
 
-        public static bool ReadyToHand(QuestDef q) => q != null && Step(q.Id) == 1 && Progress(q) >= q.Need;
+        public static bool ReadyToHand(QuestDef q) => q != null && Step(q.Id) == 1 && Progress(q) >= EffectiveNeed(q);
 
         /// <summary>Hands the quest in: gold, the gift item, and the step moves to done.</summary>
         public static void Complete(QuestDef q)
@@ -595,10 +595,21 @@ namespace MoonThief
             }
         }
 
+        /// <summary>How much the errand can still ask. A zones errand counts only ground
+        /// that still exists to find - three named lands and six hearths make nine, so a
+        /// walker who found every one before asking has already done the deed whole.
+        /// Without the cap the rhyme quest could never be handed in.</summary>
+        static int EffectiveNeed(QuestDef q)
+        {
+            if (q == null || q.Kind != QuestKind.Zones) return q != null ? q.Need : 0;
+            int b = Base.TryGetValue(q.Id, out var v) ? v : 0;
+            return Mathf.Min(q.Need, Mathf.Max(0, 9 - b));
+        }
+
         /// <summary>The line the quest log shows for a quest.</summary>
         public static string Line(QuestDef q)
         {
-            int left = Mathf.Max(0, q.Need - Progress(q));
+            int left = Mathf.Max(0, EffectiveNeed(q) - Progress(q));
             return Strings.Get(q.StepKey, left);
         }
 
