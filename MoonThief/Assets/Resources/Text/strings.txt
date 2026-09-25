@@ -438,7 +438,7 @@ jr.atk|ATK
 jr.hp|HP
 jr.cure|CURE
 jr.wake|WAKE
-jr.mom|MOM
+jr.mom|FLOW
 jr.maxhp|MAX HP
 jr.all|ALL
 jr.key|KEEPSAKE

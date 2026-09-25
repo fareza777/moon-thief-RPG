@@ -267,7 +267,7 @@ namespace MoonThief
                     // every dish has a second comfort - say so where it is bought and bagged
                     if (d.Key == "item.honey" || d.Key == "item.starlight") fx += "+" + Strings.Get("jr.cure");
                     else if (d.Key == "item.tea" || d.Key == "item.mead") fx += "+" + Strings.Get("jr.wake");
-                    else if (d.Key == "item.soup" || d.Key == "item.feast") fx += "+" + Strings.Get("jr.mom");
+                    else if (SoupKeys.Contains(d.Key)) fx += "+" + Strings.Get("jr.mom");
                     return fx;
                 case ItemKind.Blade: return "+" + d.Power + " " + Strings.Get("jr.atk");
                 case ItemKind.Cloth: return "+" + d.Power + " " + Strings.Get("jr.maxhp");
@@ -275,6 +275,14 @@ namespace MoonThief
                 default: return Strings.Get("jr.key");
             }
         }
+
+        /// <summary>The dishes that warm the party into momentum: every soup and feast across
+        /// the catalog carries the same kitchen-table bonus, so the tag and the morsel effect
+        /// both key off this one list.</summary>
+        public static readonly HashSet<string> SoupKeys = new HashSet<string>
+        {
+            "item.soup", "item.feast", "item.dawnsoup", "item.nightfeast",
+        };
 
         /// <summary>What a sealed cache holds. Chests are the night's promised find, so they
         /// draw from a wider shelf than a stray kill: roughly half gear, half fare, and the

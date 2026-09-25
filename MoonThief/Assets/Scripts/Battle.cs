@@ -2580,6 +2580,7 @@ namespace MoonThief
             switch (food)
             {
                 case "item.honey":
+                case "item.starlight":
                     foreach (var p in View.Party)
                     {
                         if (!p.Alive || p.Poison <= 0) continue;
@@ -2590,6 +2591,7 @@ namespace MoonThief
                     }
                     break;
                 case "item.tea":
+                case "item.mead":
                     foreach (var p in View.Party)
                     {
                         if (!p.Alive || !p.Dazed) continue;
@@ -2599,9 +2601,14 @@ namespace MoonThief
                             Strings.Get("bt.warmed"), new Color(1f, 0.85f, 0.6f));
                     }
                     break;
-                case "item.soup":
-                    _flow = Mathf.Min(9, _flow + 1);
-                    View.SetRound(_round, _flow);
+                default:
+                    // every bowl and feast steadies the table's momentum - the same kitchen
+                    // bonus the shop prints as +FLOW on the label
+                    if (Items.SoupKeys.Contains(food))
+                    {
+                        _flow = Mathf.Min(9, _flow + 1);
+                        View.SetRound(_round, _flow);
+                    }
                     break;
             }
             View.Refresh();
