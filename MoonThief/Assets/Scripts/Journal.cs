@@ -400,7 +400,6 @@ namespace MoonThief
         public int Chapter;         // earliest chapter it can happen in
         public int Gold;
         public string Gift;
-        public int Heal;
         public string Fight;        // monster name key to fight ("" = none)
         public bool Tragic;
     }
@@ -450,13 +449,13 @@ namespace MoonThief
             new WorldEvent{ Id="ev.toll", Chapter=1, Pos=new Vector2(45.5f, 20.5f), TextKey="ev.toll", Gold=6 },
             new WorldEvent{ Id="ev.laundry", Chapter=2, Pos=new Vector2(12.5f, 34.5f), TextKey="ev.laundry" },
             // odd
-            new WorldEvent{ Id="ev.rock", Chapter=1, Pos=new Vector2(37.5f, 40.5f), TextKey="ev.rock", Heal=8 },
+            new WorldEvent{ Id="ev.rock", Chapter=1, Pos=new Vector2(37.5f, 40.5f), TextKey="ev.rock" },
             new WorldEvent{ Id="ev.moth", Chapter=2, Pos=new Vector2(48.5f, 44.5f), TextKey="ev.moth", Gift="item.charm.moon" },
             new WorldEvent{ Id="ev.bell", Chapter=3, Pos=new Vector2(24.5f, 62.5f), TextKey="ev.bell", Fight="mon.wisp" },
             // sad
             new WorldEvent{ Id="ev.grave", Chapter=2, Pos=new Vector2(9.5f, 46.5f), TextKey="ev.grave", Tragic=true },
             new WorldEvent{ Id="ev.lantern", Chapter=3, Pos=new Vector2(36.5f, 74.5f), TextKey="ev.lantern", Tragic=true, Gold=15 },
-            new WorldEvent{ Id="ev.dog", Chapter=1, Pos=new Vector2(52.5f, 30.5f), TextKey="ev.dog", Tragic=true, Heal=6 },
+            new WorldEvent{ Id="ev.dog", Chapter=1, Pos=new Vector2(52.5f, 30.5f), TextKey="ev.dog", Tragic=true },
         };
 
         // step: 0 not seen, 1 active, 2 ready to hand in, 3 done
