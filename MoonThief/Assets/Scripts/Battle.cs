@@ -1941,6 +1941,7 @@ namespace MoonThief
                     StartCoroutine(Fx.Shake(View.Stage, 0.2f, 0.35f));
                 }
                 Sfx.Play("boss");
+                Fx.Buzz();   // the temper is felt, not just seen
                 yield return Fx.Wait(1.1f);
                 // the heat does not fade with the flash: the guard stays reddened until it falls
                 if (rig != null && rig.Anim != null)
@@ -2112,7 +2113,7 @@ namespace MoonThief
             StartCoroutine(Fx.Shake(tRig.Root, slam ? 0.22f : 0.14f, 0.25f));
             StartCoroutine(Fx.Slash(View.Stage, tRig.Home + new Vector3(0f, 0.85f, 0f),
                 new Color(1f, 0.55f, 0.45f, 0.85f), slam ? 1.4f : 1f));
-            if (slam) StartCoroutine(Fx.Shake(View.Stage, 0.15f, 0.2f));
+            if (slam) { StartCoroutine(Fx.Shake(View.Stage, 0.15f, 0.2f)); Fx.Buzz(); }
             if (target.ColorDir != null) View.HurtPulse();   // heroes bleed the frame edge
             if (slam && target.Alive && UnityEngine.Random.value < 0.15f)
             {
@@ -2174,6 +2175,7 @@ namespace MoonThief
                     OnFighterDown(target);
                     yield return FadeOut(tRig, true);
                     Sfx.Play("faint");
+                    if (target.Species == null) Fx.Buzz();   // a friend down is felt
                     View.SetMessage(Strings.Get(target.Species != null ? "bt.fainted" : "bt.herodown", target.Name));
                     yield return Fx.Wait(0.8f);
                 }
@@ -2221,6 +2223,7 @@ namespace MoonThief
                 OnFighterDown(f);
                 if (rig != null) yield return FadeOut(rig, true);
                 Sfx.Play("faint");
+                if (f.Species == null) Fx.Buzz();   // a friend down is felt
                 View.SetMessage(Strings.Get(f.Species != null ? "bt.fainted" : "bt.herodown", f.Name));
                 yield return Fx.Wait(0.7f);
             }
@@ -2632,6 +2635,7 @@ namespace MoonThief
                 Sfx.Play("enemy");
             }
             Sfx.Play(crit ? "crit" : "hit");
+            if (crit) Fx.Buzz();   // a crit is felt, not just heard
         }
 
         /// <summary>True when the acting friend's style cuts this foe's family seam.</summary>

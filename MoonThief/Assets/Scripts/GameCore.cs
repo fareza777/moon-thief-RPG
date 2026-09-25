@@ -340,6 +340,16 @@ namespace MoonThief
             while (t < seconds) { t += Time.deltaTime; yield return null; }
         }
 
+        /// <summary>A phone's buzz for the moments worth feeling: the crit that lands, the
+        /// friend that falls, the slam that shakes the arena. No-op everywhere a motor
+        /// isn't bolted in, so the call sites never need a platform check.</summary>
+        public static void Buzz()
+        {
+#if UNITY_ANDROID || UNITY_IOS
+            try { Handheld.Vibrate(); } catch { }
+#endif
+        }
+
         public static IEnumerator MoveLocal(Transform t, Vector3 to, float duration)
         {
             if (t == null) yield break;
