@@ -1525,6 +1525,9 @@ namespace MoonThief
         /// his feet (the flicker loop owns the alpha, so this feeds its amp instead).</summary>
         SpriteRenderer _heroGlow;
         int _heroGlowIdx;
+        // the thief muffles his own light when he creeps: the lantern pool thins to a
+        // glow-worm's worth while a held breath or soft stick keeps him hidden
+        float _sneakGlow = 1f;
 
         public void SetMoonFill(int shards, int needed)
         {
@@ -2806,14 +2809,20 @@ namespace MoonThief
                 }
             }
 
+            // the hero's pool thins while he hides - a fading thief with a full lantern
+            // under him would still read as a beacon to anything watching the field
+            _sneakGlow = Mathf.MoveTowards(_sneakGlow, Sneaking ? 0.38f : 1f, dt * 3.2f);
+
             // torch flicker: one curve, one peak per light
             for (int i = 0; i < _glows.Count; i++)
             {
                 var g = _glows[i];
                 if (g == null) continue;
                 float f = 0.84f + 0.11f * Mathf.Sin(_time * 7f + i * 2.1f) + 0.06f * Mathf.Sin(_time * 13.7f + i);
+                float amp = i < _glowAmp.Count ? _glowAmp[i] : 0.3f;
+                if (i == _heroGlowIdx) amp *= _sneakGlow;
                 var c = g.color;
-                c.a = Mathf.Clamp01(f * (i < _glowAmp.Count ? _glowAmp[i] : 0.3f));
+                c.a = Mathf.Clamp01(f * amp);
                 g.color = c;
             }
             if (_cristalGlow != null)
