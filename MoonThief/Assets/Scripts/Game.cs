@@ -1998,6 +1998,15 @@ namespace MoonThief
                         company == 1 ? "FRIEND" : "FRIENDS", State.Gold,
                         State.Defeats, State.Defeats == 1 ? "BEAST" : "BEASTS"))
                     + "\n" + Strings.Get("end.again"));
+                // the ledger lives between poem and hint: a fixed y only held for the
+                // shortest telling, so anchor it under the poem's measured bottom and
+                // above the tap hint's band (position = the block's top edge)
+                {
+                    float poemBottom = HalfH - 10f - _endLines.MeasureHeight(_endLines.Text);
+                    float aboveHint = -HalfH + 3.9f + _endStats.MeasureHeight(_endStats.Text) + 0.35f;
+                    _endStats.transform.localPosition =
+                        new Vector3(0f, Fx.Snap(Mathf.Min(poemBottom - 0.5f, aboveHint)), 0f);
+                }
                 // the tale ends but the night keeps you: CONTINUE walks it again with the
                 // company's strength kept, its beasts grown bolder, its caches shut again,
                 // its errands unwritten - every retelling of the night bites deeper
