@@ -2096,8 +2096,8 @@ namespace MoonThief
                         // the first light catches only their shape - not their faces;
                         // a moonlit one still shines a little silver out of the dark
                         fr.color = key.StartsWith("moon.")
-                            ? new Color(0.62f, 0.72f, 1f, 0.95f)
-                            : new Color(0.4f, 0.42f, 0.6f, 0.95f);
+                            ? new Color(0.72f, 0.82f, 1f, 0.95f)
+                            : new Color(0.52f, 0.55f, 0.75f, 0.95f);
                         shown++;
                     }
                 }
@@ -3334,7 +3334,7 @@ namespace MoonThief
                 }
                 // a companion for the horizon line: without this the ending shot only
                 // ever sees the lone telling
-                if (State.Friends.Count == 0) { State.Friends.Add("slime"); State.Friends.Add("moon.wisp"); }
+                if (State.Friends.Count == 0) { State.Friends.Add("mon.slime"); State.Friends.Add("moon.mon.wisp"); }
                 TriggerEnding();
                 _testNoDoors = false;
                 yield return new WaitForSeconds(1.0f);
