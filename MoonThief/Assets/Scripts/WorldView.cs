@@ -33,6 +33,8 @@ namespace MoonThief
             public SpriteRenderer Alert;   // "!" bubble shown while aggro-chasing
             public SpriteRenderer Rare;    // star a moonlit wild thing wears overhead
             public bool Asleep;            // some beasts doze: deaf to eyes, still hear steps
+            public bool Sleeps;            // born a dozer - settles back down after a scare
+            public float DozeT;            // countdown back to sleep once the coast is clear
             public SpriteRenderer SleepMark;  // "z" drifting off a sleeper
             public SpriteRenderer NameChip;   // the tag behind the name; hidden with the name
             public float FadeIn;        // respawn materialise: alpha ramps in over ~0.9s
@@ -1347,6 +1349,7 @@ namespace MoonThief
                 // about a fifth of the field dozes off - blind to everything but still
                 // within earshot, so a stomping thief wakes them into the chase anyway
                 a.Asleep = rng.Next(100) < 20;
+                a.Sleeps = a.Asleep;
                 a.Name = null;
                 a.Speed = spec.Speed * 0.55f;
                 a.HomeCell = new Vector2(x, y);
@@ -2802,7 +2805,21 @@ namespace MoonThief
                 }
                 else if (m.SleepMark != null) m.SleepMark.enabled = false;
 
-                if (m.Aggro && dh > (Sneaking ? 4.5f : 6.5f)) { m.Aggro = false; m.Speed = m.Spec.Speed * 0.55f; }
+                if (m.Aggro && dh > (Sneaking ? 4.5f : 6.5f))
+                {
+                    m.Aggro = false; m.Speed = m.Spec.Speed * 0.55f;
+                    // a dozer that chased a shadow counts the quiet seconds and drifts
+                    // back off - the field settles rather than staying spooked forever
+                    if (m.Sleeps) m.DozeT = 15f;
+                }
+
+                // the drift back to sleep: a born dozer that lost the trail counts its
+                // quiet seconds down and, once calm, curls up where it stands
+                if (!m.Aggro && !m.Asleep && m.Sleeps && m.DozeT > 0f)
+                {
+                    m.DozeT -= dt;
+                    if (m.DozeT <= 0f) m.Asleep = true;
+                }
 
                 if (m.Aggro)
                 {
