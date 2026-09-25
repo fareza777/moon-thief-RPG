@@ -1329,7 +1329,7 @@ namespace MoonThief
             _t = 0f;
             _pauseRoot.gameObject.SetActive(true);
             SlideIn(_pauseCard);
-            _pauseTitle.Set(title ?? Strings.Get("conf.title"));
+            SetCardTitle(_pauseTitle, title ?? Strings.Get("conf.title"), 14.6f);
             _pauseSub.Set(sub ?? Strings.Get("conf.sub"));
             var acts = new Action[] { () => yes?.Invoke(), () => { if (no != null) no(); else ShowMain(); } };
             float rowsTop = LayoutCard(_pausePanel, 16.4f, 2, true);
@@ -1349,7 +1349,7 @@ namespace MoonThief
             _t = 0f;
             _pauseRoot.gameObject.SetActive(true);
             SlideIn(_pauseCard);
-            _pauseTitle.Set(Strings.Get("pause.title"));
+            SetCardTitle(_pauseTitle, Strings.Get("pause.title"), 14.6f);
             // the footnote of the pause card is both its status line ("saved") and, before that,
             // the one hint a player needs at the moment they stop playing
             _pauseSub.Set(Strings.Get("pause.hint"));
@@ -2080,6 +2080,16 @@ namespace MoonThief
         /// <summary>Where a card's footnote goes: under the last row, inside the border. Every
         /// card that has one calls this with the value LayRows returned.</summary>
         static float FootY(float lastRowBottom) => lastRowBottom - 1.12f;
+
+        /// <summary>Card titles are built at the big size, but a question like
+        /// "LEAVE THE NIGHT?" is longer than "PAUSED" - if the big print would walk off the
+        /// card the heading steps down a size until it sits inside the border.</summary>
+        static void SetCardTitle(PixelLabel label, string text, float maxW)
+        {
+            label.Scale = PixelFont.Measure(text, 3).x <= maxW ? 3
+                : PixelFont.Measure(text, 2).x <= maxW ? 2 : 1;
+            label.Set(text);
+        }
 
         float LayRows(List<Row> rows, string[] labels, Action[] acts, string[] vals, float topY, int count, int[] icons = null, Sprite[] sprites = null)
         {
