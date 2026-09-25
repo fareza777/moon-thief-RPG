@@ -359,6 +359,8 @@ namespace MoonThief
         bool MetMira => Quests.Step("mq.1") == 3;
         readonly HashSet<string> _metNpcs = new HashSet<string>();
         bool _hintTalk = true, _hintChest = true, _hintSneak = true;
+        int _aggroWas;          // hunters with the scent last frame - the rising edge speaks
+        float _aggroBarkT;      // the company's nerves take a breath between warnings
         float _hintT;                                            // countdown for the deferred chapter toast
         string _hintKey;
         float _barkT = 30f;                                      // companion banter: first quip half a minute in
@@ -1548,6 +1550,18 @@ namespace MoonThief
                 StartBattle(BattleData.Roll(State.Chapter, new System.Random()));
                 return;
             }
+
+            // the company's nerves: a fresh set of eyes on the party earns one quip,
+            // then quiet again until the scent is lost and found anew
+            int ac = World.AggroCount;
+            if (ac > _aggroWas && _aggroBarkT <= 0f && !World.BannerUp)
+            {
+                _aggroBarkT = 14f;
+                if (State.Joined.Count > 0)
+                    Menus.ShowToast(Strings.Get("bark.spot." + Random.Range(0, 3)), 3.2f);
+            }
+            _aggroWas = ac;
+            _aggroBarkT -= Time.deltaTime;
 
             // first step into the hunting grounds: one nudge about the quiet gait,
             // then never again - the prowl earns its own medals from there

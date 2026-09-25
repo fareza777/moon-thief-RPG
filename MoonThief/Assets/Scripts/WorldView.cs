@@ -128,6 +128,18 @@ namespace MoonThief
 
         public bool Ready { get; private set; }
 
+        /// <summary>How many hunters currently have the scent - the frontend reads the
+        /// rising edge of this to give the company its nerves.</summary>
+        public int AggroCount
+        {
+            get
+            {
+                int n = 0;
+                foreach (var m in Monsters) if (m.Aggro) n++;
+                return n;
+            }
+        }
+
         // ---------------------------------------------------------------- build
 
         public void Build(GameMap map, Transform parent, float halfH)
