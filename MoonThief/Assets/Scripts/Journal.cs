@@ -77,7 +77,6 @@ namespace MoonThief
                 case "worm":            pool = new[] { "item.stew", "item.roast", "item.pudding", "item.chowder",
                                                        "item.wormhide", "item.rotberry" }; break;
                 case "ghost":           pool = new[] { "item.charm.thread", "item.charm.star", "item.nightsilk" }; break;
-                case "wisp":            pool = new[] { "item.charm.lantern", "item.charm.bell", "item.honey" }; break;
                 case "scorpion":        pool = new[] { "item.cider", "item.jam", "item.charm.feather" }; break;
                 case "skeleton":        pool = new[] { "item.charm.bead", "item.charm.coin", "item.bread" }; break;
                 case "skeletonwarrior": pool = new[] { "item.hauberk", "item.brigandine", "item.pike" }; break;
@@ -87,7 +86,7 @@ namespace MoonThief
                 case "slime":           pool = new[] { "item.jam", "item.berry", "item.plum", "item.crumb" }; break;
                 case "mushroom":        pool = new[] { "item.soup", "item.broth", "item.stew", "item.pudding" }; break;
                 case "wasp":            pool = new[] { "item.honey", "item.jam", "item.berry" }; break;
-                case "genius":          pool = new[] { "item.charm.lantern", "item.charm.wisp", "item.charm.bell" }; break;
+                case "genius":          pool = new[] { "item.charm.lantern", "item.charm.wisp", "item.charm.bell", "item.honey" }; break;
                 case "minotaur":        pool = new[] { "item.roast", "item.hauberk", "item.moonedge" }; break;
                 default: return null;
             }

@@ -1738,7 +1738,8 @@ namespace MoonThief
             }
             // a wisp keeps its lantern habit: its first turn each duel wraps a thin
             // ward around the frailest friend standing - one light, one drink
-            if (fFam == "wisp" && !f.WardGiven)
+            // (the family of "GeniusA" is "genius" - the wisp's own kind)
+            if (fFam == "genius" && !f.WardGiven)
             {
                 f.WardGiven = true;   // one gift of light per fight
                 Fighter frail = null;
