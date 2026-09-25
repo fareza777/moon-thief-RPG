@@ -121,7 +121,9 @@ namespace MoonThief
             // flow gets the HUD's spare second line instead of stretching the round counter:
             // "R1 FLOW x5" at scale 2 ran its tail into the AUTO chip
             _hudFlow = Label("hudFlow", 1, new Color(0.66f, 0.72f, 0.95f), TextAlign.Left, 50);
-            _hudFlow.transform.localPosition = new Vector3(Left + 6.3f, Top - 1.72f, 0f);
+            // midway between the scale-2 round glyphs (~Top-1.35) and the hint row
+            // (Top-2.13): the audit caught -1.72 shearing through both neighbours
+            _hudFlow.transform.localPosition = new Vector3(Left + 6.3f, Top - 1.56f, 0f);
 
             _moonIcon = SpriteRendererUtil.Make(Stage, "bmoon", Game.State.Chapter >= 3 ? TexArt.MoonFull() : TexArt.MoonEmpty(), 50);
             _moonIcon.transform.localPosition = new Vector3(Right - 0.9f, Top - 0.85f, 0f);
@@ -1567,9 +1569,15 @@ namespace MoonThief
             // moon is already lending its weight (FlowMul) - say so on the button
             int style = f.Style;
             bool moonlit = _flow >= 4;
-            View.Menu[0].Text.Set(Strings.Get(
+            string word = Strings.Get(
                 moonlit ? (style == 1 ? "menu.msweep" : style == 2 ? "menu.mmend" : "menu.mstrike")
-                        : (style == 1 ? "menu.sweep" : style == 2 ? "menu.mend" : "menu.strike")));
+                        : (style == 1 ? "menu.sweep" : style == 2 ? "menu.mend" : "menu.strike"));
+            View.Menu[0].Text.Set(word);
+            // a MOON- word outgrows the cell's text span (MOON STRIKE is ~8.1 units into a
+            // 6.25-unit slot and used to run into the neighbour's icon) - shrink the label's
+            // transform just enough to stay inside its own cell
+            float tw = PixelFont.Measure(word, View.Menu[0].Text.Scale).x;
+            View.Menu[0].Text.transform.localScale = Vector3.one * Mathf.Min(1f, 6.1f / Mathf.Max(0.1f, tw));
             View.Menu[0].Text.SetColor(moonlit ? new Color(0.72f, 0.82f, 1f) : Color.white);
             View.Menu[0].Icon.sprite = TexArt.MenuIcon(style == 1 ? 13 : style == 2 ? 29 : 0);
             // commands that cannot fire go grey: morsel needs bag food and a fresh
