@@ -1489,10 +1489,11 @@ namespace MoonThief
             }
         }
 
-        public void StartBattle(MonsterSpec[] specs) => StartBattle(specs, false, false);
-        public void StartBattle(MonsterSpec[] specs, bool ambush) => StartBattle(specs, ambush, false);
+        public void StartBattle(MonsterSpec[] specs) => StartBattle(specs, false, false, false);
+        public void StartBattle(MonsterSpec[] specs, bool ambush) => StartBattle(specs, ambush, false, false);
+        public void StartBattle(MonsterSpec[] specs, bool ambush, bool fromSleep) => StartBattle(specs, ambush, fromSleep, false);
 
-        public void StartBattle(MonsterSpec[] specs, bool ambush, bool fromSleep)
+        public void StartBattle(MonsterSpec[] specs, bool ambush, bool fromSleep, bool fromMimic)
         {
             // a stale invocation - a ghost card's TRY AGAIN, a queued callback landing after
             // the stage came down - must not build rigs on a dead view: every coroutine it
@@ -1543,7 +1544,8 @@ namespace MoonThief
             string introKey;
             // a dozing beast names its own entrance: roused from dreams, not merely
             // caught off guard - the same daze, a different telling
-            if (ambush) introKey = fromSleep ? "bt.sleep" : "bt.ambush";
+            if (fromMimic) introKey = "bt.mimic";
+            else if (ambush) introKey = fromSleep ? "bt.sleep" : "bt.ambush";
             else if (hasBoss) introKey = "bt.boss";
             else if (anyRare) introKey = "bt.moonlit";
             else if (specs.Length > 2) introKey = "bt.three";

@@ -1730,6 +1730,14 @@ namespace MoonThief
             }
             if (chestAt >= 0)
             {
+                // teeth before treasure: a box that's really a beast unfolds on the touch
+                if (World.ChestIsMimic(chestAt))
+                {
+                    var ms = World.SpringMimic(chestAt);
+                    Sfx.Play("enemy");
+                    StartBattle(new[] { ms }, false, false, true);
+                    return;
+                }
                 int shardsBefore = State.MoonShards;
                 World.OpenChest(chestAt);
                 Sfx.Play(State.MoonShards > shardsBefore ? "shard" : "chest");
@@ -2090,10 +2098,11 @@ namespace MoonThief
 
         // ------------------------------------------------------------ battles
 
-        public void StartBattle(MonsterSpec[] specs) => StartBattle(specs, false, false);
-        public void StartBattle(MonsterSpec[] specs, bool ambush) => StartBattle(specs, ambush, false);
+        public void StartBattle(MonsterSpec[] specs) => StartBattle(specs, false, false, false);
+        public void StartBattle(MonsterSpec[] specs, bool ambush) => StartBattle(specs, ambush, false, false);
+        public void StartBattle(MonsterSpec[] specs, bool ambush, bool fromSleep) => StartBattle(specs, ambush, fromSleep, false);
 
-        public void StartBattle(MonsterSpec[] specs, bool ambush, bool fromSleep)
+        public void StartBattle(MonsterSpec[] specs, bool ambush, bool fromSleep, bool fromMimic)
         {
             // a fight queued before the ending was called must not land after it: its
             // transition middle re-activates the stage over the dawn - caught on film by
@@ -2118,7 +2127,7 @@ namespace MoonThief
                 if (_hudZone != null) _hudZone.enabled = false;
                 SetHudQuestVisible(false);
                 BattleViewRef.gameObject.SetActive(true);
-                Director.StartBattle(specs, ambush, fromSleep);
+                Director.StartBattle(specs, ambush, fromSleep, fromMimic);
             }, 0.16f, 0.3f);
             bool boss = false;
             foreach (var s in specs) if (s.Boss) boss = true;

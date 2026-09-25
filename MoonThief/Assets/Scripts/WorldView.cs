@@ -107,6 +107,8 @@ namespace MoonThief
             public int Variant;          // which of the seven chest sheets this one is
             public bool Opened;
             public string LootKey;
+            public bool IsMimic;         // teeth, not treasure - the wild keeps chests too
+            public MonsterSpec? Mimic;   // what unfolds when the lid is touched
         }
 
         /// <summary>A felled monster's ticket home: the species, the tile it guarded, and when
@@ -975,7 +977,7 @@ namespace MoonThief
 
         void BuildChests()
         {
-            _chests = new ChestDef[Map.Chests.Count];
+            var defs = new List<ChestDef>(Map.Chests.Count + 3);
             for (int i = 0; i < Map.Chests.Count; i++)
             {
                 var c = Map.Chests[i];
@@ -1005,11 +1007,11 @@ namespace MoonThief
                 bool wasOpened = Map.Interior
                     ? Game.State.HasChestKey("h" + Map.HouseIndex + ":" + c.x + "," + c.y)
                     : Game.State.HasChest(MapChapter, c);
-                _chests[i] = new ChestDef
+                defs.Add(new ChestDef
                 {
                     Pos = pos, Cell = c, Sr = sr, Glow = glow, Anim = anim, Variant = variant,
                     Opened = wasOpened, LootKey = "loot.moonshard",
-                };
+                });
                 // a chest left open in an earlier visit still reads open - no halo, dark wood,
                 // lid up on frame 3 - so the field cannot be looted twice by walking out and in
                 if (wasOpened)
@@ -1019,6 +1021,57 @@ namespace MoonThief
                     sr.color = new Color(0.76f, 0.78f, 0.86f);
                 }
             }
+
+            // the wild keeps chests of its own: deep-field boxes that are teeth, not
+            // treasure. Their shimmer runs a shade colder than honest gold - close enough
+            // to tempt, different enough to warn a careful eye
+            if (!Map.Interior)
+            {
+                var mrng = new System.Random(909 + MapChapter * 31);
+                int want = MapChapter >= 2 ? 2 : 1;
+                string mimicName = MapChapter >= 3 ? "mon.zombi" : MapChapter == 2 ? "mon.thick" : "mon.imp";
+                MonsterSpec? mimicSpec = null;
+                foreach (var s in BattleData.Bestiary) if (s.Name == mimicName) mimicSpec = s;
+                for (int tries = 0; tries < 80 && want > 0; tries++)
+                {
+                    int band = want;   // the first mimic lurks the near field, the second deeper
+                    int yMin = band == 1 ? 30 : 58, yMax = band == 1 ? 55 : GameMap.H - 6;
+                    var mc = new Vector2Int(mrng.Next(5, GameMap.W - 5), mrng.Next(yMin, yMax));
+                    if (!Map.Walkable(mc)) continue;
+                    if (Vector2.Distance(mc, new Vector2(30, 6)) < 14f) continue;
+                    if (Game.State.HasChestKey("mimic:" + MapChapter + ":" + mc.x + "," + mc.y)) continue;
+                    var mpos = Map.CellCenter(mc);
+                    bool tooClose = false;
+                    foreach (var d in defs)
+                        if (Vector2.Distance(d.Pos, mpos) < 4f) { tooClose = true; break; }
+                    if (tooClose) continue;
+                    int mvar = 2 + (defs.Count % 6);
+                    var mframes = TexArt.ChestFrames(ChestSheet(mvar));
+                    var msr = SpriteRendererUtil.Make(_root, "chestM" + defs.Count,
+                        mframes.Length > 0 ? mframes[0] : null, WorldOrder(mc.y));
+                    msr.transform.localPosition = new Vector3(mpos.x, mpos.y - 0.5f, 0f);
+                    var manim = msr.gameObject.AddComponent<Anim>();
+                    manim.Setup(msr, false, 0f);
+                    manim.Play(new[] { mframes.Length > 0 ? mframes[0] : null }, 1f, true);
+                    var mglow = SpriteRendererUtil.Make(_root, "cglowM" + defs.Count, TexArt.Glow(), 2005);
+                    mglow.transform.localPosition = new Vector3(mpos.x, mpos.y - 0.15f, 0f);
+                    mglow.transform.localScale = Vector3.one * 3.4f;
+                    // a shimmer a shade colder than honest gold: the only warning it gives
+                    mglow.color = new Color(0.7f, 0.85f, 1f, 0.3f);
+                    AddGlow(mglow, 0.22f);
+                    var msh = SpriteRendererUtil.Make(_root, "cshM" + defs.Count, TexArt.Shadow(), 45);
+                    msh.transform.localPosition = new Vector3(mpos.x, mpos.y - 0.46f, 0f);
+                    msh.transform.localScale = new Vector3(0.8f, 0.66f, 1f);
+                    defs.Add(new ChestDef
+                    {
+                        Pos = mpos, Cell = mc, Sr = msr, Glow = mglow, Anim = manim,
+                        Variant = mvar, Opened = false, LootKey = null,
+                        IsMimic = true, Mimic = mimicSpec,
+                    });
+                    want--;
+                }
+            }
+            _chests = defs.ToArray();
         }
 
         static string ChestSheet(int variant) =>
@@ -1095,7 +1148,7 @@ namespace MoonThief
             var list = new List<Vector2>();
             if (_chests == null) return list;
             for (int i = 0; i < _chests.Length; i++)
-                if (!_chests[i].Opened) list.Add(_chests[i].Pos);
+                if (!_chests[i].Opened && !_chests[i].IsMimic) list.Add(_chests[i].Pos);
             return list;
         }
 
@@ -1106,7 +1159,8 @@ namespace MoonThief
             {
                 int n = 0;
                 if (_chests != null)
-                    for (int i = 0; i < _chests.Length; i++) if (!_chests[i].Opened) n++;
+                    for (int i = 0; i < _chests.Length; i++)
+                        if (!_chests[i].Opened && !_chests[i].IsMimic) n++;
                 return n;
             }
         }
@@ -1116,8 +1170,27 @@ namespace MoonThief
         /// real item, rolled from the chapter's pool - a chest used to hand out a flag and a
         /// number that nothing read. Inside a house nothing ever counts as a shard: the room cache
         /// is pocket money, so the night's four shards stay where the story put them.</summary>
+        /// <summary>True while the shut box at i is really a beast - it still answers
+        /// taps, because a trap you can see coming is no trap at all.</summary>
+        public bool ChestIsMimic(int i) => i >= 0 && i < _chests.Length && _chests[i].IsMimic && !_chests[i].Opened;
+
+        /// <summary>Springs the trap: the box is spent for good (its quiet key joins the
+        /// opened-chest list so a rebuild never re-seeds teeth where they already bit).
+        /// Returns the beast that was folded inside.</summary>
+        public MonsterSpec SpringMimic(int i)
+        {
+            var chest = _chests[i];
+            chest.Opened = true;
+            if (chest.Sr != null) chest.Sr.enabled = false;
+            if (chest.Glow != null) chest.Glow.enabled = false;
+            Game.State.MarkChestKey("mimic:" + MapChapter + ":" + chest.Cell.x + "," + chest.Cell.y);
+            _chests[i] = chest;
+            return chest.Mimic ?? BattleData.Bestiary[0];
+        }
+
         public void OpenChest(int i)
         {
+            if (_chests[i].IsMimic) return;   // teeth are sprung, not opened
             _chests[i].Opened = true;
             var chest = _chests[i];
             // every cache remembers it was spent - field chests by night and cell,
