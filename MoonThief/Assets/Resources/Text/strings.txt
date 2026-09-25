@@ -304,6 +304,14 @@ bark.sea.wood|SEA: The wood listens. Keep your knife loose.
 bark.moss.village|MOSS: Smell the smoke? The stoves still burn.
 bark.moss.fields|MOSS: I used to count stems out here.
 bark.moss.wood|MOSS: The old trees do not like us walking.
+bark.sea.idle.0|SEA: Stay close. The dark has eyes tonight.
+bark.sea.idle.1|SEA: I used to walk this road alone.
+bark.sea.idle.2|SEA: Hear that? Something moved off the path.
+bark.sea.idle.3|SEA: Your lantern is the only light for miles.
+bark.moss.idle.0|MOSS: The stems are still out here somewhere.
+bark.moss.idle.1|MOSS: Breathe slow. Fear draws them.
+bark.moss.idle.2|MOSS: I can mend cuts. I cannot mend fear.
+bark.moss.idle.3|MOSS: The moon would know what to do here.
 zone.short.village|HOLLOW
 zone.short.fields|FIELDS
 zone.short.wood|WOOD

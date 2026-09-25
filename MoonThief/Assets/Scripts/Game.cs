@@ -259,6 +259,9 @@ namespace MoonThief
         bool _hintTalk = true, _hintChest = true;
         float _hintT;                                            // countdown for the deferred chapter toast
         string _hintKey;
+        float _barkT = 30f;                                      // companion banter: first quip half a minute in
+        bool _barkSwap;
+        int _barkLine;
         PixelLabel _hudQuest;
         SpriteRenderer _hudQuestChip;
         Vector2? _resumePos;
@@ -1207,6 +1210,21 @@ namespace MoonThief
             // camera follows the hero on both axes, clamped to the map; the HUD layer follows too
             FollowHero();
             World.SetObjective(ObjectivePos());
+
+            // company banter: the people you walk with occasionally say what they see -
+            // slow enough to stay flavor, never in a house and never while you are talking
+            if (State.Joined.Count > 0 && !_inHouse && !_dlgOpen)
+            {
+                _barkT -= Time.deltaTime;
+                if (_barkT <= 0f)
+                {
+                    _barkT = 26f + Random.value * 14f;
+                    string who = State.Joined.Contains("hero.moss")
+                        && (!State.Joined.Contains("hero.sea") || _barkSwap) ? "moss" : "sea";
+                    _barkSwap = !_barkSwap;
+                    Menus.ShowToast(Strings.Get("bark." + who + ".idle." + _barkLine++ % 4), 3.2f);
+                }
+            }
 
             // the deferred chapter toast fires once the banner has had its beat
             if (_hintT > 0f)
