@@ -1097,6 +1097,31 @@ namespace MoonThief
             }
         }
 
+        /// <summary>The style a tamed beast fights in - the one that answers its own family.
+        /// A befriended ghost folds like moss, a befriended wasp arcs like sea; whatever
+        /// shares no soft seam (genius, minotaur) just claws like amber.
+        /// </summary>
+        public static int StyleForFamily(string fam)
+        {
+            switch (fam)
+            {
+                case "slime":
+                case "slimesword":
+                case "mushroom": return 0;
+                case "wasp":
+                case "scorpion":
+                case "lamia":
+                case "worm": return 1;
+                case "zombi":
+                case "ghost":
+                case "skeleton":
+                case "skeletonwarrior":
+                case "succubus":
+                case "blackmagus": return 2;
+                default: return 0;
+            }
+        }
+
         /// <summary>A random encounter for a chapter. Usually one foe, sometimes two.</summary>
         public static MonsterSpec[] Roll(int chapter, System.Random rng)
         {

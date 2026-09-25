@@ -297,7 +297,9 @@ namespace MoonThief
                         AtkMin = ms.AtkMin,
                         AtkMax = ms.AtkMax,
                         Speed = ms.Speed,
-                        Style = 0,
+                        // a tamed beast fights in its family's own answer-style - a ghost
+                        // friend folds like moss, a wasp friend arcs like sea
+                        Style = BattleData.StyleForFamily(BattleData.FamilyOf(ms)),
                         BattlerPath = ms.Battler,
                         Scale = FitScale(Bank.One(ms.Battler), 3.2f, 2.8f, 2)
                     };
