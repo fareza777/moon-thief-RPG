@@ -32,6 +32,7 @@ namespace MoonThief
             public string Art;          // the walk sheet this actor cycles (critters, see Strip)
             public SpriteRenderer Alert;   // "!" bubble shown while aggro-chasing
             public SpriteRenderer NameChip;   // the tag behind the name; hidden with the name
+            public float FadeIn;        // respawn materialise: alpha ramps in over ~0.9s
         }
 
         public GameMap Map;
@@ -2512,6 +2513,8 @@ namespace MoonThief
                 a.Anim.Play(MonsterClip(r.Spec.MapSheet, Dir.Down), 4f, true);
                 a.Sr.transform.localScale = Vector3.one * (0.68f + r.Spec.Tier * 0.04f + (r.Spec.Rare ? 0.1f : 0f));
                 if (r.Spec.Rare) a.Sr.color = new Color(0.72f, 0.84f, 1f);
+                var c0 = a.Sr.color; c0.a = 0f; a.Sr.color = c0;
+                a.FadeIn = 0.9f;
                 Monsters.Add(a);
                 _respawns.RemoveAt(i);
             }
@@ -2521,6 +2524,14 @@ namespace MoonThief
             {
                 if (m.Root == null) continue;
                 var mpos = (Vector2)m.Root.localPosition;
+                if (m.FadeIn > 0f)
+                {
+                    // a respawned beast gathers out of the dark instead of blinking in
+                    m.FadeIn -= dt;
+                    var fc = m.Sr.color;
+                    fc.a = 1f - Mathf.Clamp01(m.FadeIn / 0.9f);
+                    m.Sr.color = fc;
+                }
 
                 // notice the hero: close in, give up if they slip away. The "!" holds a beat
                 // before the chase so the player gets a dodge window instead of an ambush.
