@@ -1236,6 +1236,8 @@ namespace MoonThief
             // houses, a sparser watchful line under the old trees, the folk pulse in between
             Sfx.Mus.Play(_inHouse || World.HeroPos.y <= 26f ? "village"
                 : World.HeroPos.y > 58f ? "wood" : "explore");
+            // the village tune plays inside houses too, but the night bed does not
+            Sfx.Mus.Ambient = !_inHouse;
 
             // camera follows the hero on both axes, clamped to the map; the HUD layer follows too
             FollowHero();

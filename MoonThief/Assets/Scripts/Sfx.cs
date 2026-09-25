@@ -159,6 +159,8 @@ namespace MoonThief
         public static class Mus
         {
             static AudioSource _a, _b;      // ping-pong crossfade pair
+            static AudioSource _amb;        // night bed - wind wash + cricket chorus
+            static bool _ambOn;
             static AudioSource _cur;
             static readonly Dictionary<string, AudioClip> _clips = new Dictionary<string, AudioClip>();
             static Transform _host;
@@ -209,8 +211,14 @@ namespace MoonThief
                 {
                     _muted = value;
                     if (_cur != null) _cur.mute = _muted;
+                    if (_amb != null) _amb.mute = _muted;
                 }
             }
+
+            /// <summary>Night ambience under the walking tunes. Play() turns it on for the
+            /// outdoor tracks and off everywhere else; Game.cs also forces it off indoors.
+            /// The bed loops always and fades through Tick(), so there is no start/stop pop.</summary>
+            public static bool Ambient { get => _ambOn; set => _ambOn = value; }
 
             public static string Current => _track;
 
@@ -220,6 +228,11 @@ namespace MoonThief
                 _host = parent;
                 _a = NewSource("musA");
                 _b = NewSource("musB");
+                _amb = NewSource("amb");
+                _amb.clip = Ambience();
+                _amb.mute = _muted;
+                _amb.volume = 0f;
+                _amb.Play();
             }
 
             static AudioSource NewSource(string name)
@@ -239,6 +252,8 @@ namespace MoonThief
             {
                 if (_a == null || !Application.isPlaying || track == _track) return;
                 _track = track;
+                // the night bed belongs under the walking tunes, not under menus or fights
+                _ambOn = track == "explore" || track == "village" || track == "wood";
                 var next = _cur == _a ? _b : _a;
                 var clip = Clip(track);
                 next.clip = clip;
@@ -256,6 +271,9 @@ namespace MoonThief
 
             public static void Tick()
             {
+                if (_amb != null)
+                    _amb.volume = Mathf.MoveTowards(_amb.volume, _ambOn ? 0.13f * Sfx.Volume : 0f,
+                        Time.deltaTime * 0.1f);
                 if (_a == null || _fade <= 0f) return;
                 _fade -= Time.deltaTime;
                 float k = 1f - Mathf.Clamp01(_fade / 0.45f);
@@ -277,6 +295,51 @@ namespace MoonThief
 
             /// <summary>midi number -> Hz, A4 = 69.</summary>
             static float F(int midi) => 440f * Mathf.Pow(2f, (midi - 69) / 12f);
+
+            /// <summary>The night bed under the walking tunes: a slow wind wash plus a loose
+            /// chorus of crickets. Seven seconds, deterministic, written wrap-safe so a chirp
+            /// can cross the loop seam without popping.</summary>
+            static AudioClip Ambience()
+            {
+                int len = MRate * 7;
+                var buf = new float[len];
+                var rnd = new System.Random(20260925);
+                // wind: a bounded random walk (brown-ish noise) breathing on a ~0.13Hz swell
+                float walk = 0f;
+                for (int i = 0; i < len; i++)
+                {
+                    float t = i / (float)MRate;
+                    walk = walk * 0.9993f + (float)(rnd.NextDouble() * 2.0 - 1.0) * 0.012f;
+                    float swell = 0.55f + 0.45f * Mathf.Sin(t * Mathf.PI * 2f * 0.13f + 1.3f);
+                    buf[i] = walk * swell * 0.55f
+                           + (float)(rnd.NextDouble() * 2.0 - 1.0) * 0.008f * swell;
+                }
+                // crickets: a chirp is a few short pulses of a high sine at a ~70ms tick;
+                // several callers at random onsets so the chorus never sounds mechanical
+                for (int c = 0; c < 7; c++)
+                {
+                    float f = 4200f + (float)rnd.NextDouble() * 700f;
+                    double t = rnd.NextDouble() * 7.0;
+                    while (t < 7.0)
+                    {
+                        int pulses = 3 + rnd.Next(3);
+                        for (int p = 0; p < pulses; p++)
+                        {
+                            int start = (int)((t + p * 0.07) * MRate);
+                            int plen = (int)(MRate * 0.018);
+                            for (int s = 0; s < plen; s++)
+                            {
+                                float env = Mathf.Sin(Mathf.PI * s / (float)plen);
+                                buf[(start + s) % len] += Mathf.Sin(2f * Mathf.PI * f * (start + s) / MRate) * env * 0.15f;
+                            }
+                        }
+                        t += 0.7 + rnd.NextDouble() * 1.1;
+                    }
+                }
+                var clip = AudioClip.Create("amb", len, 1, MRate, false);
+                clip.SetData(buf, 0);
+                return clip;
+            }
 
             /// <summary>Per-track compositions. Every row is a 16th-note step; -1 is a rest,
             /// -2 holds the previous note. Loops are 4-8 seconds of night music.</summary>
