@@ -957,6 +957,12 @@ namespace MoonThief
             if (paused) ParkProgress();
         }
 
+        void OnApplicationFocus(bool focused)
+        {
+            // alt-tab on a desktop loses the window the same way a call loses the phone
+            if (!focused) ParkProgress();
+        }
+
         /// <summary>Park the run wherever it stands. Only the live play phases have a run
         /// worth writing - menus, cinema and the ending have nothing to lose.</summary>
         void ParkProgress()
