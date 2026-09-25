@@ -535,6 +535,10 @@ namespace MoonThief
         {
             if (q == null) return;
             Steps[q.Id] = 3;
+            // a toll is money changing hands, not a pile to hold: the counted
+            // coins leave the purse when the errand is handed in
+            if (q.Kind == QuestKind.Pay)
+                Game.State.Gold = Mathf.Max(0, Game.State.Gold - q.Need);
             Game.State.Gold += q.Reward;
             if (!string.IsNullOrEmpty(q.Gift)) Game.State.AddBag(q.Gift);
             string goal = GoalItem(q);
