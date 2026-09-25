@@ -1527,7 +1527,9 @@ namespace MoonThief
             if (_ph == Ph.Card) return;   // the card ended the round while the pick timer was in flight
             if (!AwaitingInput || !Auto) return;   // a hand got there first
             bool hurt = false;
-            foreach (var p in View.Party) if (p.Alive && p.Hp01 < 0.45f) hurt = true;
+            foreach (var p in View.Party)
+                // a full sting drains like a wound: mend it out before it ticks the fighter down
+                if (p.Alive && (p.Hp01 < 0.45f || p.Poison >= 3)) hurt = true;
             // a mender's own ATTACK is its mend - it tends the party for free, so the
             // food stays in the bag
             if (hurt && actor.Style != 2 && !_morselUsed && Game.State.BestFood() != null)
