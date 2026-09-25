@@ -1728,10 +1728,14 @@ namespace MoonThief
                         // included, since four shards and one guard are both countable. The
                         // shown need is the capped ask, so a chest errand never promises
                         // more caches than the night still holds.
-                        vals.Add(q.Kind == QuestKind.Talk || step != 1 ? Quests.StateWord(step)
+                        // an errand whose count is full but not yet told reads READY, not
+                        // "3/3" - the number said the deed is done, the word says where to go
+                        bool handIn = Quests.ReadyToHand(q);
+                        vals.Add(handIn || q.Kind == QuestKind.Talk || step != 1
+                            ? Quests.StateWord(handIn ? 2 : step)
                             : Strings.Get("jr.prog", Mathf.Min(Quests.Progress(q), Quests.EffectiveNeed(q)),
                                 Quests.EffectiveNeed(q)));
-                        icons.Add(step == 3 ? 26 : step == 2 ? 25 : 20);
+                        icons.Add(step == 3 ? 26 : (step == 2 || handIn) ? 25 : 20);
                         var quest = q;
                         acts.Add(() => ShowToast(Quests.Line(quest), 4.2f));
                     }
