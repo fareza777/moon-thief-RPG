@@ -1623,7 +1623,8 @@ namespace MoonThief
             {
                 Sfx.Play("ui");
                 if (Director.AwaitingInput) Director.Confirm();
-                else if (BattleViewRef.OverlayButtonCount > 0) BattleViewRef.CardButtonAt(0)?.Invoke();
+                else if (BattleViewRef.OverlayButtonCount > 0 && BattleViewRef.CardArmed)
+                    BattleViewRef.CardButtonAt(0)?.Invoke();
             }
         }
 
@@ -3281,6 +3282,9 @@ namespace MoonThief
                     else if (BattleViewRef.OverlayButtonCount > 0)
                     {
                         Shot("14-card");
+                        // the card only listens once it has settled - tap the way a player
+                        // who waited for it would, not the way a machine polling frames could
+                        while (!BattleViewRef.CardArmed) yield return null;
                         var cr = BattleViewRef.CardButtonRect(0);
                         if (cr.width > 0f) { Director.TapAt(cr.center); Debug.Log("[selftest] TapAt card button"); }
                         else BattleViewRef.CardButtonAt(0)?.Invoke();
@@ -3440,6 +3444,7 @@ namespace MoonThief
                             yield return null;
                             yield return null;
                             Shot("16-bosscard-n" + night);
+                            while (!BattleViewRef.CardArmed) yield return null;
                             var cr = BattleViewRef.CardButtonRect(0);
                             if (cr.width > 0f) Director.TapAt(cr.center);
                             else BattleViewRef.CardButtonAt(0)?.Invoke();

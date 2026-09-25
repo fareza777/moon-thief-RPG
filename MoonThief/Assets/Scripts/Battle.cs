@@ -61,6 +61,7 @@ namespace MoonThief
         Transform _overlayRoot;
         SpriteRenderer _ovDim, _ovPanel;
         Transform _ovCard;             // panel + title + lines + buttons ride this; the dim snaps
+        float _cardArmT;               // a fresh card ignores fingers until it has landed
         PixelLabel _ovTitle;
         List<PixelLabel> _ovLines = new List<PixelLabel>();
         List<(SpriteRenderer panel, PixelLabel text, Rect rect, Action act)> _ovButtons = new List<(SpriteRenderer, PixelLabel, Rect, Action)>();
@@ -1170,7 +1171,10 @@ namespace MoonThief
                 y -= BtnH + BtnGap;
             }
 
-            // the verdict lands the way a card should: the dim snaps, the sheet settles
+            // a finger still hammering the attack spot must not pick the card's own
+            // button out of the air: a fresh card stays deaf for a breath - long enough
+            // for the sheet to land and the verdict to be read before it is answered
+            _cardArmT = Time.unscaledTime + 0.45f;
             if (Application.isPlaying && _ovCard != null)
             {
                 _ovCard.localPosition = new Vector3(0f, 0.6f, 0f);
@@ -1231,8 +1235,11 @@ namespace MoonThief
             return best;
         }
 
+        public bool CardArmed => Time.unscaledTime >= _cardArmT;
+
         public Action HitCardButton(Vector2 w)
         {
+            if (!CardArmed) return null;
             // buttons ride the settling card: their rects are card-local, so the tap is
             // measured in the card's frame until it has finished dropping in
             if (_ovCard != null) w -= (Vector2)_ovCard.localPosition;
