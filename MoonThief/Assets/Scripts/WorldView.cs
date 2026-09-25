@@ -2888,6 +2888,9 @@ namespace MoonThief
                         m.SleepMark.color = new Color(0.7f, 0.78f, 0.95f, 0.9f);
                         m.SleepMark.sortingOrder = 2100;
                     }
+                    // a dozer drifting back off reuses its old mark - waking disabled it,
+                    // the second sleep has to switch it back on or the z stays gone
+                    m.SleepMark.enabled = true;
                     float zt = ((_time * 0.55f) + m.HomeCell.x * 0.37f) % 1f;
                     m.SleepMark.transform.localPosition = new Vector3(0.3f + zt * 0.28f, 0.9f + zt * 0.55f, 0f);
                     var zc = m.SleepMark.color; zc.a = 0.9f - zt * 0.75f; m.SleepMark.color = zc;
