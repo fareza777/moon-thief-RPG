@@ -254,7 +254,10 @@ namespace MoonThief
         public float HalfH { get; private set; }
 
         bool _paused;
-        bool _metMira;
+        /// <summary>Whether Mira's first talk has happened - read off the quest itself, so a
+        /// save loaded mid-rung-one still shows rung one (the old flag was forced true on
+        /// every load and skipped the opening step).</summary>
+        bool MetMira => Quests.Step("mq.1") == 3;
         readonly HashSet<string> _metNpcs = new HashSet<string>();
         bool _hintTalk = true, _hintChest = true;
         float _hintT;                                            // countdown for the deferred chapter toast
@@ -851,7 +854,7 @@ namespace MoonThief
         void BeginRun()
         {
             State.NewRun();
-            _metMira = false;
+
             _hintTalk = true;
             _hintChest = true;
             _bossDown = false;
@@ -999,7 +1002,7 @@ namespace MoonThief
             // go blank
             if (World != null && World.Map != null && World.Map.Interior && !string.IsNullOrEmpty(_questLineRaw))
                 return _questLineRaw;
-            if (!_metMira) return Strings.Get("quest.1");
+            if (!MetMira) return Strings.Get("quest.1");
             // the company forms before the work: Sea at the village edge, then Moss deeper
             // in the fields. The ladder reads one line - Mira -> Sea -> Moss -> the night's
             // errand - instead of three strangers appearing at your heels unasked.
@@ -1052,7 +1055,7 @@ namespace MoonThief
 
         Vector2? ObjectivePosInner()
         {
-            if (!_metMira)
+            if (!MetMira)
             {
                 var mira = World.FindNpc("npc.elder");
                 if (mira != null && mira.Root != null) return mira.Root.localPosition;
@@ -1280,7 +1283,7 @@ namespace MoonThief
                 _hintChest = false;
                 Menus.ShowToast(Strings.Get("onb.chest"), 3.6f);
             }
-            if (_hintTalk && !_metMira && !World.BannerUp && World.Npcs.Count > 0)
+            if (_hintTalk && !MetMira && !World.BannerUp && World.Npcs.Count > 0)
             {
                 var npc = World.NearestNpc(World.HeroPos, 4f);
                 if (npc.NameKey != null)
@@ -1422,7 +1425,7 @@ namespace MoonThief
 
             if (npc.NameKey != null)
             {
-                if (npc.NameKey == "npc.elder") _metMira = true;   // the quest giver
+
                 TalkTo(npc);
                 // meeting Mira is the first rung itself - once the words pass, the chest
                 // errand is live without a second signature
@@ -2081,7 +2084,6 @@ namespace MoonThief
             var d = SaveSystem.Read();
             if (d == null) { BeginRun(); return; }
             State.Apply(d);
-            _metMira = true;                       // the save is past the first conversation
             _hintTalk = false;
             _hintChest = false;
             _ending = false;
@@ -2277,7 +2279,8 @@ namespace MoonThief
             State.NewRun();
             State.Chapter = chapter;
             Phase = St.Explore;
-            _metMira = true;
+            Quests.SetStep("mq.1", 3);            // a staged run is past the first talk
+            if (Quests.Step("mq.2") == 0) Quests.Accept(Quests.Find("mq.2"));
             _inHouse = false;          // staging the street cancels any room we stood in
             Menus.Hide();
             _titleRoot.gameObject.SetActive(false);
@@ -2448,7 +2451,8 @@ namespace MoonThief
             State.NewRun();
             State.Chapter = 1;
             Phase = St.Explore;
-            _metMira = true;
+            Quests.SetStep("mq.1", 3);
+            if (Quests.Step("mq.2") == 0) Quests.Accept(Quests.Find("mq.2"));
             Menus.Hide();
             _titleRoot.gameObject.SetActive(false);
             _endRoot.gameObject.SetActive(false);
