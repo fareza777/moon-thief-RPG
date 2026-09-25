@@ -1472,6 +1472,7 @@ namespace MoonThief
             _befriended = 0;
             _enraged = false;
             _bossSpoke = false;
+            _partySpoke = false;
             _flow = 0;
             _levelAtStart = Game.State.Level;
             AwaitingInput = false;
@@ -1594,10 +1595,11 @@ namespace MoonThief
                 return;
             }
             View.SetTurnRig(View.RigOf(f));
-            // the friends talk in a fight: a short bark over the rig now and then, so a
-            // party of three reads as three people, not three cogs. One in three turns,
-            // one line each - chatter, not a second log.
-            if (f.Species == null && Application.isPlaying && UnityEngine.Random.value < 0.3f)
+            // the friends talk in a fight: the party's first turn of a fight always
+            // carries one line so every brawl opens with a voice; after that it's
+            // one in three - chatter, not a second log
+            if (f.Species == null && Application.isPlaying
+                && (!_partySpoke || UnityEngine.Random.value < 0.3f))
             {
                 var bRig = View.RigOf(f);
                 if (bRig != null)
@@ -1605,6 +1607,7 @@ namespace MoonThief
                         Strings.Get("bk." + (f.Style == 0 ? "amber" : f.Style == 1 ? "sea" : "moss")
                             + "." + UnityEngine.Random.Range(0, 3)),
                         new Color(1f, 0.96f, 0.72f), 1);
+                _partySpoke = true;
             }
             // a befriended beast acts on its own - no command menu, it just helps
             if (f.Species != null && Application.isPlaying)
@@ -2274,6 +2277,7 @@ namespace MoonThief
         bool _enraged;
         bool _hasBoss;
         bool _bossSpoke;   // the keeper's guaranteed first line is spent
+        bool _partySpoke;  // the party's opening line is spent
 
         public void Confirm()
         {
