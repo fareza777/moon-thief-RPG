@@ -85,6 +85,7 @@ namespace MoonThief
         // to hear it, so the ripple is a warning, not wallpaper
         class Ripple { public SpriteRenderer Sr; public float T; }
         readonly List<Ripple> _ripples = new List<Ripple>();
+        float _snoreT;   // the dozers breathe on one shared clock, not twenty rumbles at once
         SpriteRenderer _touchCue;
         // One direction strip per sheet and facing. A turn swaps to an array that already
         // exists, so actors of the same kind share sprites and no walk cycle is built twice.
@@ -2873,7 +2874,8 @@ namespace MoonThief
                 _respawns.RemoveAt(i);
             }
 
-            // wild monster wander
+            // wild monster wander - and the dozers' rumble, cooling off between snores
+            _snoreT -= dt;
             foreach (var m in Monsters)
             {
                 if (m.Root == null) continue;
@@ -2920,8 +2922,14 @@ namespace MoonThief
 
                 if (m.Asleep)
                 {
-                    // still and breathing; the z drifts up-right off its shoulder
+                    // still and breathing; the z drifts up-right off its shoulder,
+                    // and a thief in earshot can hear the dozer before he sees it
                     if (m.Anim != null) m.Anim.Fps = 0f;
+                    if (dh < 4.5f && _snoreT <= 0f)
+                    {
+                        _snoreT = 5f + Random.value * 3f;
+                        Sfx.Play("snore");
+                    }
                     if (m.SleepMark == null)
                     {
                         var zgo = new GameObject("sleepMark");
