@@ -358,7 +358,7 @@ namespace MoonThief
         /// every load and skipped the opening step).</summary>
         bool MetMira => Quests.Step("mq.1") == 3;
         readonly HashSet<string> _metNpcs = new HashSet<string>();
-        bool _hintTalk, _hintChest, _hintSneak;   // one-off lessons - set from Prefs.Hints at run start
+        bool _hintTalk, _hintChest, _hintSneak, _hintDoor;   // one-off lessons - set from Prefs.Hints at run start
         int _aggroWas;          // hunters with the scent last frame - the rising edge speaks
         float _aggroBarkT;      // the company's nerves take a breath between warnings
         float _dozeBarkT;       // a hush over a sleeping one is whispered once per approach
@@ -1003,6 +1003,7 @@ namespace MoonThief
             _hintTalk = (Prefs.Hints & 1) == 0;
             _hintChest = (Prefs.Hints & 2) == 0;
             _hintSneak = (Prefs.Hints & 4) == 0;
+            _hintDoor = (Prefs.Hints & 8) == 0;
             _bossDown = false;
             _ending = false;
             _resumePos = null;
@@ -1868,7 +1869,12 @@ namespace MoonThief
                 RefreshHud();
                 ShowZoneBanner(Strings.Get(_houseMap.InteriorNameKey));
                 FollowHero();
-                Menus.ShowToast(Strings.Get("onb.door"), 3.2f);
+                if (_hintDoor)
+                {
+                    _hintDoor = false;
+                    Prefs.Hints |= 8; Prefs.Store();
+                    Menus.ShowToast(Strings.Get("onb.door"), 3.2f);
+                }
             }, 0.2f, 0.3f);
         }
 
