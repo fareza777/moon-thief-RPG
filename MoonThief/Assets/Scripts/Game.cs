@@ -1607,6 +1607,8 @@ namespace MoonThief
                 {
                     Quests.Complete(Quests.Find("mq.1"));
                     Quests.Accept(Quests.Find("mq.2"));
+                    // the tracker is live now - teach where it lives, once the talk settles
+                    _hintT = 4.5f; _hintKey = "onb.quest";
                 }
                 RefreshQuest();
                 return;
