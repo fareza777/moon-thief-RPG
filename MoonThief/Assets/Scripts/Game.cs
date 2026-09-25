@@ -2039,6 +2039,30 @@ namespace MoonThief
                     _endStats.transform.localPosition =
                         new Vector3(0f, Fx.Snap(Mathf.Min(poemBottom - 0.5f, aboveHint)), 0f);
                 }
+                // the company walks home on the screen's edge: up to three friends stand
+                // as small silhouettes on the horizon line under the tap hint. Cleared
+                // first - the tale can end more than once and the hill would collect ghosts
+                for (int i = _endRoot.childCount - 1; i >= 0; i--)
+                    if (_endRoot.GetChild(i).name.StartsWith("endFriend"))
+                        Destroy(_endRoot.GetChild(i).gameObject);
+                {
+                    int shown = 0;
+                    foreach (var key in State.Friends)
+                    {
+                        if (shown >= 3) break;
+                        var sk = key.StartsWith("moon.") ? key.Substring(5) : key;
+                        var spec = BattleData.Species(sk);
+                        var spr = spec.HasValue ? TexArt.MapMonster(spec.Value.MapSheet, 1) : null;
+                        if (spr == null) continue;
+                        var fr = SpriteRendererUtil.Make(_endRoot, "endFriend" + shown, spr, 98);
+                        fr.transform.localPosition =
+                            new Vector3((shown - 1f) * 1.9f, -HalfH + 1.4f, 0f);
+                        fr.transform.localScale = Vector3.one * 1.5f;
+                        // the first light catches only their shape - not their faces
+                        fr.color = new Color(0.4f, 0.42f, 0.6f, 0.95f);
+                        shown++;
+                    }
+                }
                 // the tale ends but the night keeps you: CONTINUE walks it again with the
                 // company's strength kept, its beasts grown bolder, its caches shut again,
                 // its errands unwritten - every retelling of the night bites deeper
