@@ -53,6 +53,7 @@ namespace MoonThief
         public readonly List<MenuCell> Menu = new List<MenuCell>();
 
         SpriteRenderer _backdrop, _floorTint, _hudPanel, _menuPanel, _msgPanel, _moonIcon, _targetChev, _turnChev, _nextChev;
+        bool _autoOn;   // the AUTO chip's steering state, for the breathe in Update
         SpriteRenderer _bvig;
         float _hurtPulseT;   // HurtPulse owns the vignette color while it runs
         SpriteRenderer _autoChip;
@@ -923,6 +924,11 @@ namespace MoonThief
         {
             _time += Time.deltaTime;
             MoonflowTint();
+            // the chip breathes while it steers: a static toggle can read as forgotten,
+            // a warm pulse says the party is still fighting itself
+            if (_autoOn && _autoChip != null && _autoChip.enabled)
+                _autoChip.color = new Color(1f, 0.95f, 0.6f,
+                    0.75f + 0.2f * Mathf.Sin(_time * 2.2f));
             // foes bob on the spot; the party breathes, so the arena is never a still frame
             foreach (var rig in EnemyRigs)
             {
@@ -1241,6 +1247,7 @@ namespace MoonThief
         /// <summary>Brighten the chip while the party fights itself.</summary>
         public void SetAuto(bool on)
         {
+            _autoOn = on;
             if (_autoChip != null)
                 _autoChip.color = on ? new Color(1f, 0.95f, 0.6f, 0.95f) : new Color(1f, 1f, 1f, 0.5f);
             if (_autoLabel != null)
