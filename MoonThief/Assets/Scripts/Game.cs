@@ -358,7 +358,7 @@ namespace MoonThief
         /// every load and skipped the opening step).</summary>
         bool MetMira => Quests.Step("mq.1") == 3;
         readonly HashSet<string> _metNpcs = new HashSet<string>();
-        bool _hintTalk = true, _hintChest = true, _hintSneak = true;
+        bool _hintTalk, _hintChest, _hintSneak;   // one-off lessons - set from Prefs.Hints at run start
         int _aggroWas;          // hunters with the scent last frame - the rising edge speaks
         float _aggroBarkT;      // the company's nerves take a breath between warnings
         float _sneakDuck = 1f;  // the band's volume while the thief holds his breath
@@ -993,8 +993,11 @@ namespace MoonThief
             State.NewRun();
             Medals.EarnedThisRun = 0;
 
-            _hintTalk = true;
-            _hintChest = true;
+            // each lesson whispers once per player, not once per night - a second
+            // run doesn't need telling what the first already taught
+            _hintTalk = (Prefs.Hints & 1) == 0;
+            _hintChest = (Prefs.Hints & 2) == 0;
+            _hintSneak = (Prefs.Hints & 4) == 0;
             _bossDown = false;
             _ending = false;
             _resumePos = null;
@@ -1574,6 +1577,7 @@ namespace MoonThief
             if (_hintSneak && World.HeroPos.y > 26f && World.Monsters.Count > 0 && !World.BannerUp)
             {
                 _hintSneak = false;
+                Prefs.Hints |= 4; Prefs.Store();
                 Menus.ShowToast(Strings.Get("hint.sneak"), 4.5f);
             }
 
@@ -1582,6 +1586,7 @@ namespace MoonThief
             if (_hintChest && World.ChestsLeft > 0 && !World.BannerUp && World.NearestChest(World.HeroPos, 3f) >= 0)
             {
                 _hintChest = false;
+                Prefs.Hints |= 2; Prefs.Store();
                 Menus.ShowToast(Strings.Get("onb.chest"), 3.6f);
             }
             if (_hintTalk && !MetMira && !World.BannerUp && World.Npcs.Count > 0)
@@ -1590,6 +1595,7 @@ namespace MoonThief
                 if (npc.NameKey != null)
                 {
                     _hintTalk = false;
+                    Prefs.Hints |= 1; Prefs.Store();
                     Menus.ShowToast(Strings.Get("onb.talk"), 3.6f);
                 }
             }

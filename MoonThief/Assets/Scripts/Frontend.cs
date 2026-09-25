@@ -22,6 +22,7 @@ namespace MoonThief
         public static bool Haptics = true;      // the phone's small motor, on by default
         public static int MedalsSeen;          // how many medals the case has shown - drives the * on the hub
         public static int BeastsSeen;          // how many bestiary entries the book has shown - same * rule
+        public static int Hints;               // one-off field lessons already whispered: talk=1, chest=2, sneak=4
 
         public static float RevealSpeed => SpeedIndex switch
         {
@@ -59,6 +60,7 @@ namespace MoonThief
             Haptics = PlayerPrefs.GetInt("mt.haptics", 1) == 1;
             MedalsSeen = PlayerPrefs.GetInt("mt.medals.seen", 0);
             BeastsSeen = PlayerPrefs.GetInt("mt.beasts.seen", 0);
+            Hints = PlayerPrefs.GetInt("mt.hints", 0);
             Sfx.Volume = SoundLevel * 0.25f;
             Sfx.Muted = SoundLevel <= 0;
             Sfx.Mus.Volume = MusicLevel * 0.25f;
@@ -79,6 +81,7 @@ namespace MoonThief
             PlayerPrefs.SetInt("mt.haptics", Haptics ? 1 : 0);
             PlayerPrefs.SetInt("mt.medals.seen", MedalsSeen);
             PlayerPrefs.SetInt("mt.beasts.seen", BeastsSeen);
+            PlayerPrefs.SetInt("mt.hints", Hints);
             PlayerPrefs.Save();
             Sfx.Volume = SoundLevel * 0.25f;
             Sfx.Muted = SoundLevel <= 0;
