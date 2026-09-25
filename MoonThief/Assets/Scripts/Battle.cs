@@ -926,6 +926,14 @@ namespace MoonThief
             // the next one -- last fight's sparks and damage numbers popping into a fresh arena.
             // Kill the routines and sweep the FX nodes they would have cleaned up themselves.
             StopAllCoroutines();
+            ClearFloats();
+        }
+
+        /// <summary>A verdict deserves a clean stage: drifting numbers and slash marks die
+        /// the moment a card takes the floor - the old half-second let a MOON STRIKE float
+        /// wander past the CONTINUE button while the win was still being read.</summary>
+        public void ClearFloats()
+        {
             if (Stage == null) return;
             for (int i = Stage.childCount - 1; i >= 0; i--)
             {
@@ -3053,6 +3061,7 @@ namespace MoonThief
             Sfx.Mus.Duck = 0.5f;            // the band steps back while the card has the floor
             AwaitingInput = false;
             View.SetMenuVisible(false);
+            View.ClearFloats();
 
             bool boss = false;
             foreach (var s in _specs) if (s.Boss) boss = true;
@@ -3170,6 +3179,7 @@ namespace MoonThief
             Sfx.Play("boss");   // the dark takes the stage for a breath
             AwaitingInput = false;
             View.SetMenuVisible(false);
+            View.ClearFloats();
             // slinking home costs a handful of gold: standing back up for another
             // try is the free path, and the card says so
             int tithe = Mathf.Min(Game.State.Gold, 15 + Game.State.Chapter * 5);
