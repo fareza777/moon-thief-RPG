@@ -2847,7 +2847,11 @@ namespace MoonThief
                     var adir = DirVec.From(delta);
                     Face(a, adir, AnimalClip(a.Art, adir));
                     var step = delta.normalized * a.Speed * dt;
-                    pos += new Vector2(step.x, step.y);
+                    // small feet still go around the trunks, same as the wild do
+                    var cnx = pos + new Vector2(step.x, 0f);
+                    var cny = pos + new Vector2(0f, step.y);
+                    if (Map.Walkable(Map.CellOf(cnx))) pos.x = cnx.x;
+                    if (Map.Walkable(Map.CellOf(cny))) pos.y = cny.y;
                     a.Root.localPosition = new Vector3(pos.x, pos.y, 0f);
                     if (a.Anim != null) a.Anim.Fps = 5.5f;
                 }
