@@ -2511,25 +2511,36 @@ namespace MoonThief
             return vec;
         }
 
+        /// <summary>The rectangle the whole stage draws into: the safe area, so a notch or
+        /// a rounded bezel never eats the night bar, the moon icon or the AUTO chip. The
+        /// render stretches into it, so on an un-notched phone this is the full screen.</summary>
+        static Rect DrawRect()
+        {
+            var sa = Screen.safeArea;
+            return new Rect(sa.x, Screen.height - sa.yMax, sa.width, sa.height);
+        }
+
         /// <summary>The inverse of ScreenToStage, for tests that need to aim at the screen the
         /// way a finger would instead of poking world coordinates directly.</summary>
         public Vector3 StageToScreen(Vector2 stage)
         {
-            return new Vector3((stage.x / 18f + 0.5f) * Screen.width,
-                (stage.y / (HalfH * 2f) + 0.5f) * Screen.height, 0f);
+            var sa = Screen.safeArea;
+            return new Vector3(sa.x + (stage.x / 18f + 0.5f) * sa.width,
+                sa.y + (stage.y / (HalfH * 2f) + 0.5f) * sa.height, 0f);
         }
 
         public Vector2 ScreenToStage(Vector3 screenPos)
         {
-            float nx = Screen.width > 0 ? screenPos.x / Screen.width : 0.5f;
-            float ny = Screen.height > 0 ? screenPos.y / Screen.height : 0.5f;
+            var sa = Screen.safeArea;
+            float nx = sa.width > 0f ? (screenPos.x - sa.x) / sa.width : 0.5f;
+            float ny = sa.height > 0f ? (screenPos.y - sa.y) / sa.height : 0.5f;
             return new Vector2((nx - 0.5f) * 18f, (ny - 0.5f) * (HalfH * 2f));
         }
 
         void OnGUI()
         {
             if (Target == null) return;
-            GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Target, ScaleMode.StretchToFill, false);
+            GUI.DrawTexture(DrawRect(), Target, ScaleMode.StretchToFill, false);
         }
 
         // ------------------------------------------------------------ editor preview
