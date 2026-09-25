@@ -2863,6 +2863,10 @@ namespace MoonThief
             DriveRipples(dt);
             DriveTouchCue();
 
+            // while a talk is open the wild holds its breath: nothing hears, nothing
+            // wakes, nothing walks up to wait at the hero's heels for the last line
+            if (!Game.DialogOpen)
+            {
             // respawn tickets: a felled monster comes back after its delay, and only while
             // the hero is somewhere else - nothing materialises on top of the player
             for (int i = _respawns.Count - 1; i >= 0; i--)
@@ -3059,6 +3063,7 @@ namespace MoonThief
                 m.Root.localPosition = new Vector3(pos.x, pos.y, 0f);
                 if (m.Anim != null) m.Anim.Fps = 5f;
                 if (m.Body != null) m.Body.localPosition = new Vector3(0f, StepBob(_time, 7f, m.HomeCell.x), 0f);
+            }
             }
 
             RefreshNamePlates();

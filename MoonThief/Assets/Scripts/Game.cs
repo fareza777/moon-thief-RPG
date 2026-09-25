@@ -401,7 +401,11 @@ namespace MoonThief
         Transform _dlgSheet;           // the box's contents: rises into place when a talk opens
         int _dlgChars;
         SpriteRenderer _dlgPanel, _dlgPanelName, _dlgPortrait, _dlgPortPlate;
-        bool _dlgOpen;
+        /// <summary>While the talk box is up the wild holds its breath too - a beast that
+        /// walked up mid-conversation used to be waiting at your heels the moment the last
+        /// line closed. Read by the world, set with the talk box.</summary>
+        public static bool DialogOpen;
+        bool _dlgOpen { get => DialogOpen; set => DialogOpen = value; }
         string[] _dlgLines;
         int _dlgIndex;
         System.Action _dlgThen;   // queued by a scripted talk (the boss taunt) to fire when it closes
