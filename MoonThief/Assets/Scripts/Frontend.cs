@@ -1675,7 +1675,7 @@ namespace MoonThief
         /// <summary>The hero's own mark breathes on the map: a static pin at two pixels is a
         /// speck, not a position - the pulse is what tells the eye 'you are here'. Ends when
         /// the page closes and the dot hides.</summary>
-        IEnumerator PulseMapDots()
+        System.Collections.IEnumerator PulseMapDots()
         {
             while (_mapHeroDot != null && _mapHeroDot.enabled)
             {
