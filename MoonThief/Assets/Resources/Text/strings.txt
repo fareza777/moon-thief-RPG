@@ -166,6 +166,7 @@ bt.fam.succubus|A {0} swoops down, thirsty!
 bt.fam.lamia|A {0} uncoils from the reeds!
 bt.fam.blackmagus|A {0} raises its hollow hand.
 bt.fam.skeletonwarrior|A {0} lowers its plated helm.
+bt.fam.minotaur|A {0} paws the ground, horns low!
 bt.slam|The {0} rears up and SLAMS down!
 bt.enraged|The {0} is cornered - it fights without mercy now!
 bt.dazed|DAZED
