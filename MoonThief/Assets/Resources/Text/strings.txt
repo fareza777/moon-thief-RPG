@@ -887,3 +887,6 @@ bark.spot.1|Eyes on us - run or fight!
 bark.spot.2|It knows we're here - move!
 dl.kid.3|I saw a chest out there that breathed. It shimmered cold, like winter. Don't open the cold ones, okay?
 bark.spot.solo|It's got my scent.
+md.full|FULL MOON
+md.full.d|Every mark in the case earned. The night has no more secrets to keep from you.
+md.full.h|Unearned: it falls the moment the rest of the case is full.

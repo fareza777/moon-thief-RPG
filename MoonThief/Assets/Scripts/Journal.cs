@@ -735,6 +735,7 @@ namespace MoonThief
             new Def{ Id="iron",    Icon=3  },   // the moon raised on HARD - the cruel telling
             new Def{ Id="ghost",   Icon=16 },   // three blades they never saw coming
             new Def{ Id="bitten",  Icon=8  },   // touched the wrong box and lived
+            new Def{ Id="full",    Icon=0  },   // every other medal earned - the moon complete
         };
 
         static readonly HashSet<string> _set = new HashSet<string>();
@@ -759,6 +760,9 @@ namespace MoonThief
             EarnedThisRun++;
             PlayerPrefs.SetString("mt.medals", JoinedSet());
             PlayerPrefs.Save();
+            // the last medal needs no hunt of its own: it falls out of the sky the
+            // moment the rest of the case is full
+            if (id != "full" && _set.Count == All.Length - 1) Grant("full");
             return true;
         }
 
