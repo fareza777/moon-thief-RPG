@@ -274,6 +274,7 @@ namespace MoonThief
         float _hintT;                                            // countdown for the deferred chapter toast
         string _hintKey;
         float _barkT = 30f;                                      // companion banter: first quip half a minute in
+        float _owlT = 16f;                                       // the far-off owl: first hoot quarter a minute in
         bool _barkSwap;
         int _barkLine;
         PixelLabel _hudQuest;
@@ -1296,6 +1297,18 @@ namespace MoonThief
                         && (!State.Joined.Contains("hero.sea") || _barkSwap) ? "moss" : "sea";
                     _barkSwap = !_barkSwap;
                     Menus.ShowToast(Strings.Get("bark." + who + ".idle." + _barkLine++ % 4), 3.2f);
+                }
+            }
+
+            // the night keeps its own voice too: an owl somewhere past the lamps,
+            // sparse enough to stay a gift - never indoors and not over someone's words
+            if (!_inHouse && !_dlgOpen)
+            {
+                _owlT -= Time.deltaTime;
+                if (_owlT <= 0f)
+                {
+                    _owlT = 22f + Random.value * 16f;
+                    Sfx.Play("owl", 0.9f + Random.value * 0.25f);
                 }
             }
 
