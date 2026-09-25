@@ -720,43 +720,53 @@ q.axe.title|LENT AXE
 q.axe.step|Find my axe in a chest. {0} left.
 q.axe.offer|I lent my axe to a neighbour, and then the neighbour went out into the dark.
 q.axe.done|That is my axe. Take the thread charm - it never snaps.
+q.axe.offer.ng|The neighbour went out into the dark again. My axe went with him, same as before.
 q.mush.title|MUSHROOMS
 q.mush.step|Gather night mushrooms. {0} left.
 q.mush.offer|Three mushrooms, dear. The ones that glow a little. The cap-folk in the fields carry them, if you're quick.
 q.mush.done|Now sit down, and no arguing about the soup.
+q.mush.offer.ng|Three mushrooms again, dear. The cap-folk keep growing them, the night keeps asking.
 q.doll.title|RED DOLL
 q.doll.step|Look for the doll. {0} left.
 q.doll.offer|I dropped her somewhere in the fields. She is red. She is not scary.
 q.doll.done|She is not even wet! Where did you find her? Never mind - thank you.
+q.doll.offer.ng|She is lost again. Red, not scary, same field as last time. She never learns.
 q.chicken.title|THE HEN
 q.chicken.step|Talk the hen down off the roof.
 q.chicken.offer|My hen is on the roof again. She only ever listens to strangers.
 q.chicken.done|You said one word and she came down. One word! What was it?
+q.chicken.offer.ng|The roof, the hen, the strangers. You know how this one goes.
 q.toll.title|BRIDGE TOLL
 q.toll.step|Pay the boy his toll. {0} gold left.
 q.toll.offer|A boy has put a toll on the old bridge. Pay him before I do something I regret.
 q.toll.done|Good. And here is a bell. Ring it when the dark gets close.
+q.toll.offer.ng|The boy is at the bridge again with his stick. Eight coins, same toll as ever.
 q.kettle.title|KETTLES
 q.kettle.step|Open night chests for kettles. {0} left.
 q.kettle.offer|I need three kettles, and the only stock left in this village is inside the chests.
 q.kettle.done|Three kettles. Now the forge can at least boil water at night.
+q.kettle.offer.ng|The chests restock themselves when the tale retells. Three kettles, same as always.
 q.rhyme.title|THREE PLACES
 q.rhyme.step|Walk somewhere new. {0} left.
 q.rhyme.offer|Go to the village, the fields, and the wood, and bring me back what the wind said.
 q.rhyme.done|No, no - the wind said it wrong. Still. Here is a leaf charm for the trip.
+q.rhyme.offer.ng|Walk the three roads again - village, fields, wood. The wind tells it differently each time.
 q.watch.title|NIGHT WATCH
 q.watch.step|Fell beasts for the watch. {0} left.
 q.watch.offer|Five beasts down and I might sleep again. That is the whole of my plan.
 q.watch.done|Five. I will sleep tonight with the light on, just the same.
+q.watch.offer.ng|Five more beasts, same bargain. The dark never runs out of them; neither do you.
 q.grave.title|EMPTY CHAIR
 q.grave.step|Find Wren and speak about the chair. {0} left.
 q.grave.offer|My brother's chair is still set for supper. If you meet a hunter called Wren, tell him.
 q.grave.done|He came home. He does not remember me. Take this - he would have wanted it given away.
 q.grave.meet|A chair? Set for supper? ...I should go home. Tell her I am coming.
+q.grave.offer.ng|The chair is set again. Wren is out there again. Some lines the night rewrites unchanged.
 q.ledger.title|THE LEDGER
 q.ledger.step|Open night chests for the ledger. {0} left.
 q.ledger.offer|My father kept a ledger of everything the dark was owed. Six lines are still unpaid.
 q.ledger.done|Six lines closed. Now take the blade - it was always meant to leave this house.
+q.ledger.offer.ng|The ledger's lines come back unpaid when the night retells. Six, same six.
 
 # ---- one-off things on the road
 ev.hen|A hen looks at you, coughs, and drops an ember berry she has plainly swallowed twice. There is no arguing with her.
