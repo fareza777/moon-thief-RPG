@@ -156,10 +156,16 @@ bt.fam.ghost|A {0} drifts out of the treeline.
 bt.fam.skeleton|A {0} drags itself upright.
 bt.fam.scorpion|A {0} skitters out, tail high!
 bt.fam.genius|A {0} floats down, lantern-bright.
+bt.fam.lamia|A {0} uncoils from the reeds!
+bt.fam.blackmagus|A {0} raises its hollow hand.
+bt.fam.skeletonwarrior|A {0} lowers its plated helm.
 bt.slam|The {0} rears up and SLAMS down!
 bt.enraged|The {0} is cornered - it fights without mercy now!
 bt.dazed|DAZED
 bt.tripped|TRIPPED
+bt.hexed|HEXED
+bt.coiled|COILED
+bt.plated|PLATED
 bt.cleansed|CLEANSED
 bt.warmed|WARM
 bt.poison|POISON
@@ -240,6 +246,12 @@ mon.palebell.d|It rings. Something answers.
 mon.revenant.d|It died angry. The dark keeps the grievance filed. Down once, up once.
 mon.stalker.d|It ate the dusk patrol. Now it eats the road.
 mon.squire.d|A page that outlived its knight.
+mon.magus|HOLLOW MAGUS
+mon.lamia|COIL SISTER
+mon.swarrior|BONE WARDEN
+mon.magus.d|Traded its face for one more spell. Its mark saps the arm it lands on.
+mon.lamia.d|Half the dark, half the river. It holds its mark past a turn or two.
+mon.swarrior.d|A knight out of the bone pile. Its plate drinks part of every blow.
 
 # ---- result cards
 card.wintitle|THE WAY IS CLEAR

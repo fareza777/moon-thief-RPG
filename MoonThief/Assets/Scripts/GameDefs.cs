@@ -909,6 +909,8 @@ namespace MoonThief
         public bool WardGiven;      // a befriended wisp's one gift of light, spent
         public bool Announced;      // a friend's first turn already declared itself
         public int Poison;          // rounds of venom left - scorpion stings leave it
+        public int Weaken;          // blows left at half strength - a magus's hex saps the arm
+        public int Snare;           // turns held fast - a lamia's coil does not let go quickly
         public string BattlerPath;      // Resources path of the battler sprite
         public string Species;          // monster string key - set on wild foes and befriended allies
         public string ColorDir;         // party only: "color_1"
@@ -1007,6 +1009,11 @@ namespace MoonThief
             // so the fields keep a face the player has not already befriended twice
             new MonsterSpec{ Name="mon.palebell",Battler="Art/Battlers/GhostA",    MapSheet="Pack/Monsters/Monsters_02_5", Tier=3, Chapter=3, Hp=30, AtkMin=5, AtkMax=8, Speed=5.0f },
             new MonsterSpec{ Name="mon.thick",   Battler="Art/Battlers/MushroomB", MapSheet="Pack/Monsters/Monsters_04_3", Tier=2, Chapter=2, Hp=36, AtkMin=6, AtkMax=9, Speed=3.4f },
+            // the last dark learns new shapes: a warlock who hexes the strong arm,
+            // a serpent that holds its mark fast, a knight whose plate drinks blows
+            new MonsterSpec{ Name="mon.lamia",   Battler="Art/Battlers/LamiaA",    MapSheet="Pack/Monsters/Monsters_03_6", Tier=2, Chapter=2, Hp=28, AtkMin=5, AtkMax=9, Speed=4.6f },
+            new MonsterSpec{ Name="mon.magus",   Battler="Art/Battlers/BlackMagusA", MapSheet="Pack/Monsters/Monsters_02_6", Tier=3, Chapter=3, Hp=38, AtkMin=7, AtkMax=12, Speed=4.4f },
+            new MonsterSpec{ Name="mon.swarrior",Battler="Art/Battlers/SkeletonwarriorA", MapSheet="Pack/Monsters/Monsters_05_4", Tier=3, Chapter=3, Hp=48, AtkMin=7, AtkMax=10, Speed=3.0f },
             // the gatekeepers live in the bestiary so the journal can picture them, but they
             // are not field spawns - every one carries the boss flag and Roll never deals it
             new MonsterSpec{ Name="mon.stalker", Battler="Art/Battlers/ScorpionA", MapSheet="Art/Mon/Monsters_03_0", Tier=2, Chapter=1, Hp=42, AtkMin=4, AtkMax=7, Speed=4.0f, Boss=true },
@@ -1034,13 +1041,11 @@ namespace MoonThief
         {
             var b = s.Battler ?? "";
             var n = b.Substring(b.LastIndexOf('/') + 1);
-            var sb = new System.Text.StringBuilder(n.Length);
-            foreach (var c in n)
-            {
-                if (!char.IsLetter(c)) break;
-                sb.Append(char.ToLowerInvariant(c));
-            }
-            return sb.ToString();
+            // every battler file ends in a single tier letter - SlimeA, SlimeD, GhostC -
+            // so the family is the name with that last char dropped. Taking all leading
+            // letters instead kept the suffix ("slimea"), which quietly silenced every
+            // family-keyed trick and weakness in the game.
+            return n.Length > 1 ? n.Substring(0, n.Length - 1).ToLowerInvariant() : "";
         }
 
         /// <summary>Style vs species: every friend's trick has a family it was made for. Amber's
@@ -1054,9 +1059,12 @@ namespace MoonThief
                 case "slime":
                 case "mushroom": return style == 0;
                 case "wasp":
-                case "scorpion": return style == 1;
+                case "scorpion":
+                case "lamia": return style == 1;        // sea's arc parts sting and coil alike
                 case "ghost":
-                case "skeleton": return style == 2;
+                case "skeleton":
+                case "skeletonwarrior":
+                case "blackmagus": return style == 2;   // the dark's own fold to the moon
                 default: return false;   // genius and minotaur have no soft seam
             }
         }

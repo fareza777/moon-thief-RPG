@@ -512,9 +512,11 @@ namespace MoonThief
             {
                 rig.F.Hp = rig.F.MaxHp;
                 rig.F.Dead = false;
-                // a new duel is a clean slate: last fight's venom and stars stay there
+                // a new duel is a clean slate: last fight's venom, hexes and coils stay there
                 rig.F.Poison = 0;
                 rig.F.Dazed = false;
+                rig.F.Weaken = 0;
+                rig.F.Snare = 0;
                 rig.Root.gameObject.SetActive(true);
                 rig.Root.localPosition = rig.Home;
                 rig.Body.localPosition = Vector3.zero;
@@ -1441,13 +1443,15 @@ namespace MoonThief
                 var f = _queue[_qi];
                 if (f.Alive)
                 {
-                    if (!f.Dazed) break;
-                    // a dazed fighter loses its turn once - the stars show why
-                    f.Dazed = false;
+                    if (!f.Dazed && f.Snare <= 0) break;
+                    // a dazed fighter loses its turn once; a coiled one is held fast a while
+                    bool snared = !f.Dazed && f.Snare > 0;
+                    if (f.Dazed) f.Dazed = false; else f.Snare--;
                     var dRig = View.RigOf(f);
                     if (dRig != null)
                         View.FloatNumber(dRig.Home + new Vector3(0f, 1.6f, 0f),
-                            Strings.Get("bt.dazed"), new Color(1f, 0.9f, 0.5f));
+                            Strings.Get(snared ? "bt.coiled" : "bt.dazed"),
+                            snared ? new Color(0.75f, 0.95f, 0.6f) : new Color(1f, 0.9f, 0.5f));
                     _qi++;
                     continue;
                 }
@@ -1457,7 +1461,7 @@ namespace MoonThief
             // the silver chevron answers "who's after this one" before the turn plays out
             Fighter nxt = null;
             for (int i = _qi + 1; i < _queue.Count; i++)
-                if (_queue[i].Alive && !_queue[i].Dazed) { nxt = _queue[i]; break; }
+                if (_queue[i].Alive && !_queue[i].Dazed && _queue[i].Snare <= 0) { nxt = _queue[i]; break; }
             View.SetNextRig(nxt != null ? View.RigOf(nxt) : null);
             if (cur.Side == Side.Party) BeginPlayerTurn(cur);
             else if (Application.isPlaying) StartCoroutine(EnemyTurn(cur));
@@ -1600,6 +1604,8 @@ namespace MoonThief
             bool crit = UnityEngine.Random.value < 0.18f;
             bool weakHit = WeakTo(0, target);
             int dmg = Mathf.RoundToInt(UnityEngine.Random.Range(f.AtkMin, f.AtkMax + 1) * (crit ? 1.6f : 1f) * (weakHit ? 1.5f : 1f) * FlowMul());
+            // a hex saps the arm it fell on: blows come out dull until it lifts
+            if (f.Weaken > 0) { dmg = Mathf.Max(1, dmg - 4); f.Weaken--; }
             HitFoe(target, dmg, crit, weakHit);
             View.Refresh();
             // a scorpion friend carries its sting over to your side: its bite
@@ -1626,6 +1632,20 @@ namespace MoonThief
                 target.Poison = 2;
                 View.FloatNumber(tRig.Home + new Vector3(0f, 1.75f, 0f),
                     Strings.Get("bt.poisoned"), new Color(0.55f, 1f, 0.5f));
+            }
+            // a tame magus keeps its hex: its mark saps the foe's arm for a while
+            if (fFam == "blackmagus" && target.Alive && target.Weaken <= 0 && UnityEngine.Random.value < 0.3f)
+            {
+                target.Weaken = 2;
+                View.FloatNumber(tRig.Home + new Vector3(0f, 1.9f, 0f),
+                    Strings.Get("bt.hexed"), new Color(0.8f, 0.6f, 1f));
+            }
+            // a befriended lamia still coils: it holds the mark fast past a turn or two
+            if (fFam == "lamia" && target.Alive && target.Snare <= 0 && UnityEngine.Random.value < 0.3f)
+            {
+                target.Snare = target.Boss ? 1 : 2;
+                View.FloatNumber(tRig.Home + new Vector3(0f, 1.9f, 0f),
+                    Strings.Get("bt.coiled"), new Color(0.75f, 0.95f, 0.6f));
             }
             // a wisp keeps its lantern habit: its first turn each duel wraps a thin
             // ward around the frailest friend standing - one light, one drink
@@ -1821,6 +1841,8 @@ namespace MoonThief
 
             int dmg = Mathf.RoundToInt(UnityEngine.Random.Range(e.AtkMin, e.AtkMax + 1)
                 * (slam ? 1.6f : 1f) * (_enraged ? 1.25f : 1f) * (Prefs.Story ? 0.65f : 1f));
+            // a hexed enemy strikes dull too: a tame magus's mark works both ways
+            if (e.Weaken > 0) { dmg = Mathf.Max(1, dmg - 4); e.Weaken--; }
             if (UnityEngine.Random.value < (tFam == "ghost" ? 0.2f : 0.06f))
             {
                 // the hero slips aside: the lunge lands on empty air
@@ -1831,6 +1853,13 @@ namespace MoonThief
                 yield return Lunge(eRig, eRig.Home, 0.3f);
                 EndTurn();
                 yield break;
+            }
+            // a befriended warden keeps its plate on your side too
+            if (tFam == "skeletonwarrior" && dmg > 1)
+            {
+                dmg = Mathf.Max(1, dmg - 2);
+                View.FloatNumber(tRig.Home + new Vector3(0f, 1.75f, 0f),
+                    Strings.Get("bt.plated"), new Color(0.8f, 0.85f, 0.9f));
             }
             target.Hp = Mathf.Max(0, target.Hp - dmg);
             if (_flow != 0) { _flow = 0; View.SetRound(_round); }   // momentum breaks on a hit taken
@@ -1865,6 +1894,20 @@ namespace MoonThief
                 target.Dazed = true;
                 View.FloatNumber(tRig.Home + new Vector3(0f, 1.9f, 0f),
                     Strings.Get("bt.tripped"), new Color(0.6f, 0.85f, 1f));
+            }
+            // a magus's mark saps the arm it lands on: blows come out dull for a while
+            if (fam == "blackmagus" && target.Alive && target.Weaken <= 0 && UnityEngine.Random.value < 0.3f)
+            {
+                target.Weaken = 2;
+                View.FloatNumber(tRig.Home + new Vector3(0f, 1.9f, 0f),
+                    Strings.Get("bt.hexed"), new Color(0.8f, 0.6f, 1f));
+            }
+            // a lamia's coil holds fast: the marked fighter loses turns to the squeeze
+            if (fam == "lamia" && target.Alive && target.Snare <= 0 && UnityEngine.Random.value < 0.3f)
+            {
+                target.Snare = target.Boss ? 1 : 2;
+                View.FloatNumber(tRig.Home + new Vector3(0f, 1.9f, 0f),
+                    Strings.Get("bt.coiled"), new Color(0.75f, 0.95f, 0.6f));
             }
             View.FloatNumber(tRig.Home + new Vector3(0f, 1.4f, 0f), "-" + dmg,
                 slam ? new Color(1f, 0.45f, 0.3f) : new Color(1f, 0.6f, 0.55f));
@@ -2278,6 +2321,13 @@ namespace MoonThief
                     Strings.Get(fam == "ghost" ? "bt.phased" : "bt.miss"), new Color(0.8f, 0.85f, 0.95f));
                 Sfx.Play("whoosh");
                 return;
+            }
+            // a bone warden's plate drinks part of every blow that lands
+            if (fam == "skeletonwarrior" && dmg > 1)
+            {
+                dmg = Mathf.Max(1, dmg - 2);
+                View.FloatNumber(tRig.Home + new Vector3(0f, 1.9f, 0f),
+                    Strings.Get("bt.plated"), new Color(0.8f, 0.85f, 0.9f));
             }
             target.Hp = Mathf.Max(0, target.Hp - dmg);
             StartCoroutine(Fx.FlashTint(tRig.Anim, new Color(1f, 0.5f, 0.4f), 2, 0.07f, 0.07f));
