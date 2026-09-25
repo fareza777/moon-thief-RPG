@@ -1043,6 +1043,12 @@ namespace MoonThief
             new MonsterSpec{ Name="mon.stalker", Battler="Art/Battlers/ScorpionA", MapSheet="Art/Mon/Monsters_03_0", Tier=2, Chapter=1, Hp=42, AtkMin=4, AtkMax=7, Speed=4.0f, Boss=true },
             new MonsterSpec{ Name="mon.thane",   Battler="Art/Battlers/MinotaurB", MapSheet="Pack/Monsters/Monsters_04_5", Tier=4, Chapter=2, Hp=62, AtkMin=6, AtkMax=11, Speed=3.8f, Boss=true },
             new MonsterSpec{ Name="mon.squire", Battler="Art/Battlers/GhostA",    MapSheet="Art/Mon/Monsters_02_0", Tier=2, Chapter=2, Hp=20, AtkMin=5, AtkMax=8, Speed=5.0f, Boss=true },
+            // the Guard's own lantern counts as a creature of the night too: kept out of
+            // the wild pool by the flag, but findable by Species() so the bell's fight can
+            // deal it and a kind word can carry one home - before it lived only inside
+            // BossFight(3), so the bell's promised fight found nothing and a tamed wisp
+            // could never be rebuilt into the party
+            new MonsterSpec{ Name="mon.wisp", Battler="Art/Battlers/GeniusA",   MapSheet="Art/Mon/Monsters_05_0", Tier=3, Chapter=3, Hp=28, AtkMin=6, AtkMax=10, Speed=5.2f, Boss=true },
         };
 
         public static readonly MonsterSpec Boss = new MonsterSpec
@@ -1160,13 +1166,10 @@ namespace MoonThief
             }
             // the Pale Guard never walks alone: a lantern wisp screens it. The fight
             // used to be one big health bar, which made MORSEL and BEFRIEND pointless at the
-            // climax - two targets keeps every command relevant to the last turn.
-            var wisp = Boss;
-            wisp.Name = "mon.wisp";
-            wisp.Battler = "Art/Battlers/GeniusA";
-            wisp.MapSheet = "Art/Mon/Monsters_05_0";
-            wisp.Hp = 28; wisp.AtkMin = 6; wisp.AtkMax = 10; wisp.Speed = 5.2f;
-            wisp.Boss = false; wisp.Tier = 3;
+            // climax - two targets keeps every command relevant to the last turn. The wisp
+            // is not itself a keeper, so the word and the morsel can still reach it.
+            var wisp = Species("mon.wisp").Value;
+            wisp.Boss = false;
             return new[] { Boss, wisp };
         }
 

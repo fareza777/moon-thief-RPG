@@ -1648,7 +1648,10 @@ namespace MoonThief
                 if (!string.IsNullOrEmpty(ev.Fight))
                 {
                     foreach (var m in BattleData.Bestiary)
-                        if (m.Name == ev.Fight) { StartBattle(new[] { m }); break; }
+                        // a wild happening is not a gate: the bestiary keeps the flag for
+                        // the pool's sake, but an event fight must allow the slip and the
+                        // word, or a road-side bell could only end one way
+                        if (m.Name == ev.Fight) { var v = m; v.Boss = false; StartBattle(new[] { v }); break; }
                 }
                 return true;
             }
