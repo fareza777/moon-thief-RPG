@@ -2904,11 +2904,11 @@ namespace MoonThief
                 float dh = Vector2.Distance(mpos, HeroPos);
                 // a dozing beast is blind but not deaf: sight range collapses to nothing
                 // while ears stay as sharp as any hunter's
-                float hearR = Sneaking ? 0f : (Prefs.Hard ? 4.6f : 3.6f);
-                // on the cruel telling even the eyes are keener: the wild spots a
-                // stride a full pace sooner, and catches a creep at arm's length
+                // difficulty tunes the senses both ways: the kind telling dulls
+                // them, the cruel one sharpens them - and a creep stays a creep
+                float hearR = Sneaking ? 0f : (Prefs.Hard ? 4.6f : Prefs.Story ? 3.0f : 3.6f);
                 float seeR = m.Asleep ? 0f : (Sneaking ? (Prefs.Hard ? 1.1f : 0.7f)
-                                                          : (Prefs.Hard ? 4.0f : 3.2f));
+                                                          : (Prefs.Hard ? 4.0f : Prefs.Story ? 2.6f : 3.2f));
                 // a chase runs at full field speed; the 0.55 gait is only for wandering -
                 // without this every hunter chases at a stroll the hero can simply outwalk
                 if (!m.Aggro && (dh < hearR || (dh < seeR && ClearLineOfSight(mpos, HeroPos)))) { m.Asleep = false; m.Aggro = true; m.AggroT = 0.85f; m.Speed = m.Spec.Speed; Sfx.Play("alert"); }
