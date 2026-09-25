@@ -630,7 +630,8 @@ namespace MoonThief
 
         public void SetNight(int chapter)
         {
-            _hudNight.Set(Strings.Get("hud.nightshort", chapter));
+            _hudNight.Set(Strings.Get("hud.nightshort", chapter)
+                + (Game.State.NgPlus > 0 ? "+" : ""));
             // the ground answers the night too: violet dark in the wood, steel cold on
             // the plain, a drowned pale under the keep
             _floorTint.color = chapter >= 3 ? new Color32(14, 26, 30, 255)

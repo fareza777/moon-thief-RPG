@@ -1233,7 +1233,8 @@ namespace MoonThief
                 if (State.NoteZone(zk))
                 {
                     ShowZoneBanner(Strings.Get("zone.name." + zk.Substring(5))
-                        + "\n" + Strings.Get("hud.nightshort", State.Chapter));
+                        + "\n" + Strings.Get("hud.nightshort", State.Chapter)
+                        + (State.NgPlus > 0 ? "+" : ""));
                     // a company member reads the land too - the party talks, not just walks
                     string bark = State.Joined.Contains("hero.sea")
                         ? Strings.Get("bark.sea." + zk.Substring(5))
