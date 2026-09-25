@@ -332,7 +332,7 @@ npc.moss|MOSS
 # ---- dialog: Mira, the keeper of the lantern
 dl.elder.1.1|The moon did not rise. Not one cloud, and still dark.
 dl.elder.1.2|Tracks crossed all four roads. Something carried the sky away.
-dl.elder.1.3|Four shards of moonlight are out there. Take the lantern.
+dl.elder.1.3|Four shards of moonlight are out there. Take the lantern.\nSea waits at the village's north edge, Moss out in the fields.\nBring them with you - nobody should walk this dark alone.
 dl.elder.2.1|Two nights gone, and the fields grow bold. You carry shards.
 dl.elder.2.2|Befriend what you can. Two hearts walk further than one.
 dl.elder.2.3|The road north opens at the far gate. Follow the lamps.
