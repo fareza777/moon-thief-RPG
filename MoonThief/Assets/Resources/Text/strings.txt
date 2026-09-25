@@ -355,6 +355,14 @@ bark.moss.idle.0|MOSS: The stems are still out here somewhere.
 bark.moss.idle.1|MOSS: Breathe slow. Fear draws them.
 bark.moss.idle.2|MOSS: I can mend cuts. I cannot mend fear.
 bark.moss.idle.3|MOSS: The moon would know what to do here.
+bark.sea.idle.4|SEA: Keep your blade oiled and your feet quiet.
+bark.sea.idle.5|SEA: Moss hums when she is scared. She is always humming.
+bark.sea.idle.6|SEA: Four shards down, and the night only grows teeth.
+bark.sea.idle.7|SEA: When this is over I am sleeping for a week.
+bark.moss.idle.4|MOSS: These trees remember the moon. Listen.
+bark.moss.idle.5|MOSS: If I slow down, walk on without me.
+bark.moss.idle.6|MOSS: Sea pretends he is not afraid. I mend his hands anyway.
+bark.moss.idle.7|MOSS: Somewhere past the dark, morning is already walking here.
 zone.short.village|HOLLOW
 zone.short.fields|FIELDS
 zone.short.wood|WOOD

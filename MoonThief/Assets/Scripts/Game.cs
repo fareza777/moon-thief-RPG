@@ -369,7 +369,6 @@ namespace MoonThief
         float _owlT = 16f;                                       // the far-off owl: first hoot quarter a minute in
         float _fireT = 2f;                                       // the hearth's crackle, for rooms that keep one
         bool _barkSwap;
-        int _barkLine;
         PixelLabel _hudQuest;
         SpriteRenderer _hudQuestChip;
         Vector2? _resumePos;
@@ -1498,7 +1497,9 @@ namespace MoonThief
                     string who = State.Joined.Contains("hero.moss")
                         && (!State.Joined.Contains("hero.sea") || _barkSwap) ? "moss" : "sea";
                     _barkSwap = !_barkSwap;
-                    Menus.ShowToast(Strings.Get("bark." + who + ".idle." + _barkLine++ % 4), 3.2f);
+                    // eight quips each now, picked blind - the old fixed four-loop had the
+                    // company reciting the same verse on every long walk
+                    Menus.ShowToast(Strings.Get("bark." + who + ".idle." + Random.Range(0, 8)), 3.2f);
                 }
             }
 
