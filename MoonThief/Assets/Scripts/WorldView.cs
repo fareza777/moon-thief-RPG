@@ -2316,6 +2316,11 @@ namespace MoonThief
 
         void SpawnRipple(Vector3 at)
         {
+            // standing in earshot used to stack ring on ring into one bright blob -
+            // a live ring already marking the spot makes the next one redundant
+            foreach (var x in _ripples)
+                if (x.Sr != null && x.Sr.enabled
+                    && (x.Sr.transform.localPosition - at).sqrMagnitude < 2.6f) return;
             Ripple r = null;
             foreach (var x in _ripples) if (!x.Sr.enabled) { r = x; break; }
             if (r == null)
