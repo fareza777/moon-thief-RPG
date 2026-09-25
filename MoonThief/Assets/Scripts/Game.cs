@@ -2154,6 +2154,7 @@ namespace MoonThief
                 // ENDER and NG+ belong to the retelling's count, not this one's farewell
                 int runMedals = Medals.EarnedThisRun;
                 Medals.Grant("ender");
+                if (Prefs.Hard) Medals.Grant("iron");   // the cruel telling counts itself
                 Phase = St.End;
                 SetCamY(0f);
                 World.gameObject.SetActive(false);

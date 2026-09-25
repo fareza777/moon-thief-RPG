@@ -713,6 +713,7 @@ namespace MoonThief
             new Def{ Id="ngp",     Icon=30 },   // the tale retold (NEW GAME+)
             new Def{ Id="fleet",   Icon=32 },   // a friend wished back to the wild
             new Def{ Id="warden",  Icon=20 },   // every villager errand finished
+            new Def{ Id="iron",    Icon=3  },   // the moon raised on HARD - the cruel telling
         };
 
         static readonly HashSet<string> _set = new HashSet<string>();

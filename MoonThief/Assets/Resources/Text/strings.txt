@@ -819,6 +819,8 @@ md.fleet|OPEN HAND
 md.fleet.d|You wished a friend back to the wild. That is its own mercy.
 md.warden|VILLAGE WARDEN
 md.warden.d|Every errand in Quiet Hollow finished. Nobody waited on you.
+md.iron|IRON THIEF
+md.iron.d|The moon raised on the cruel telling. The wild bit hardest - you bit back.
 
 # locked medals keep their name but tell you the feat to chase
 md.friend.h|Unearned: a wild beast has not yet said yes.
@@ -835,6 +837,7 @@ md.ender.h|Unearned: walk the moon home.
 md.ngp.h|Unearned: when the credits end, the night offers a retelling.
 md.fleet.h|Unearned: a friend can be wished back to the wild, from its page.
 md.warden.h|Unearned: the villagers' errand list, emptied.
+md.iron.h|Unearned: set DIFFICULTY to HARD, then hang the moon.
 
 # ---- battle barks: the friends mutter one line a breath while they fight
 bk.amber.0|stay sharp
