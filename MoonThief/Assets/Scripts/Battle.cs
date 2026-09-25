@@ -1735,11 +1735,17 @@ namespace MoonThief
             var aRig = View.RigOf(f);
             View.SetTurnRig(aRig);
             // a befriended beast cannot talk, but it can chatter: a rare small sound
-            // over its head so the pet reads as alive, not a spare weapon
+            // over its head so the pet reads as alive, not a spare weapon - same
+            // no-repeat rule as the voices
             if (aRig != null && UnityEngine.Random.value < 0.18f)
+            {
+                int bi = UnityEngine.Random.Range(0, 3);
+                if (_lastBarkWho == "pet" && bi == _lastBarkIdx) bi = (bi + 1) % 3;
+                _lastBarkWho = "pet"; _lastBarkIdx = bi;
                 View.FloatNumber(aRig.Home + new Vector3(0f, 2.15f, 0f),
-                    Strings.Get("bk.pet." + UnityEngine.Random.Range(0, 3)),
+                    Strings.Get("bk.pet." + bi),
                     new Color(0.8f, 1f, 0.9f), 1);
+            }
             int ti = -1; float low = float.MaxValue;
             for (int i = 0; i < View.Enemies.Length; i++)
                 if (View.Enemies[i].Alive && View.Enemies[i].Hp < low) { low = View.Enemies[i].Hp; ti = i; }
