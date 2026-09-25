@@ -2120,8 +2120,11 @@ namespace MoonThief
             {
                 var f = _friends[i];
                 if (f.Spec.Name != species) continue;      // sea & moss carry no Spec
-                if (f.Root != null) f.Root.gameObject.SetActive(false);
-                if (f.Name != null) f.Name.gameObject.SetActive(false);
+                // a wished-away friend used to leave its rig switched off but alive in
+                // the scene - a ghost of a ghost for every release. Kill it like the
+                // wild's removals do
+                if (f.Root != null) Fx.Kill(f.Root.gameObject);
+                if (f.Name != null) Fx.Kill(f.Name.gameObject);
                 _friends.RemoveAt(i);          // out of the list so the trail leaves no gap
             }
         }
