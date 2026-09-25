@@ -1460,6 +1460,30 @@ namespace MoonThief
             return false;
         }
 
+        /// <summary>How far along a locked feat sits: countable medals show the count,
+        /// one-shot feats show nothing - the hint toast carries those.</summary>
+        string MedalProgress(string id)
+        {
+            switch (id)
+            {
+                case "hoard": return Mathf.Min(Game.State.ChestsOpened, 10) + "/10";
+                case "rich": return Mathf.Min(Game.State.Gold, 300) + "/300";
+                case "army": return Mathf.Min(Game.State.Friends.Count, 2) + "/2";
+                case "keeper":
+                    int n = 0;
+                    if (Medals.Has("boss1")) n++;
+                    if (Medals.Has("boss2")) n++;
+                    if (Medals.Has("boss3")) n++;
+                    return n + "/3";
+                case "warden":
+                    int total = 0, left = 0;
+                    foreach (var q in Quests.All)
+                        if (!q.Main) { total++; if (Quests.Step(q.Id) != 3) left++; }
+                    return (total - left) + "/" + total;
+                default: return "";
+            }
+        }
+
         /// <summary>Cycles a slot through everything of that kind in the bag. One tap per change,
         /// which is all a slot needs on a phone.</summary>
         void CycleWorn(ItemKind kind)
@@ -1623,7 +1647,7 @@ namespace MoonThief
                     {
                         bool got = Medals.Has(md.Id);
                         labels.Add(got ? Strings.Get("md." + md.Id) : Strings.Get("md.locked"));
-                        vals.Add(got ? Strings.Get("jr.done") : "");
+                        vals.Add(got ? Strings.Get("jr.done") : MedalProgress(md.Id));
                         // won medals wear their own mark; the un-won wear the cross so the
                         // case reads as a trophy wall, not a checklist of failures
                         icons.Add(got ? md.Icon : 27);
