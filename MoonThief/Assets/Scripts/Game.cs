@@ -2050,7 +2050,7 @@ namespace MoonThief
                     float poemBottom = HalfH - 10f - _endLines.MeasureHeight(_endLines.Text);
                     float aboveHint = -HalfH + 3.9f + _endStats.MeasureHeight(_endStats.Text) + 1.6f;
                     _endStats.transform.localPosition =
-                        new Vector3(0f, Fx.Snap(Mathf.Min(poemBottom - 0.5f, aboveHint)), 0f);
+                        new Vector3(0f, Fx.Snap(Mathf.Min(poemBottom - 0.8f, aboveHint)), 0f);
                 }
                 // the company walks home on the screen's edge: up to three friends stand
                 // as small silhouettes on the horizon line under the tap hint. Cleared
