@@ -19,6 +19,7 @@ namespace MoonThief
         public static bool OnbSeen;            // the three onboarding cards only run once
         public static bool Auto;               // the party's standing battle stance
         public static int MedalsSeen;          // how many medals the case has shown - drives the * on the hub
+        public static int BeastsSeen;          // how many bestiary entries the book has shown - same * rule
 
         public static float RevealSpeed => SpeedIndex switch
         {
@@ -48,6 +49,7 @@ namespace MoonThief
             OnbSeen = PlayerPrefs.GetInt("mt.onb", 0) == 1;
             Auto = PlayerPrefs.GetInt("mt.auto", 0) == 1;
             MedalsSeen = PlayerPrefs.GetInt("mt.medals.seen", 0);
+            BeastsSeen = PlayerPrefs.GetInt("mt.beasts.seen", 0);
             Sfx.Volume = SoundLevel * 0.25f;
             Sfx.Muted = SoundLevel <= 0;
             Sfx.Mus.Volume = MusicLevel * 0.25f;
@@ -65,6 +67,7 @@ namespace MoonThief
             PlayerPrefs.SetInt("mt.onb", OnbSeen ? 1 : 0);
             PlayerPrefs.SetInt("mt.auto", Auto ? 1 : 0);
             PlayerPrefs.SetInt("mt.medals.seen", MedalsSeen);
+            PlayerPrefs.SetInt("mt.beasts.seen", BeastsSeen);
             PlayerPrefs.Save();
             Sfx.Volume = SoundLevel * 0.25f;
             Sfx.Muted = SoundLevel <= 0;
@@ -1418,7 +1421,8 @@ namespace MoonThief
             var vals = new[]
             {
                 "L" + Game.State.Level, Game.State.Bag.Count.ToString(), WornCount() + "/3",
-                Game.State.Seen.Count + "/" + (BattleData.Bestiary.Length + 1),
+                Game.State.Seen.Count + "/" + (BattleData.Bestiary.Length + 1)
+                    + (Game.State.Seen.Count > Prefs.BeastsSeen ? " *" : ""),
                 Quests.DoneCount + "/" + Quests.All.Length,
                 Strings.Get("zone.short." + Game.State.CurZone),
                 Medals.Count + "/" + Medals.All.Length + (Medals.Count > Prefs.MedalsSeen ? " *" : ""), "",
@@ -1590,6 +1594,9 @@ namespace MoonThief
                 case Page2.Bestiary:
                     title = "jr.bestiary";
                     foot = "jr.bestiary.tip";
+                    // opening the book counts as seeing what it holds - same * rule as medals
+                    Prefs.BeastsSeen = Game.State.Seen.Count;
+                    Prefs.Store();
                     sub = Strings.Get("jr.bestiary.sub", Game.State.Seen.Count, BattleData.Bestiary.Length + 1);
                     sprites = new List<Sprite>();
                     foreach (var spec in BattleData.Bestiary)
