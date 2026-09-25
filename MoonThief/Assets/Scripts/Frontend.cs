@@ -1460,6 +1460,7 @@ namespace MoonThief
                 case Page2.Items:
                     title = "jr.items";
                     sub = Strings.Get("jr.items.sub", Game.State.Bag.Count);
+                    foot = "jr.items.tip";
                     {
                         icons = new List<int>();
                         var keys = new List<string>();
@@ -1517,6 +1518,7 @@ namespace MoonThief
 
                 case Page2.Bestiary:
                     title = "jr.bestiary";
+                    foot = "jr.bestiary.tip";
                     sub = Strings.Get("jr.bestiary.sub", Game.State.Seen.Count, BattleData.Bestiary.Length + 1);
                     sprites = new List<Sprite>();
                     foreach (var spec in BattleData.Bestiary)

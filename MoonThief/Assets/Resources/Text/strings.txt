@@ -418,7 +418,9 @@ loot.found|You found {0} and {1} gold.
 pause.journal|JOURNAL
 jr.title|JOURNAL
 jr.hint|PICK A ROW TO OPEN, BACK TO RETURN
-jr.pagehint|PICK A ROW - * MARKS THE BEST SHELF
+jr.pagehint|PICK A ROW FOR DETAILS
+jr.items.tip|TAP TO EQUIP - * MARKS THE BEST SHELF
+jr.bestiary.tip|FRIENDS YOU KEEP CARRY THEIR FAMILY MARK
 jr.map.tip|SPECKS MARK UNOPENED CHESTS
 jr.sub|LEVEL {0}    {1} GOLD
 jr.character|CHARACTER
