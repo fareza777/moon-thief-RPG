@@ -2726,6 +2726,21 @@ namespace MoonThief
             Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);   // BACK -> title
             yield return new WaitForSeconds(0.3f);
 
+            // the intro reel: every slide sits behind ci.N text and one of three backdrop
+            // arts, none of which any shot has ever stood up. Walk the reel the way a player
+            // taps it - finish-line then next-slide - through the plain, forest and dungeon
+            // arts, then Hide drops the card without firing OnIntroDone (BeginRun still
+            // opens the run below). Ten slides: 0-3 plain, 4-6 forest, 7-9 dungeon.
+            Menus.ShowCinema(0);
+            yield return new WaitForSeconds(1.0f);
+            Shot("10f-cinema-1");
+            for (int s = 0; s < 8; s++) { Menus.Tick(0.05f, Vector2.zero, false, 0, true, false); yield return new WaitForSeconds(0.25f); }
+            Shot("10f-cinema-5");
+            for (int s = 0; s < 10; s++) { Menus.Tick(0.05f, Vector2.zero, false, 0, true, false); yield return new WaitForSeconds(0.25f); }
+            Shot("10f-cinema-9");
+            Menus.Hide();
+            yield return new WaitForSeconds(0.2f);
+
             BeginRun();
             yield return new WaitForSeconds(1.2f);
             Shot("11-village");
