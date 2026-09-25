@@ -1584,6 +1584,9 @@ namespace MoonThief
             Sfx.Mus.Intensity = 1f;             // whatever the last fight left behind
             Sfx.Mus.Duck = 1f;                  // and the band comes back up for the fight
             Sfx.Mus.Play(hasBoss ? "boss" : "battle");
+            // a fight that walked out of a box plays a half-step sharper - the trap's
+            // own edge on the same old tune
+            if (fromMimic) Sfx.Mus.Intensity = 1.08f;
             Sfx.Play(hasBoss ? "boss" : "enemy");
             // a clean prowl gets its own whisper: the thief's first voice of the fight
             // gloats about the entrance, not the upcoming swings
