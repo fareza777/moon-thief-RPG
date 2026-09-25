@@ -481,6 +481,7 @@ jr.cure|CURE
 jr.wake|WAKE
 jr.mom|FLOW
 jr.maxhp|MAX HP
+jr.spd|SPD
 jr.all|ALL
 jr.key|KEEPSAKE
 jr.slot.blade|BLADE

@@ -1593,6 +1593,9 @@ namespace MoonThief
                     AddK(labels, vals, acts, "jr.gold", Game.State.Gold.ToString());
                     AddK(labels, vals, acts, "jr.atk", "+" + Game.State.BonusAtk);
                     AddK(labels, vals, acts, "jr.maxhp", "+" + Game.State.BonusHp);
+                    // the charm's third blessing is real too - say the turn-queue edge,
+                    // or a charm looks like only half the gift it is
+                    AddK(labels, vals, acts, "jr.spd", "+" + Game.State.BonusSpd.ToString("0.0#"));
                     Add(labels, vals, acts, Strings.Get("jr.slot.blade"), WornWord(0),
                         () => { CycleWorn(ItemKind.Blade); ShowPage(Page2.Character); });
                     Add(labels, vals, acts, Strings.Get("jr.slot.cloth"), WornWord(1),
@@ -1601,8 +1604,8 @@ namespace MoonThief
                         () => { CycleWorn(ItemKind.Charm); ShowPage(Page2.Character); });
                     // a little pictogram per stat: level/star, xp/scroll, shards/moon,
                     // friends/paw, felled/sword, chests/bag, company/person, gold/coin,
-                    // atk/bolt, hp/shield, blade/sword, cloth/shield, charm/bell
-                    icons = new List<int> { 21, 20, 24, 19, 0, 17, 16, 28, 13, 18, 0, 18, 25 };
+                    // atk/bolt, hp/shield, spd/bell, blade/sword, cloth/shield, charm/bell
+                    icons = new List<int> { 21, 20, 24, 19, 0, 17, 16, 28, 13, 18, 25, 0, 18, 25 };
                     break;
 
                 case Page2.Items:
@@ -1670,7 +1673,8 @@ namespace MoonThief
                         () => { CycleWorn(ItemKind.Charm); ShowPage(Page2.Equipment); });
                     AddK(labels, vals, acts, "jr.atk", "+" + Game.State.BonusAtk);
                     AddK(labels, vals, acts, "jr.maxhp", "+" + Game.State.BonusHp);
-                    icons = new List<int> { 0, 18, 25, 13, 18 };
+                    AddK(labels, vals, acts, "jr.spd", "+" + Game.State.BonusSpd.ToString("0.0#"));
+                    icons = new List<int> { 0, 18, 25, 13, 18, 25 };
                     break;
 
                 case Page2.Bestiary:
