@@ -1489,9 +1489,10 @@ namespace MoonThief
             }
         }
 
-        public void StartBattle(MonsterSpec[] specs) => StartBattle(specs, false);
+        public void StartBattle(MonsterSpec[] specs) => StartBattle(specs, false, false);
+        public void StartBattle(MonsterSpec[] specs, bool ambush) => StartBattle(specs, ambush, false);
 
-        public void StartBattle(MonsterSpec[] specs, bool ambush)
+        public void StartBattle(MonsterSpec[] specs, bool ambush, bool fromSleep)
         {
             // a stale invocation - a ghost card's TRY AGAIN, a queued callback landing after
             // the stage came down - must not build rigs on a dead view: every coroutine it
@@ -1540,7 +1541,9 @@ namespace MoonThief
             bool anyRare = false;
             foreach (var en in View.Enemies) if (en.Rare) anyRare = true;
             string introKey;
-            if (ambush) introKey = "bt.ambush";
+            // a dozing beast names its own entrance: roused from dreams, not merely
+            // caught off guard - the same daze, a different telling
+            if (ambush) introKey = fromSleep ? "bt.sleep" : "bt.ambush";
             else if (hasBoss) introKey = "bt.boss";
             else if (anyRare) introKey = "bt.moonlit";
             else if (specs.Length > 2) introKey = "bt.three";

@@ -1531,13 +1531,14 @@ namespace MoonThief
                 // a beast that never saw you is struck flat-footed: the whole roster
                 // opens the fight reeling - the prowl's payoff, not a free pass
                 bool ambush = !touched.Aggro;
+                bool fromSleep = touched.Asleep;   // a dozing beast names its own intro
                 World.RemoveMonster(touched);
                 if (ambush)
                 {
                     State.Ambushes++;
                     if (State.Ambushes >= 3) Medals.Grant("ghost");
                 }
-                StartBattle(new[] { spec }, ambush);
+                StartBattle(new[] { spec }, ambush, fromSleep);
                 return;
             }
             if (_encounterCooldown <= 0f && move.sqrMagnitude > 0.01f && World.HeroPos.y > 20f
@@ -2089,9 +2090,10 @@ namespace MoonThief
 
         // ------------------------------------------------------------ battles
 
-        public void StartBattle(MonsterSpec[] specs) => StartBattle(specs, false);
+        public void StartBattle(MonsterSpec[] specs) => StartBattle(specs, false, false);
+        public void StartBattle(MonsterSpec[] specs, bool ambush) => StartBattle(specs, ambush, false);
 
-        public void StartBattle(MonsterSpec[] specs, bool ambush)
+        public void StartBattle(MonsterSpec[] specs, bool ambush, bool fromSleep)
         {
             // a fight queued before the ending was called must not land after it: its
             // transition middle re-activates the stage over the dawn - caught on film by
@@ -2116,7 +2118,7 @@ namespace MoonThief
                 if (_hudZone != null) _hudZone.enabled = false;
                 SetHudQuestVisible(false);
                 BattleViewRef.gameObject.SetActive(true);
-                Director.StartBattle(specs, ambush);
+                Director.StartBattle(specs, ambush, fromSleep);
             }, 0.16f, 0.3f);
             bool boss = false;
             foreach (var s in specs) if (s.Boss) boss = true;
