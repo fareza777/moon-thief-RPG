@@ -3297,6 +3297,9 @@ namespace MoonThief
                     if (Vector2.Distance(World.HeroPos, target) < 2f) break;
                     yield return null;
                 }
+                // a companion for the horizon line: without this the ending shot only
+                // ever sees the lone telling
+                if (State.Friends.Count == 0) { State.Friends.Add("slime"); State.Friends.Add("moon.wisp"); }
                 TriggerEnding();
                 _testNoDoors = false;
                 yield return new WaitForSeconds(1.0f);
