@@ -1419,9 +1419,11 @@ namespace MoonThief
                 var a = MakeActor(Map.CellCenter(cell), WorldOrder(cell.y), isNpc: false);
                 if (rng.Next(100) < 10) spec.Rare = true;   // moonlit: silver skin, worth hunting
                 a.Spec = spec;
-                // about a fifth of the field dozes off - blind to everything but still
-                // within earshot, so a stomping thief wakes them into the chase anyway
-                a.Asleep = rng.Next(100) < 20;
+                // a fifth of the first field dozes off - blind to everything but still
+                // within earshot, so a stomping thief wakes them into the chase anyway.
+                // Deeper nights stay more awake: the wild learned the thief's gait too.
+                int doze = MapChapter == 1 ? 20 : MapChapter == 2 ? 13 : 7;
+                a.Asleep = rng.Next(100) < doze;
                 a.Sleeps = a.Asleep;
                 a.Name = null;
                 a.Speed = spec.Speed * 0.55f;
