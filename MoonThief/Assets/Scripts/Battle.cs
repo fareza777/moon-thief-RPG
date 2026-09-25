@@ -1603,6 +1603,7 @@ namespace MoonThief
             {
                 var bRig = View.RigOf(f);
                 if (bRig != null)
+                {
                     string who = f.Style == 0 ? "amber" : f.Style == 1 ? "sea" : "moss";
                     // same voice never says the same line twice running - a repeat reads
                     // as a stutter, not a personality
@@ -1611,6 +1612,7 @@ namespace MoonThief
                     _lastBarkWho = who; _lastBarkIdx = bi;
                     View.FloatNumber(bRig.Home + new Vector3(0f, 2.15f, 0f),
                         Strings.Get("bk." + who + "." + bi), new Color(1f, 0.96f, 0.72f), 1);
+                }
                 _partySpoke = true;
             }
             // a befriended beast acts on its own - no command menu, it just helps
