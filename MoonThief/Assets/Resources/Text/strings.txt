@@ -116,10 +116,12 @@ hud.quest|NEXT: {0}
 # ---- screen over the world, and a 39-character line ran most of the way across it.
 # Numbered: the corner line reads like a walkthrough, so the order is never in doubt.
 quest.1|1. Talk to Mira.
-quest.2|2. Open {0} night chests.
-quest.3|3. Follow the lamps.
-quest.4|4. Face the {0}.
-quest.5|5. Raise the moon at Mira's crystal.
+quest.sea|2. Find Sea at the village edge.
+quest.moss|3. Find Moss out in the fields.
+quest.2|4. Open {0} night chests.
+quest.3|5. Follow the lamps.
+quest.4|6. Face the {0}.
+quest.5|7. Raise the moon at Mira's crystal.
 
 # ---- heroes
 hero.amber|AMBER
@@ -324,6 +326,8 @@ npc.oda|ODA
 npc.nail|NAIL
 npc.prune|PRUNE
 npc.marn|MARN
+npc.sea|SEA
+npc.moss|MOSS
 
 # ---- dialog: Mira, the keeper of the lantern
 dl.elder.1.1|The moon did not rise. Not one cloud, and still dark.
@@ -335,6 +339,14 @@ dl.elder.2.3|The road north opens at the far gate. Follow the lamps.
 dl.elder.3.1|This is the last night, child. The wood has no dawn.
 dl.elder.3.2|The Pale Guard wears the last shard. It does not sleep.
 dl.elder.3.3|Sing to the crystal when you return. The sky listens.
+
+# ---- dialog: Sea, the knife-hand at the village edge
+dl.sea.1|You must be the thief Mira sent for. I heard the moon never rose.
+dl.sea.2|My knives are dull against the dark alone. Take me with you - I will cut what the night sends.
+
+# ---- dialog: Moss, the field-mender
+dl.moss.1|I was counting stems when the sky went black. The fields are not safe to work now.
+dl.moss.2|Let me walk with you. I can still mend what is torn - better than hiding here.
 
 # ---- dialog: Tobbe, the kid
 dl.kid.1|The slimes glow a little at night. They miss the moon too.
@@ -432,6 +444,7 @@ jr.done|DONE
 jr.page|NEXT PAGE {0}/{1}
 jr.newquest|NEW QUEST: {0}
 jr.questdone|QUEST DONE: {0}
+jr.join|{0} joins the walk.
 q.goal|It is written down in your journal.
 q.reward|Gold in hand, and something to carry.
 
@@ -441,17 +454,112 @@ item.berry|EMBER BERRY
 item.honey|WILD HONEY
 item.soup|MUSHROOM SOUP
 item.tea|MOON TEA
+item.crumb|POCKET CRUMB
+item.plum|MOON PLUM
+item.nut|ACORN SACK
+item.toast|CHAR TOAST
+item.egg|HEN'S EGG
+item.apple|ORCHARD APPLE
+item.milk|WARM MILK
+item.bread|DARK LOAF
+item.fig|NIGHT FIG
+item.roll|FIELD ROLL
+item.biscuit|THIEF'S BISCUIT
+item.jam|BRAMBLE JAM
+item.pudding|EGG PUDDING
+item.cheese|GOAT CHEESE
+item.broth|CLEAR BROTH
+item.pie|MOON PIE
+item.cider|PRESSED CIDER
+item.dumpling|BERRY DUMPLING
+item.stew|HEARTH STEW
+item.fish|SILVER FISH
+item.cake|SEED CAKE
+item.mead|OLD MEAD
+item.roast|DUSK ROAST
+item.chowder|MOON CHOWDER
+item.moonpie|FULL MOON PIE
+item.moontart|STAR TART
+item.feast|VILLAGE FEAST
+item.starlight|BOTTLED STARLIGHT
+item.ambrosia|DEW AMBROSIA
 item.spoon|BENT SPOON
 item.knife|KITCHEN KNIFE
 item.sickle|OLD SICKLE
 item.blade|MOON BLADE
+item.fork|GARDEN FORK
+item.peeler|TURNIP PEELER
+item.shiv|TWIG SHIV
+item.dagger|NIGHT DAGGER
+item.machete|FIELD MACHETE
+item.cutter|HEDGE CUTTER
+item.handaxe|HAND AXE
+item.spear|RIVER SPEAR
+item.falchion|FALCHION
+item.saber|REED SABER
+item.glaive|WARDEN GLAIVE
+item.lance|LAMP LANCE
+item.pike|NIGHT PIKE
+item.rapier|FOX RAPIER
+item.moonedge|MOON EDGE
+item.cleaver|BUTCHER'S CLEAVER
+item.fang|WOLF FANG
+item.windsword|WIND SWORD
+item.nightbrand|NIGHTBRAND
+item.frostsaber|FROST SABER
+item.flamebrand|EMBER BRAND
+item.voidedge|VOID EDGE
+item.starmetal|STARMETAL EDGE
+item.moonblade|CRESCENT BLADE
+item.dawnbreaker|DAWNBREAKER
 item.cloak|MOTH CLOAK
 item.vest|HIDE VEST
 item.mail|CHAIN MAIL
+item.scarf|NIGHT SCARF
+item.apron|WORK APRON
+item.tunic|HEMP TUNIC
+item.robe|WAYFARER ROBE
+item.shawl|WOOL SHAWL
+item.jerkin|THICK JERKIN
+item.pelt|BEAST PELT
+item.leather|FIELD LEATHER
+item.hauberk|RIVETED HAUBERK
+item.brigandine|BRIGANDINE
+item.scale|MOON SCALE
+item.plate|FIELD PLATE
+item.moonweave|MOONWEAVE
+item.nightshroud|NIGHT SHROUD
+item.stormcoat|STORM COAT
+item.ironhide|IRONHIDE
+item.starcloak|STAR CLOAK
+item.voidmantle|VOID MANTLE
+item.dawnplate|DAWN PLATE
+item.lunarplate|LUNAR PLATE
+item.aegis|MOON AEGIS
 item.charm.bell|BELL CHARM
 item.charm.leaf|LEAF CHARM
 item.charm.moon|MOON CHARM
 item.charm.thread|THREAD CHARM
+item.charm.acorn|LUCKY ACORN
+item.charm.bead|GLASS BEAD
+item.charm.coin|LUCKY COIN
+item.charm.feather|OWL FEATHER
+item.charm.shell|RIVER SHELL
+item.charm.pebble|WISHING PEBBLE
+item.charm.fang|FOX FANG
+item.charm.ivy|IVY BRAID
+item.charm.owl|OWL TOKEN
+item.charm.lantern|LANTERN CHARM
+item.charm.rune|ASH RUNE
+item.charm.ash|MOURNING ASH
+item.charm.moth|MOON MOTH
+item.charm.star|FALLEN STAR
+item.charm.wisp|WISP OIL
+item.charm.comet|COMET DUST
+item.charm.halo|PALE HALO
+item.charm.eclipse|ECLIPSE STONE
+item.charm.zodiac|ZODIAC WHEEL
+item.charm.moonstone|MOONSTONE
 item.axe|AN OLD AXE
 item.doll|A RED DOLL
 item.note|A FOLDED NOTE

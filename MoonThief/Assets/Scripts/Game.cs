@@ -30,6 +30,9 @@ namespace MoonThief
             // ---- the journal: the bag, what is worn, what has been seen, what has been done ----
             public static readonly List<string> Bag = new List<string>();          // item keys, repeats allowed
             public static readonly List<string> Friends = new List<string>();      // befriended species keys (max 2)
+            // the company: hero keys whose recruiting talks have run (amber is always in,
+            // so it is not stored). Drives both the battle party and the trail walkers.
+            public static readonly HashSet<string> Joined = new HashSet<string>();
             public static readonly string[] Worn = new string[3];                  // blade, cloth, charm
             public static readonly List<string> Zones = new List<string>();        // places walked into
             public static string CurZone = "village";                              // the zone the hero stands in now
@@ -46,6 +49,7 @@ namespace MoonThief
                 Gold = 0; Xp = 0; ChestsOpened = 0; Defeats = 0;
                 Bag.Clear(); Worn[0] = Worn[1] = Worn[2] = null;
                 Zones.Clear(); Seen.Clear(); ChestsDone.Clear(); Friends.Clear();
+                Joined.Clear();
                 Quests.Reset();
             }
 
@@ -174,10 +178,17 @@ namespace MoonThief
                 chestsOpened = ChestsOpened, heroX = heroX, heroY = heroY,
                 defeats = Defeats, bossDown = bossDown,
                 bag = Bag.ToArray(), worn = (string[])Worn.Clone(),
-                friends = Friends.ToArray(),
+                friends = Friends.ToArray(), joined = JoinedArray(),
                 zones = Zones.ToArray(), quests = Quests.Capture(),
                 seen = SeenKeys(), chests = ChestsDone.ToArray(),
             };
+
+            static string[] JoinedArray()
+            {
+                var list = new List<string>();
+                foreach (var j in Joined) list.Add(j);
+                return list.ToArray();
+            }
 
             static string[] SeenKeys()
             {
@@ -219,6 +230,9 @@ namespace MoonThief
                 Friends.Clear();
                 if (d.friends != null) foreach (var f in d.friends)
                     if (!string.IsNullOrEmpty(f) && Friends.Count < 2) Friends.Add(f);
+                Joined.Clear();
+                if (d.joined != null) foreach (var j in d.joined)
+                    if (!string.IsNullOrEmpty(j)) Joined.Add(j);
                 Quests.Apply(d.quests);
             }
         }
@@ -978,6 +992,11 @@ namespace MoonThief
             if (World != null && World.Map != null && World.Map.Interior && !string.IsNullOrEmpty(_questLineRaw))
                 return _questLineRaw;
             if (!_metMira) return Strings.Get("quest.1");
+            // the company forms before the work: Sea at the village edge, then Moss deeper
+            // in the fields. The ladder reads one line - Mira -> Sea -> Moss -> the night's
+            // errand - instead of three strangers appearing at your heels unasked.
+            if (!State.Joined.Contains("hero.sea")) return Strings.Get("quest.sea");
+            if (!State.Joined.Contains("hero.moss")) return Strings.Get("quest.moss");
             if (_bossDown && State.MoonShards >= ShardsNeeded) return Strings.Get("quest.5");
             if (State.MoonShards >= ShardsNeeded) return Strings.Get("quest.3");
             // only the first three caches hold shards - the fourth rides the Pale Guard.
@@ -1016,6 +1035,19 @@ namespace MoonThief
             {
                 var mira = World.FindNpc("npc.elder");
                 if (mira != null && mira.Root != null) return mira.Root.localPosition;
+            }
+            // the compass walks the company together before any chest or boss: first Sea on
+            // the road out, then Moss in the fields. Once joined their wandering selves are
+            // gone and the same ladder step just falls through.
+            if (!State.Joined.Contains("hero.sea"))
+            {
+                var sea = World.FindNpc("npc.sea");
+                if (sea != null && sea.Root != null) return sea.Root.localPosition;
+            }
+            if (!State.Joined.Contains("hero.moss"))
+            {
+                var moss = World.FindNpc("npc.moss");
+                if (moss != null && moss.Root != null) return moss.Root.localPosition;
             }
             if (State.MoonShards >= ShardsNeeded)
                 return _bossDown ? (Vector2?)World.Map.CristalPos : World.Map.BossPos;
@@ -1536,6 +1568,12 @@ namespace MoonThief
                     _dlgPortrait.sprite = TexArt.MapMonster(npc.Sheet, 1);
                     _dlgPortrait.transform.localScale = Vector3.one * 1.15f;
                 }
+                else if (!string.IsNullOrEmpty(npc.Walk))
+                {
+                    var frames = Bank.Frames(npc.Walk);
+                    _dlgPortrait.sprite = frames.Length > 0 ? frames[0] : null;
+                    _dlgPortrait.transform.localScale = Vector3.one * 3f;
+                }
                 else
                 {
                     _dlgPortrait.sprite = TexArt.Chara(Folks.Sheet(npc), (int)Dir.Down, 1);
@@ -1543,6 +1581,9 @@ namespace MoonThief
                 }
                 _dlgPortrait.enabled = _dlgPortrait.sprite != null;
             }
+            if (!string.IsNullOrEmpty(npc.JoinKey) && !State.Joined.Contains(npc.JoinKey)
+                && _dlgThen == null)
+                _dlgThen = () => Join(npc);
             Sfx.Play("blip");
         }
 
@@ -1583,12 +1624,38 @@ namespace MoonThief
             _dlgText.Set(Strings.Get(_dlgLines[_dlgIndex]));
             if (_dlgPortrait != null)
             {
-                _dlgPortrait.sprite = TexArt.Face(Folks.Sheet(npc))
-                    ?? TexArt.Chara(Folks.Sheet(npc), (int)Dir.Down, 1);
+                // walk-anim folk have no chara sheet to strip: the first frame of their own
+                // rig is their face, the same figure that fights beside you later
+                if (!string.IsNullOrEmpty(npc.Walk))
+                {
+                    var frames = Bank.Frames(npc.Walk);
+                    _dlgPortrait.sprite = frames.Length > 0 ? frames[0] : null;
+                }
+                else
+                    _dlgPortrait.sprite = TexArt.Face(Folks.Sheet(npc))
+                        ?? TexArt.Chara(Folks.Sheet(npc), (int)Dir.Down, 1);
                 _dlgPortrait.transform.localScale = Vector3.one * 3f;
                 _dlgPortrait.enabled = _dlgPortrait.sprite != null;
             }
+            // a recruiting talk ends in a yes: closing their dialog runs the join, which
+            // pulls their wandering self off the map and lights their walker on the trail
+            if (!string.IsNullOrEmpty(npc.JoinKey) && !State.Joined.Contains(npc.JoinKey))
+                _dlgThen = () => Join(npc);
             Sfx.Play("blip");
+        }
+
+        /// <summary>A companion says yes: their key joins the company, their wandering self
+        /// leaves the map, the trail gains a walker, and the whole thing is saved the same
+        /// moment so a join can never be lost.</summary>
+        void Join(NpcDef npc)
+        {
+            if (State.Joined.Contains(npc.JoinKey)) return;
+            State.Joined.Add(npc.JoinKey);
+            World.SyncParty();
+            Menus.ShowToast(Strings.Get("jr.join", Strings.Get(npc.NameKey)), 3.6f);
+            Sfx.Play("befriend");
+            RefreshQuest();
+            SaveRun();
         }
 
         void UpdateDialog()
@@ -1684,8 +1751,9 @@ namespace MoonThief
             {
                 // the fade lands 0.22s after the phase flips: a fight that began inside
                 // that gap owns the stage now - tearing it down mid-setup starved every
-                // battle coroutine when the selftest staged its loss in exactly that window
-                if (Phase == St.Battle) return;
+                // battle coroutine when the selftest staged its loss in exactly that window.
+                // the card still dies, though: its buttons must not ghost over the new fight
+                if (Phase == St.Battle) { BattleViewRef.HideCard(); return; }
                 BattleViewRef.gameObject.SetActive(false);
                 BattleViewRef.HideCard();
                 World.gameObject.SetActive(true);
@@ -1744,8 +1812,9 @@ namespace MoonThief
             Phase = St.Explore;
             DoTransition(() =>
             {
-                // same window as a victory: a new fight inside the fade owns the stage
-                if (Phase == St.Battle) return;
+                // same window as a victory: a new fight inside the fade owns the stage -
+                // but its leftover card buttons still have to go or they ghost over it
+                if (Phase == St.Battle) { BattleViewRef.HideCard(); return; }
                 BattleViewRef.HideCard();
                 BattleViewRef.gameObject.SetActive(false);
                 World.gameObject.SetActive(true);
@@ -2527,6 +2596,30 @@ namespace MoonThief
             yield return new WaitForSecondsRealtime(0.5f);
             Shot("28f-bestiary");
             ClosePause();
+
+            // the company forms before the hunt, the same way a player forms it: find the
+            // wanderer, take the talk, and let the talk's close run the join. After this the
+            // wandering selves are gone, two walkers trail the hero, and every fight ahead
+            // (including the three bosses, which were tuned for three) has the full party.
+            var seaNpc = World.FindNpc("npc.sea");
+            if (seaNpc != null)
+            {
+                TalkTo(seaNpc.Npc);
+                yield return new WaitForSeconds(0.8f);
+                Shot("12a-sea-talk");
+                CloseDialog();
+                yield return new WaitForSeconds(0.4f);
+            }
+            var mossNpc = World.FindNpc("npc.moss");
+            if (mossNpc != null)
+            {
+                TalkTo(mossNpc.Npc);
+                yield return new WaitForSeconds(0.4f);
+                CloseDialog();
+                yield return new WaitForSeconds(0.4f);
+            }
+            Debug.Log("[selftest] company=" + string.Join(",", State.Joined));
+            Shot("12a-party");
 
             // hunt the nearest wild monster so an encounter is guaranteed, not lucky. Steering is
             // diagonal: the old axis-only version (straight east/west, then straight north) wedged

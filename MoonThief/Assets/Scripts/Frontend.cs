@@ -93,6 +93,7 @@ namespace MoonThief
         public string[] zones;
         public string[] seen;
         public string[] friends;
+        public string[] joined;   // the company: hero keys whose recruiting talks ran
         public string[] quests;
         public string[] chests;
     }
@@ -991,6 +992,7 @@ namespace MoonThief
             _sc = Sc.Shop;
             _sel = 0;
             _shopSell = false;
+            _shopIndex = 0;
             _shopRoot.gameObject.SetActive(true);
             SlideIn(_shopCard);
             RefreshShop();
@@ -1002,24 +1004,46 @@ namespace MoonThief
         {
             switch (Mathf.Clamp(Game.State.Chapter, 1, 3))
             {
-                case 1: return new[] { "item.berry", "item.morsel", "item.honey",
-                                       "item.spoon", "item.cloak", "item.knife", "item.charm.bell" };
-                case 2: return new[] { "item.berry", "item.morsel", "item.honey", "item.soup",
-                                       "item.knife", "item.vest", "item.charm.bell", "item.charm.thread" };
-                default: return new[] { "item.morsel", "item.honey", "item.soup", "item.tea",
-                                        "item.sickle", "item.mail", "item.blade", "item.charm.moon" };
+                // pocket food and kitchen steel while the night is young -
+                // the shelf grows braver as the dark does
+                case 1: return new[] { "item.crumb", "item.berry", "item.plum", "item.morsel",
+                                       "item.honey", "item.soup", "item.bread", "item.egg",
+                                       "item.fork", "item.spoon", "item.shiv", "item.dagger",
+                                       "item.knife", "item.scarf", "item.apron", "item.cloak",
+                                       "item.tunic", "item.charm.acorn", "item.charm.bell",
+                                       "item.charm.bead" };
+                case 2: return new[] { "item.morsel", "item.honey", "item.soup", "item.roll",
+                                       "item.pie", "item.stew", "item.broth", "item.cider",
+                                       "item.dumpling", "item.knife", "item.machete",
+                                       "item.cutter", "item.handaxe", "item.sickle",
+                                       "item.spear", "item.vest", "item.jerkin", "item.pelt",
+                                       "item.leather", "item.robe", "item.charm.leaf",
+                                       "item.charm.thread", "item.charm.coin", "item.charm.feather" };
+                default: return new[] { "item.soup", "item.tea", "item.stew", "item.roast",
+                                        "item.chowder", "item.moonpie", "item.feast",
+                                        "item.starlight", "item.sickle", "item.saber",
+                                        "item.glaive", "item.moonedge", "item.blade",
+                                        "item.nightbrand", "item.starmetal", "item.mail",
+                                        "item.scale", "item.plate", "item.moonweave",
+                                        "item.aegis", "item.charm.moon", "item.charm.star",
+                                        "item.charm.eclipse", "item.charm.moonstone" };
             }
         }
+
+        // the stall holds more wares than one card can show: six rows a page, then a
+        // MORE row that walks the window forward - same shape the journal pages use
+        const int ShopRowsPerView = 6;
+        int _shopIndex;
 
         void RefreshShop()
         {
             _shopSub.Set(Strings.Get("shop.sub", Game.State.Gold));
             // the foot tells you what a tap does in THIS mode: buy it or let it go
             _shopFoot.Set(Strings.Get(_shopSell ? "shop.sellhint" : "shop.hint"));
-            var labels = new List<string>();
-            var vals = new List<string>();
-            var acts = new List<Action>();
-            var icons = new List<int>();
+            var goods = new List<string>();
+            var gvals = new List<string>();
+            var gacts = new List<Action>();
+            var gicons = new List<int>();
             int iconOf(ItemKind kind) => kind == ItemKind.Food ? 2
                 : kind == ItemKind.Blade ? 0 : kind == ItemKind.Cloth ? 18 : 25;
             if (_shopSell)
@@ -1028,25 +1052,23 @@ namespace MoonThief
                 // quest: half her shelf price, she says, and a story thrown in free.
                 var keys = new List<string>();
                 foreach (var b in Game.State.Bag) if (!keys.Contains(b)) keys.Add(b);
-                int shown = 0;
                 foreach (var key in keys)
                 {
                     var def = Items.Get(key);
                     if (def.Kind == ItemKind.Key) continue;          // quest things stay
                     if (Items.IsEquip(def.Kind) && IsWorn(key)) continue;   // on your back
                     int n = Game.State.BagCount(key);
-                    labels.Add(Strings.Get(key) + (n > 1 ? " x" + n : ""));
-                    vals.Add(Mathf.Max(1, def.Price / 2) + " G");
-                    icons.Add(iconOf(def.Kind));
+                    goods.Add(Strings.Get(key) + (n > 1 ? " x" + n : ""));
+                    gvals.Add(Mathf.Max(1, def.Price / 2) + " G");
+                    gicons.Add(iconOf(def.Kind));
                     var k = key;
-                    acts.Add(() => Sell(k));
-                    shown++;
+                    gacts.Add(() => Sell(k));
                 }
-                if (shown == 0) { AddK(labels, vals, acts, "jr.empty", ""); icons.Add(-1); }
-                labels.Add(Strings.Get("shop.buymode"));
-                vals.Add("");
-                acts.Add(() => { _shopSell = false; RefreshShop(); Select(0); });
-                icons.Add(28);
+                if (goods.Count == 0)
+                {
+                    goods.Add(Strings.Get("jr.empty"));
+                    gvals.Add(""); gicons.Add(-1); gacts.Add(() => { });
+                }
             }
             else
             {
@@ -1065,17 +1087,54 @@ namespace MoonThief
                             fx += " (" + (diff >= 0 ? "+" : "") + diff + ")";
                         }
                     }
-                    labels.Add(Strings.Get(key) + "  " + fx);
+                    goods.Add(Strings.Get(key) + "  " + fx);
                     bool owned = Items.IsEquip(def.Kind)
                         && (Game.State.BagCount(key) > 0 || Array.IndexOf(Game.State.Worn, key) >= 0);
-                    vals.Add(owned ? Strings.Get("shop.owned") : def.Price + " G");
+                    gvals.Add(owned ? Strings.Get("shop.owned") : def.Price + " G");
                     var k = key;
-                    acts.Add(() => Buy(k));
-                    icons.Add(iconOf(def.Kind));
+                    gacts.Add(() => Buy(k));
+                    gicons.Add(iconOf(def.Kind));
                 }
+            }
+
+            // slice the window: the card shows ShopRowsPerView goods, a MORE row when the
+            // shelf is longer, then the mode row (and BACK when buying)
+            int total = goods.Count;
+            int pages = Mathf.Max(1, Mathf.CeilToInt(total / (float)ShopRowsPerView));
+            _shopIndex = Mathf.Clamp(_shopIndex, 0, pages - 1);
+            int start = _shopIndex * ShopRowsPerView;
+            int count = Mathf.Min(ShopRowsPerView, total - start);
+
+            var labels = new List<string>();
+            var vals = new List<string>();
+            var acts = new List<Action>();
+            var icons = new List<int>();
+            for (int i = 0; i < count; i++)
+            {
+                labels.Add(goods[start + i]);
+                vals.Add(gvals[start + i]);
+                acts.Add(gacts[start + i]);
+                icons.Add(gicons[start + i]);
+            }
+            if (pages > 1)
+            {
+                labels.Add(Strings.Get("jr.page", _shopIndex + 1, pages));
+                vals.Add("");
+                acts.Add(() => { _shopIndex = (_shopIndex + 1) % pages; RefreshShop(); Select(0); });
+                icons.Add(28);
+            }
+            if (_shopSell)
+            {
+                labels.Add(Strings.Get("shop.buymode"));
+                vals.Add("");
+                acts.Add(() => { _shopSell = false; _shopIndex = 0; RefreshShop(); Select(0); });
+                icons.Add(14);
+            }
+            else
+            {
                 labels.Add(Strings.Get("shop.sellmode"));
                 vals.Add("");
-                acts.Add(() => { _shopSell = true; RefreshShop(); Select(0); });
+                acts.Add(() => { _shopSell = true; _shopIndex = 0; RefreshShop(); Select(0); });
                 icons.Add(28);
                 labels.Add(Strings.Get("menu.back"));
                 vals.Add("");

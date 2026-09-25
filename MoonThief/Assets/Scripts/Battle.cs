@@ -217,7 +217,11 @@ namespace MoonThief
         /// Footer spots for a party of any size: three heroes spread wide, more squeeze in.
         static float[] PartyXs(int n)
         {
-            if (n <= 3) return new[] { -4.2f, 0f, 4.2f };
+            // centred rows, not a fixed grid: the thief alone stands mid-field before the
+            // company forms, a pair splits the old edge slots, three keep the classic line
+            if (n <= 1) return new[] { 0f };
+            if (n == 2) return new[] { -2.4f, 2.4f };
+            if (n == 3) return new[] { -4.2f, 0f, 4.2f };
             var xs = new float[n];
             for (int i = 0; i < n; i++) xs[i] = Mathf.Lerp(-5.6f, 5.6f, i / (n - 1f));
             return xs;
@@ -225,7 +229,9 @@ namespace MoonThief
 
         void BuildParty()
         {
-            var specs = BattleData.Party;
+            // the company as it stands tonight: amber always, sea and moss only after their
+            // recruiting talks - a first-night ambush can find the thief still walking alone
+            var specs = BattleData.PartyActive;
             // befriended beasts stand behind the heroes, up to the two-heart cap
             var friends = new List<MonsterSpec>();
             foreach (var key in Game.State.Friends)
@@ -1398,6 +1404,9 @@ namespace MoonThief
 
         void RoundStart()
         {
+            // a card owns the fight once it is up: a queued round-start timer that fires
+            // late (a second battle was staged over the first's timers) must not re-open play
+            if (_ph == Ph.Card) return;
             _ph = Ph.Round;
             _queue.Clear();
             var all = new List<Fighter>(View.Party.Length + View.Enemies.Length);
@@ -1412,6 +1421,7 @@ namespace MoonThief
 
         void NextTurn()
         {
+            if (_ph == Ph.Card) return;
             if (AllEnemiesGone()) { Win(); return; }
             if (PartyWiped()) { Lose(); return; }
 
@@ -1452,6 +1462,7 @@ namespace MoonThief
 
         void BeginPlayerTurn(Fighter f)
         {
+            if (_ph == Ph.Card) return;   // the fight is over; the menu must stay down
             // a stung fighter bleeds before they can act - venom does not wait for the menu
             if (f.Poison > 0 && Application.isPlaying)
             {
@@ -1505,6 +1516,7 @@ namespace MoonThief
         /// like a sensible party, not a solver.</summary>
         void AutoPick(Fighter actor)
         {
+            if (_ph == Ph.Card) return;   // the card ended the round while the pick timer was in flight
             if (!AwaitingInput || !Auto) return;   // a hand got there first
             bool hurt = false;
             foreach (var p in View.Party) if (p.Alive && p.Hp01 < 0.45f) hurt = true;
@@ -1562,6 +1574,7 @@ namespace MoonThief
         /// menu in the way - it earned its spot in line.</summary>
         IEnumerator FriendTurn(Fighter f)
         {
+            if (_ph == Ph.Card) yield break;
             _ph = Ph.Acting;
             var aRig = View.RigOf(f);
             View.SetTurnRig(aRig);
@@ -1643,6 +1656,7 @@ namespace MoonThief
 
         IEnumerator EnemyTurn(Fighter e)
         {
+            if (_ph == Ph.Card) yield break;
             // venom works on the wild things too: a befriended stinger turns
             // their own trick on them, ticking before the creature can act
             if (e.Poison > 0 && Application.isPlaying)
@@ -1875,6 +1889,7 @@ namespace MoonThief
         /// turn's opening beat, and it can drop a fighter before they ever act.</summary>
         IEnumerator PoisonTick(Fighter f, System.Action done)
         {
+            if (_ph == Ph.Card) { done?.Invoke(); yield break; }
             f.Poison--;
             var rig = View.RigOf(f);
             if (rig != null)
@@ -2529,6 +2544,7 @@ namespace MoonThief
 
         void EndTurn()
         {
+            if (_ph == Ph.Card) return;   // a card settled the fight while the action resolved
             _ph = Ph.Round;
             View.SetTurnRig(null);
             if (_qi < _queue.Count && _queue[_qi].Side == Side.Party && _flow < 9)
@@ -2556,6 +2572,9 @@ namespace MoonThief
 
         void Win()
         {
+            // win once: a second entry (a queued turn or timer landing on an already
+            // ended fight) would stack a fresh ghost card over the real one
+            if (_ph == Ph.Card) return;
             _ph = Ph.Card;
             Sfx.Mus.Intensity = 1f;
             Sfx.Mus.Duck = 0.5f;            // the band steps back while the card has the floor
@@ -2641,6 +2660,9 @@ namespace MoonThief
 
         void Lose()
         {
+            // lose once: a stray post-card tick re-showing the card stacked ghost
+            // buttons over a dead view, and TRY AGAIN on a ghost restarted the fight
+            if (_ph == Ph.Card) return;
             _ph = Ph.Card;
             Sfx.Mus.Intensity = 1f;
             Sfx.Mus.Duck = 0.5f;

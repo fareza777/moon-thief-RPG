@@ -167,6 +167,10 @@ namespace MoonThief
             BuildCristal();
             BuildChests();
             SpawnNpcs(Folks.Village(Game.State.Chapter));
+            // the companions stand their ground until they say yes: after that their
+            // wandering selves are gone and the walkers carry them instead
+            SpawnNpcs(Folks.Companions());
+            SyncParty();
             BuildCritters();
             SpawnMonsters();
             BuildFireflies();
@@ -1152,7 +1156,12 @@ namespace MoonThief
                 var a = MakeActor(spot, WorldOrder(spot.y), isNpc: true);
                 a.Npc = defs[i];
                 a.IsNpc = true;
-                a.Anim.Play(CharaClip(Folks.Sheet(defs[i]), Dir.Down), 3f, true);
+                // walking-anim folk (the companions) have no chara sheet to strip - their
+                // whole figure is one hero-style walk cycle, same as their battle rig
+                if (!string.IsNullOrEmpty(defs[i].Walk))
+                    a.Anim.Play(Bank.Frames(defs[i].Walk), 3f, true);
+                else
+                    a.Anim.Play(CharaClip(Folks.Sheet(defs[i]), Dir.Down), 3f, true);
                 string label = Strings.Get(defs[i].NameKey);
                 MakeNamePlate(a, label, new Color32(10, 8, 20, 205));
                 Npcs.Add(a);
@@ -1440,6 +1449,9 @@ namespace MoonThief
                 bool ready = false;
                 bool wants = n.Npc.NameKey == "npc.elder" && Quests.Step("mq.1") == 0;
                 if (wants) ready = true;   // the story's giver gets the warm mark
+                // a wanderer who has not said yes yet wears the cool mark: the recruiting
+                // talk IS the errand, and the bubble is how the route out is learned
+                if (n.Npc.JoinKey != null && !Game.State.Joined.Contains(n.Npc.JoinKey)) wants = true;
                 if (!wants)
                 {
                     // a giver mid-errand wears no mark - the bubble means "needs you now":
@@ -1593,7 +1605,7 @@ namespace MoonThief
             var delta = toward - (Vector2)a.Root.localPosition;
             if (delta.sqrMagnitude < 0.01f) return;
             var d = DirVec.From(delta);
-            Face(a, d, CharaClip(Folks.Sheet(a.Npc), d));
+            Face(a, d, a.Npc.Walk != null ? Bank.Frames(a.Npc.Walk) : CharaClip(Folks.Sheet(a.Npc), d));
             if (a.Anim != null) a.Anim.Fps = 1f;
         }
 
@@ -1783,6 +1795,9 @@ namespace MoonThief
                 f.Speed = 4.6f;
                 var fr = Bank.Frames(FriendArt[i]);
                 if (fr.Length > 0) f.Anim.Play(fr, 1f, true);
+                // the thief starts the tale alone: a companion's walker only exists once
+                // their wandering self has been talked into coming along
+                f.Root.gameObject.SetActive(Game.State.Joined.Contains(FriendKeys[i]));
                 _friends.Add(f);
             }
             SyncFriends();
@@ -1793,6 +1808,11 @@ namespace MoonThief
             "Art/Hero/hero/color_2/walk/hero_walk_DOWN",
             "Art/Hero/hero/color_3/walk/hero_walk_DOWN",
         };
+
+        /// <summary>The walker order above, matched to the roster keys they belong to -
+        /// sea first (color_2), then moss (color_3). A friend that has not joined yet is
+        /// still an actor, just hidden: it stands in the world as the villager you meet.</summary>
+        static readonly string[] FriendKeys = { "hero.sea", "hero.moss" };
 
         static readonly Color32 FriendChip = new Color32(58, 42, 14, 215);
 
@@ -1831,6 +1851,43 @@ namespace MoonThief
                 _friends.Add(f);
                 SortActor(f);
             }
+        }
+
+        /// <summary>Re-reads who has joined and dresses the trail to match: a companion's
+        /// walker lights up the moment they say yes, and their wandering self steps off
+        /// the map. Called after every build (a load can land mid-company), and from the
+        /// join moment itself so the trail gains them the second the dialog closes.</summary>
+        public void SyncParty()
+        {
+            for (int i = 0; i < FriendKeys.Length && i < _friends.Count; i++)
+            {
+                var f = _friends[i];
+                if (f == null || f.Root == null) continue;
+                bool joined = Game.State.Joined.Contains(FriendKeys[i]);
+                bool was = f.Root.gameObject.activeSelf;
+                f.Root.gameObject.SetActive(joined);
+                if (joined && !was && Hero?.Root != null)
+                {
+                    var hp = (Vector2)Hero.Root.localPosition;
+                    var back = hp + new Vector2(0f, -0.55f * (i + 1));
+                    f.Root.localPosition = CanStand(back) ? new Vector3(back.x, back.y, 0f)
+                        : new Vector3(hp.x, hp.y, 0f);
+                }
+            }
+            for (int i = Npcs.Count - 1; i >= 0; i--)
+                if (Npcs[i].Npc.JoinKey != null && Game.State.Joined.Contains(Npcs[i].Npc.JoinKey))
+                    RemoveNpc(Npcs[i]);
+        }
+
+        /// <summary>Takes a villager off the street: plate, chip, sprite and the list entry.
+        /// A removed npc can no longer be found by FindNpc, talked to, or plate-refreshed.</summary>
+        public void RemoveNpc(Actor a)
+        {
+            if (a == null) return;
+            if (a.Name != null) a.Name.gameObject.SetActive(false);
+            if (a.NameChip != null) a.NameChip.enabled = false;
+            if (a.Root != null) Fx.Kill(a.Root.gameObject);
+            Npcs.Remove(a);
         }
 
         /// <summary>Wish a friend back to the night: the journal asks, the wild gets one
@@ -2339,7 +2396,7 @@ namespace MoonThief
                 if (Map.Walkable(Map.CellOf(nny))) npos.y = nny.y;
                 n.Root.localPosition = new Vector3(npos.x, npos.y, 0f);
                 var ndir = DirVec.From(delta);
-                Face(n, ndir, CharaClip(Folks.Sheet(n.Npc), ndir));
+                Face(n, ndir, n.Npc.Walk != null ? Bank.Frames(n.Npc.Walk) : CharaClip(Folks.Sheet(n.Npc), ndir));
                 if (n.Anim != null) n.Anim.Fps = 4.5f;
                 if (n.Body != null) n.Body.localPosition = new Vector3(0f, StepBob(_time + i, 6.5f, 0f), 0f);
                 if (n.Name != null)

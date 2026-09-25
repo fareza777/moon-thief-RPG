@@ -28,46 +28,175 @@ namespace MoonThief
             if (rng.Next(100) >= 24) return null;
             if (rng.Next(100) < 72)
             {
-                var food = new[] { "item.morsel", "item.berry", "item.honey", "item.soup", "item.tea" };
-                return food[rng.Next(Mathf.Min(food.Length, 2 + chapter))];
+                string[] food;
+                switch (Mathf.Clamp(chapter, 1, 3))
+                {
+                    case 1: food = new[] { "item.crumb", "item.berry", "item.plum", "item.morsel",
+                                           "item.nut", "item.apple", "item.bread", "item.toast" }; break;
+                    case 2: food = new[] { "item.morsel", "item.soup", "item.roll", "item.biscuit",
+                                           "item.jam", "item.pudding", "item.cheese", "item.broth",
+                                           "item.cider", "item.pie" }; break;
+                    default: food = new[] { "item.stew", "item.fish", "item.cake", "item.mead",
+                                            "item.roast", "item.chowder", "item.moonpie",
+                                            "item.dumpling", "item.honey" }; break;
+                }
+                return food[rng.Next(food.Length)];
             }
-            var gear = new[] { "item.spoon", "item.cloak", "item.charm.bell",
-                               "item.knife", "item.vest", "item.charm.leaf",
-                               "item.sickle", "item.charm.thread" };
-            return gear[rng.Next(Mathf.Clamp(2 + chapter * 2, 3, gear.Length))];
+            string[] gear;
+            switch (Mathf.Clamp(chapter, 1, 3))
+            {
+                case 1: gear = new[] { "item.fork", "item.spoon", "item.shiv", "item.dagger",
+                                       "item.scarf", "item.apron", "item.cloak",
+                                       "item.charm.acorn", "item.charm.bell", "item.charm.bead" }; break;
+                case 2: gear = new[] { "item.knife", "item.machete", "item.cutter", "item.handaxe",
+                                       "item.tunic", "item.jerkin", "item.vest", "item.pelt",
+                                       "item.charm.leaf", "item.charm.thread", "item.charm.coin",
+                                       "item.charm.feather" }; break;
+                default: gear = new[] { "item.saber", "item.glaive", "item.pike", "item.moonedge",
+                                        "item.brigandine", "item.scale", "item.moonweave",
+                                        "item.charm.lantern", "item.charm.rune", "item.charm.star",
+                                        "item.charm.moon" }; break;
+            }
+            return gear[rng.Next(gear.Length)];
         }
 
-        /// <summary>The Guard always drops real gear - the night owes you that much.</summary>
+        /// <summary>The night's gatekeeper always drops real gear - a fight that big owes you
+        /// something worth more than the stall's everyday shelf.</summary>
         public static string BossDrop(System.Random rng)
         {
-            var gear = new[] { "item.vest", "item.knife", "item.charm.leaf",
-                               "item.sickle", "item.charm.thread" };
+            var gear = new[] { "item.sickle", "item.spear", "item.vest", "item.hauberk",
+                               "item.charm.leaf", "item.charm.thread", "item.charm.owl",
+                               "item.pike", "item.scale", "item.charm.lantern",
+                               "item.moonedge", "item.moonweave", "item.charm.moon" };
             return gear[rng.Next(gear.Length)];
         }
 
         public static readonly ItemDef[] All =
         {
-            // food - heals the whole party by Power
-            new ItemDef{ Key="item.morsel", Kind=ItemKind.Food, Power=12, Price=4 },
-            new ItemDef{ Key="item.berry",  Kind=ItemKind.Food, Power=6,  Price=2 },
-            new ItemDef{ Key="item.honey",  Kind=ItemKind.Food, Power=14, Price=6 },
-            new ItemDef{ Key="item.soup",   Kind=ItemKind.Food, Power=9,  Price=5 },
-            new ItemDef{ Key="item.tea",    Kind=ItemKind.Food, Power=20, Price=9 },
-            // blades - +attack to the whole party
-            new ItemDef{ Key="item.spoon",  Kind=ItemKind.Blade, Power=2,  Price=6 },
-            new ItemDef{ Key="item.knife",  Kind=ItemKind.Blade, Power=4,  Price=14 },
-            new ItemDef{ Key="item.sickle", Kind=ItemKind.Blade, Power=7,  Price=28 },
-            new ItemDef{ Key="item.blade",  Kind=ItemKind.Blade, Power=11, Price=60 },
-            // cloth - +max hp to the whole party
-            new ItemDef{ Key="item.cloak",  Kind=ItemKind.Cloth, Power=4,  Price=8 },
-            new ItemDef{ Key="item.vest",   Kind=ItemKind.Cloth, Power=8,  Price=20 },
-            new ItemDef{ Key="item.mail",   Kind=ItemKind.Cloth, Power=14, Price=48 },
-            // charms - a small mixed blessing
-            new ItemDef{ Key="item.charm.bell",   Kind=ItemKind.Charm, Power=2, Price=16 },
-            new ItemDef{ Key="item.charm.leaf",   Kind=ItemKind.Charm, Power=6, Price=22 },
-            new ItemDef{ Key="item.charm.moon",   Kind=ItemKind.Charm, Power=9, Price=40 },
-            new ItemDef{ Key="item.charm.thread", Kind=ItemKind.Charm, Power=4, Price=18 },
-            // things a quest wants, never sold
+            // ---- food (35): heals the whole party by Power. Cheap pocket food first,
+            // then hearth fare, then the night-baked things only the last night sees.
+            new ItemDef{ Key="item.crumb",    Kind=ItemKind.Food, Power=4,  Price=1 },
+            new ItemDef{ Key="item.berry",    Kind=ItemKind.Food, Power=6,  Price=2 },
+            new ItemDef{ Key="item.plum",     Kind=ItemKind.Food, Power=5,  Price=2 },
+            new ItemDef{ Key="item.nut",      Kind=ItemKind.Food, Power=5,  Price=2 },
+            new ItemDef{ Key="item.toast",    Kind=ItemKind.Food, Power=6,  Price=2 },
+            new ItemDef{ Key="item.egg",      Kind=ItemKind.Food, Power=7,  Price=3 },
+            new ItemDef{ Key="item.apple",    Kind=ItemKind.Food, Power=7,  Price=3 },
+            new ItemDef{ Key="item.milk",     Kind=ItemKind.Food, Power=8,  Price=3 },
+            new ItemDef{ Key="item.bread",    Kind=ItemKind.Food, Power=8,  Price=3 },
+            new ItemDef{ Key="item.fig",      Kind=ItemKind.Food, Power=8,  Price=3 },
+            new ItemDef{ Key="item.soup",     Kind=ItemKind.Food, Power=9,  Price=5 },
+            new ItemDef{ Key="item.roll",     Kind=ItemKind.Food, Power=9,  Price=4 },
+            new ItemDef{ Key="item.biscuit",  Kind=ItemKind.Food, Power=10, Price=4 },
+            new ItemDef{ Key="item.jam",      Kind=ItemKind.Food, Power=10, Price=4 },
+            new ItemDef{ Key="item.pudding",  Kind=ItemKind.Food, Power=11, Price=5 },
+            new ItemDef{ Key="item.cheese",   Kind=ItemKind.Food, Power=11, Price=5 },
+            new ItemDef{ Key="item.morsel",   Kind=ItemKind.Food, Power=12, Price=4 },
+            new ItemDef{ Key="item.broth",    Kind=ItemKind.Food, Power=12, Price=5 },
+            new ItemDef{ Key="item.pie",      Kind=ItemKind.Food, Power=13, Price=6 },
+            new ItemDef{ Key="item.cider",    Kind=ItemKind.Food, Power=13, Price=6 },
+            new ItemDef{ Key="item.honey",    Kind=ItemKind.Food, Power=14, Price=6 },
+            new ItemDef{ Key="item.dumpling", Kind=ItemKind.Food, Power=14, Price=7 },
+            new ItemDef{ Key="item.stew",     Kind=ItemKind.Food, Power=15, Price=7 },
+            new ItemDef{ Key="item.fish",     Kind=ItemKind.Food, Power=16, Price=8 },
+            new ItemDef{ Key="item.cake",     Kind=ItemKind.Food, Power=16, Price=8 },
+            new ItemDef{ Key="item.mead",     Kind=ItemKind.Food, Power=17, Price=9 },
+            new ItemDef{ Key="item.roast",    Kind=ItemKind.Food, Power=18, Price=9 },
+            new ItemDef{ Key="item.chowder",  Kind=ItemKind.Food, Power=19, Price=10 },
+            new ItemDef{ Key="item.tea",      Kind=ItemKind.Food, Power=20, Price=9 },
+            new ItemDef{ Key="item.moonpie",  Kind=ItemKind.Food, Power=22, Price=12 },
+            new ItemDef{ Key="item.moontart", Kind=ItemKind.Food, Power=24, Price=13 },
+            new ItemDef{ Key="item.feast",    Kind=ItemKind.Food, Power=26, Price=14 },
+            new ItemDef{ Key="item.starlight",Kind=ItemKind.Food, Power=32, Price=18 },
+            new ItemDef{ Key="item.ambrosia", Kind=ItemKind.Food, Power=40, Price=24 },
+
+            // ---- blades (30): +attack to the whole party. Kitchen things first,
+            // field tools next, then the moon-forged steel of the last night.
+            new ItemDef{ Key="item.fork",       Kind=ItemKind.Blade, Power=1,  Price=3 },
+            new ItemDef{ Key="item.peeler",     Kind=ItemKind.Blade, Power=1,  Price=4 },
+            new ItemDef{ Key="item.spoon",      Kind=ItemKind.Blade, Power=2,  Price=6 },
+            new ItemDef{ Key="item.shiv",       Kind=ItemKind.Blade, Power=2,  Price=5 },
+            new ItemDef{ Key="item.dagger",     Kind=ItemKind.Blade, Power=3,  Price=9 },
+            new ItemDef{ Key="item.knife",      Kind=ItemKind.Blade, Power=4,  Price=14 },
+            new ItemDef{ Key="item.machete",    Kind=ItemKind.Blade, Power=4,  Price=12 },
+            new ItemDef{ Key="item.cutter",     Kind=ItemKind.Blade, Power=5,  Price=16 },
+            new ItemDef{ Key="item.handaxe",    Kind=ItemKind.Blade, Power=5,  Price=18 },
+            new ItemDef{ Key="item.spear",      Kind=ItemKind.Blade, Power=6,  Price=20 },
+            new ItemDef{ Key="item.falchion",   Kind=ItemKind.Blade, Power=6,  Price=22 },
+            new ItemDef{ Key="item.sickle",     Kind=ItemKind.Blade, Power=7,  Price=28 },
+            new ItemDef{ Key="item.saber",      Kind=ItemKind.Blade, Power=7,  Price=26 },
+            new ItemDef{ Key="item.glaive",     Kind=ItemKind.Blade, Power=8,  Price=30 },
+            new ItemDef{ Key="item.lance",      Kind=ItemKind.Blade, Power=8,  Price=34 },
+            new ItemDef{ Key="item.pike",       Kind=ItemKind.Blade, Power=9,  Price=36 },
+            new ItemDef{ Key="item.rapier",     Kind=ItemKind.Blade, Power=9,  Price=38 },
+            new ItemDef{ Key="item.moonedge",   Kind=ItemKind.Blade, Power=9,  Price=40 },
+            new ItemDef{ Key="item.cleaver",    Kind=ItemKind.Blade, Power=10, Price=44 },
+            new ItemDef{ Key="item.fang",       Kind=ItemKind.Blade, Power=10, Price=46 },
+            new ItemDef{ Key="item.windsword",  Kind=ItemKind.Blade, Power=11, Price=52 },
+            new ItemDef{ Key="item.blade",      Kind=ItemKind.Blade, Power=11, Price=60 },
+            new ItemDef{ Key="item.nightbrand", Kind=ItemKind.Blade, Power=12, Price=56 },
+            new ItemDef{ Key="item.frostsaber", Kind=ItemKind.Blade, Power=12, Price=58 },
+            new ItemDef{ Key="item.flamebrand", Kind=ItemKind.Blade, Power=13, Price=64 },
+            new ItemDef{ Key="item.voidedge",   Kind=ItemKind.Blade, Power=13, Price=68 },
+            new ItemDef{ Key="item.starmetal",  Kind=ItemKind.Blade, Power=14, Price=72 },
+            new ItemDef{ Key="item.moonblade",  Kind=ItemKind.Blade, Power=15, Price=80 },
+            new ItemDef{ Key="item.dawnbreaker",Kind=ItemKind.Blade, Power=16, Price=90 },
+
+            // ---- cloth (26): +max hp to the whole party. Scarves and aprons first,
+            // then leather and mail, then the woven-moon armour.
+            new ItemDef{ Key="item.scarf",      Kind=ItemKind.Cloth, Power=2,  Price=4 },
+            new ItemDef{ Key="item.apron",      Kind=ItemKind.Cloth, Power=3,  Price=6 },
+            new ItemDef{ Key="item.cloak",      Kind=ItemKind.Cloth, Power=4,  Price=8 },
+            new ItemDef{ Key="item.tunic",      Kind=ItemKind.Cloth, Power=5,  Price=10 },
+            new ItemDef{ Key="item.robe",       Kind=ItemKind.Cloth, Power=6,  Price=12 },
+            new ItemDef{ Key="item.shawl",      Kind=ItemKind.Cloth, Power=7,  Price=14 },
+            new ItemDef{ Key="item.vest",       Kind=ItemKind.Cloth, Power=8,  Price=20 },
+            new ItemDef{ Key="item.jerkin",     Kind=ItemKind.Cloth, Power=9,  Price=18 },
+            new ItemDef{ Key="item.pelt",       Kind=ItemKind.Cloth, Power=10, Price=22 },
+            new ItemDef{ Key="item.leather",    Kind=ItemKind.Cloth, Power=11, Price=24 },
+            new ItemDef{ Key="item.hauberk",    Kind=ItemKind.Cloth, Power=12, Price=28 },
+            new ItemDef{ Key="item.brigandine", Kind=ItemKind.Cloth, Power=13, Price=32 },
+            new ItemDef{ Key="item.mail",       Kind=ItemKind.Cloth, Power=14, Price=48 },
+            new ItemDef{ Key="item.scale",      Kind=ItemKind.Cloth, Power=15, Price=40 },
+            new ItemDef{ Key="item.plate",      Kind=ItemKind.Cloth, Power=16, Price=44 },
+            new ItemDef{ Key="item.moonweave",  Kind=ItemKind.Cloth, Power=17, Price=48 },
+            new ItemDef{ Key="item.nightshroud",Kind=ItemKind.Cloth, Power=18, Price=52 },
+            new ItemDef{ Key="item.stormcoat",  Kind=ItemKind.Cloth, Power=19, Price=56 },
+            new ItemDef{ Key="item.ironhide",   Kind=ItemKind.Cloth, Power=20, Price=60 },
+            new ItemDef{ Key="item.starcloak",  Kind=ItemKind.Cloth, Power=21, Price=64 },
+            new ItemDef{ Key="item.voidmantle", Kind=ItemKind.Cloth, Power=22, Price=68 },
+            new ItemDef{ Key="item.dawnplate",  Kind=ItemKind.Cloth, Power=23, Price=72 },
+            new ItemDef{ Key="item.lunarplate", Kind=ItemKind.Cloth, Power=24, Price=76 },
+            new ItemDef{ Key="item.aegis",      Kind=ItemKind.Cloth, Power=26, Price=88 },
+
+            // ---- charms (24): a small mixed blessing - a little speed, a little edge,
+            // a little health all at once. Pocket luck first, star-magic last.
+            new ItemDef{ Key="item.charm.acorn",   Kind=ItemKind.Charm, Power=1,  Price=8 },
+            new ItemDef{ Key="item.charm.bell",    Kind=ItemKind.Charm, Power=2,  Price=16 },
+            new ItemDef{ Key="item.charm.bead",    Kind=ItemKind.Charm, Power=2,  Price=10 },
+            new ItemDef{ Key="item.charm.coin",    Kind=ItemKind.Charm, Power=3,  Price=12 },
+            new ItemDef{ Key="item.charm.feather", Kind=ItemKind.Charm, Power=3,  Price=14 },
+            new ItemDef{ Key="item.charm.thread",  Kind=ItemKind.Charm, Power=4,  Price=18 },
+            new ItemDef{ Key="item.charm.shell",   Kind=ItemKind.Charm, Power=4,  Price=16 },
+            new ItemDef{ Key="item.charm.pebble",  Kind=ItemKind.Charm, Power=4,  Price=18 },
+            new ItemDef{ Key="item.charm.fang",    Kind=ItemKind.Charm, Power=5,  Price=20 },
+            new ItemDef{ Key="item.charm.ivy",     Kind=ItemKind.Charm, Power=5,  Price=22 },
+            new ItemDef{ Key="item.charm.leaf",    Kind=ItemKind.Charm, Power=6,  Price=22 },
+            new ItemDef{ Key="item.charm.owl",     Kind=ItemKind.Charm, Power=6,  Price=24 },
+            new ItemDef{ Key="item.charm.lantern", Kind=ItemKind.Charm, Power=7,  Price=26 },
+            new ItemDef{ Key="item.charm.rune",    Kind=ItemKind.Charm, Power=7,  Price=28 },
+            new ItemDef{ Key="item.charm.ash",     Kind=ItemKind.Charm, Power=8,  Price=30 },
+            new ItemDef{ Key="item.charm.moth",    Kind=ItemKind.Charm, Power=8,  Price=32 },
+            new ItemDef{ Key="item.charm.moon",    Kind=ItemKind.Charm, Power=9,  Price=40 },
+            new ItemDef{ Key="item.charm.star",    Kind=ItemKind.Charm, Power=9,  Price=36 },
+            new ItemDef{ Key="item.charm.wisp",    Kind=ItemKind.Charm, Power=10, Price=40 },
+            new ItemDef{ Key="item.charm.comet",   Kind=ItemKind.Charm, Power=10, Price=44 },
+            new ItemDef{ Key="item.charm.halo",    Kind=ItemKind.Charm, Power=11, Price=48 },
+            new ItemDef{ Key="item.charm.eclipse", Kind=ItemKind.Charm, Power=12, Price=54 },
+            new ItemDef{ Key="item.charm.zodiac",  Kind=ItemKind.Charm, Power=13, Price=60 },
+            new ItemDef{ Key="item.charm.moonstone",Kind=ItemKind.Charm, Power=14, Price=66 },
+
+            // ---- things a quest wants (5): never sold, never bought
             new ItemDef{ Key="item.axe",      Kind=ItemKind.Key, Price=0 },
             new ItemDef{ Key="item.doll",     Kind=ItemKind.Key, Price=0 },
             new ItemDef{ Key="item.note",     Kind=ItemKind.Key, Price=0 },
@@ -97,9 +226,9 @@ namespace MoonThief
                 case ItemKind.Food:
                     var fx = "+" + d.Power + " " + Strings.Get("jr.hp");
                     // every dish has a second comfort - say so where it is bought and bagged
-                    if (d.Key == "item.honey") fx += "+" + Strings.Get("jr.cure");
-                    else if (d.Key == "item.tea") fx += "+" + Strings.Get("jr.wake");
-                    else if (d.Key == "item.soup") fx += "+" + Strings.Get("jr.mom");
+                    if (d.Key == "item.honey" || d.Key == "item.starlight") fx += "+" + Strings.Get("jr.cure");
+                    else if (d.Key == "item.tea" || d.Key == "item.mead") fx += "+" + Strings.Get("jr.wake");
+                    else if (d.Key == "item.soup" || d.Key == "item.feast") fx += "+" + Strings.Get("jr.mom");
                     return fx;
                 case ItemKind.Blade: return "+" + d.Power + " " + Strings.Get("jr.atk");
                 case ItemKind.Cloth: return "+" + d.Power + " " + Strings.Get("jr.maxhp");

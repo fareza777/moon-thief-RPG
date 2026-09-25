@@ -956,6 +956,22 @@ namespace MoonThief
             new HeroSpec{ NameKey="hero.moss",  ColorDir="color_3", Hp=31, AtkMin=3, AtkMax=6, Speed=4.8f, Look=2, Style=2 },
         };
 
+        /// <summary>The party actually in the fight: amber always, the others only after
+        /// their recruiting talks have run. Reads Game.State.Joined so a solo opening night
+        /// sends the thief in alone - the walkers still exist as world actors then, not
+        /// as battle rigs.</summary>
+        public static HeroSpec[] PartyActive
+        {
+            get
+            {
+                var list = new List<HeroSpec>();
+                foreach (var h in Party)
+                    if (h.NameKey == "hero.amber" || Game.State.Joined.Contains(h.NameKey))
+                        list.Add(h);
+                return list.ToArray();
+            }
+        }
+
         /// <summary>A hero's raw stats at a level: levels used to move only the journal number,
         /// now each one adds real health and edge, so grinding the fields actually pays.
         /// Equipment bonuses are added on top of this by the caller.</summary>
@@ -1114,6 +1130,11 @@ namespace MoonThief
         public string[] Lines; // string keys spoken in order
         public bool Shop;      // tapping opens the shop instead of a dialog
         public bool Monster;   // portrait comes off a 48px monster cell, not a chara sheet
+        // walk-anim folk: a Resources path to an animation bank instead of a chara sheet
+        // (the companions are drawn by the same rigs that fight beside you)
+        public string Walk;
+        // folk who can join the walk: the battle-party key their recruiting talk turns on
+        public string JoinKey;
     }
 
     public static class Folks
@@ -1125,6 +1146,30 @@ namespace MoonThief
         /// Picking by path means a new villager is a name and a line of dialog, not a copied file.</summary>
         public static string Sheet(NpcDef def)
             => string.IsNullOrEmpty(def.Sheet) ? "Art/Char/chara_" + def.Chara : def.Sheet;
+
+        /// <summary>The two wanderers who can join the walk. Sea waits at the village's
+        /// north edge with her knives; Moss stands deeper in the fields where the wild is
+        /// thicker. Both are drawn by their own hero rigs, not a villager sheet, so the
+        /// one who talks is the one who fights beside you later. Their JoinKey gates the
+        /// recruiting talk into a join, and once joined their wandering selves leave the
+        /// map (the trail walkers take over). Positions sit inside the chest/boss ring so
+        /// the night route stays one line: Mira -> Sea -> Moss -> work.</summary>
+        public static NpcDef[] Companions()
+        {
+            return new[]
+            {
+                new NpcDef{ Chara = 0, Pos = new Vector2(27.5f, 16.5f),
+                    NameKey = "npc.sea",
+                    Lines = new[] { "dl.sea.1", "dl.sea.2" },
+                    Walk = "Art/Hero/hero/color_2/walk/hero_walk_DOWN",
+                    JoinKey = "hero.sea" },
+                new NpcDef{ Chara = 0, Pos = new Vector2(30.5f, 38.5f),
+                    NameKey = "npc.moss",
+                    Lines = new[] { "dl.moss.1", "dl.moss.2" },
+                    Walk = "Art/Hero/hero/color_3/walk/hero_walk_DOWN",
+                    JoinKey = "hero.moss" },
+            };
+        }
 
         /// <summary>Who is at home in each of the six village houses. One per room, so opening a
         /// door always leads to somebody with something to say.</summary>
