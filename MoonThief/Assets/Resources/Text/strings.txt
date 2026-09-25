@@ -879,6 +879,10 @@ bk.amb.2|From the dark.
 bk.mim.0|I knew that box was wrong!
 bk.mim.1|It had teeth - I saw teeth!
 bk.mim.2|Nobody touch anything!
+bark.doze.0|Shh - it sleeps. Walk soft.
+bark.doze.1|A sleeper. The quiet road lies past it.
+bark.doze.2|Even the wild dreams. Don't wake it.
+bark.doze.solo|Sleeping. Softly now.
 bt.sleep|Roused from dreams - the {0} wakes swinging!
 bt.mimic|That's no chest - the {0} was lying in wait!
 dl.hunter.3|Chests out there aren't all chests, boy. The wild learned our shapes - a shimmer that runs cold instead of gold means teeth. Look twice before you touch.

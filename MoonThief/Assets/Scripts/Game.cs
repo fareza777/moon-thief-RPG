@@ -361,6 +361,7 @@ namespace MoonThief
         bool _hintTalk, _hintChest, _hintSneak;   // one-off lessons - set from Prefs.Hints at run start
         int _aggroWas;          // hunters with the scent last frame - the rising edge speaks
         float _aggroBarkT;      // the company's nerves take a breath between warnings
+        float _dozeBarkT;       // a hush over a sleeping one is whispered once per approach
         float _sneakDuck = 1f;  // the band's volume while the thief holds his breath
         float _hintT;                                            // countdown for the deferred chapter toast
         string _hintKey;
@@ -1557,6 +1558,22 @@ namespace MoonThief
                 // rare ambient encounter while walking in the wild
                 StartBattle(BattleData.Roll(State.Chapter, new System.Random()));
                 return;
+            }
+
+            // a hush over the sleeping ones: creep close and somebody whispers it -
+            // solo the thief breathes it to himself, once per approach
+            _dozeBarkT -= Time.deltaTime;
+            if (World.Sneaking && _dozeBarkT <= 0f && !World.BannerUp)
+            {
+                foreach (var m in World.Monsters)
+                    if (m.Asleep && m.Root != null
+                        && ((Vector2)m.Root.position - World.HeroPos).sqrMagnitude < 10.2f)
+                    {
+                        _dozeBarkT = 14f;
+                        Menus.ShowToast(Strings.Get(State.Joined.Count > 0
+                            ? "bark.doze." + Random.Range(0, 3) : "bark.doze.solo"), 3f);
+                        break;
+                    }
             }
 
             // the company's nerves: a fresh set of eyes on the party earns one quip,
