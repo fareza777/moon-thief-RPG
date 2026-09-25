@@ -438,7 +438,7 @@ namespace MoonThief
                 TitleKey="q.watch.title", StepKey="q.watch.step", OfferKey="q.watch.offer", DoneKey="q.watch.done" },
             new QuestDef{ Id="sq.grave", Chapter=3, Kind=QuestKind.Talk, Need=1, Giver="npc.house.2", Reward=26, Gift="item.keepsake",
                 TitleKey="q.grave.title", StepKey="q.grave.step", OfferKey="q.grave.offer", DoneKey="q.grave.done" },
-            new QuestDef{ Id="sq.ledger", Chapter=3, Kind=QuestKind.Chests, Need=6, Giver="npc.house.1", Reward=40, Gift="item.blade",
+            new QuestDef{ Id="sq.ledger", Chapter=3, Kind=QuestKind.Chests, Need=5, Giver="npc.house.1", Reward=40, Gift="item.blade",
                 TitleKey="q.ledger.title", StepKey="q.ledger.step", OfferKey="q.ledger.offer", DoneKey="q.ledger.done" },
         };
 

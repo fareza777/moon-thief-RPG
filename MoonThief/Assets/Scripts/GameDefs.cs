@@ -541,7 +541,9 @@ namespace MoonThief
                 new Vector2Int(9, 40), new Vector2Int(52, 36),
                 new Vector2Int(18, 66), new Vector2Int(44, 78)
             };
-            int chests = Mathf.Clamp(1 + chapter, 2, 4);
+            // the last night's dark wood holds every spot the map knows - two of the
+            // six were drawn but never stood, and the ledger quest below wants them
+            int chests = chapter >= 3 ? chestSpots.Length : Mathf.Clamp(1 + chapter, 2, 4);
             for (int i = 0; i < chests; i++) m.Chests.Add(chestSpots[i]);
             // A chest stands on its own cell. It used to be scenery: nothing marked the cell, so
             // the dressers were free to plant a tree or a boulder on top of it (a chest cut in
