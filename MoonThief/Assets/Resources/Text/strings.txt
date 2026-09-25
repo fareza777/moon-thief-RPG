@@ -697,14 +697,17 @@ dl.home.5.2|My hen has opinions. Do not take them personally.
 q.mq1.title|LAST LANTERN
 q.mq1.step|Take the lantern and step outside.
 q.mq1.offer|So the sky is short one moon, and Mira is short one thief.
+q.mq1.offer.ng|The night tells itself again, and it still owes you a moon.
 q.mq1.done|Go on. The chests the village left shut are worth opening now.
 q.mq2.title|FOUR SHARDS
 q.mq2.step|Open night chests for shards. {0} left.
 q.mq2.offer|Four shards of moonlight fell with the moon. The chests have them.
+q.mq2.offer.ng|The shards fell in the same places. You walked this once already.
 q.mq2.done|Three, and then the road north does the rest. Follow the lamps.
 q.mq3.title|PALE GUARD
 q.mq3.step|Break the Pale Guard. {0} left.
 q.mq3.offer|The guard on the ridge wears the last shard like a crown.
+q.mq3.offer.ng|It wears the shard again. You have taken it once; take it again.
 q.mq3.done|The way to the crystal is open. Sing to it.
 
 # ---- quest log: the side errands (funny, odd, and a few that are not)

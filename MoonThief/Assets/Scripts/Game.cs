@@ -1628,7 +1628,8 @@ namespace MoonThief
                     Quests.Accept(quest);
                     OpenDialog(npc, new[]
                     {
-                        quest.OfferKey,
+                        State.NgPlus > 0 && Strings.Has(quest.OfferKey + ".ng")
+                            ? quest.OfferKey + ".ng" : quest.OfferKey,
                         "q.goal",
                     });
                     Menus.ShowToast(Strings.Get("jr.newquest", Strings.Get(quest.TitleKey)), 3.6f);
@@ -1646,7 +1647,13 @@ namespace MoonThief
                     SaveRun();
                     return;
                 }
-                OpenDialog(npc, new[] { quest.OfferKey, Quests.Line(quest) });
+                {
+                    // on a retold night the givers greet the hero as someone who has done
+                    // this before - a .ng sibling of the offer that only ever speaks then
+                    string offer = quest.OfferKey;
+                    if (State.NgPlus > 0 && Strings.Has(offer + ".ng")) offer += ".ng";
+                    OpenDialog(npc, new[] { offer, Quests.Line(quest) });
+                }
                 return;
             }
             OpenDialog(npc);
