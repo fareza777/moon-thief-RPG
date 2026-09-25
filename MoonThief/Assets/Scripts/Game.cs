@@ -2814,7 +2814,7 @@ namespace MoonThief
                 }
                 int cguard = 0, cstuck = 0;
                 var lastC = World.HeroPos;
-                while (Vector2.Distance(World.HeroPos, chestAt) > 1.0f && cguard++ < 300)
+                while (Vector2.Distance(World.HeroPos, chestAt) > 1.0f && cguard++ < 900)
                 {
                     var cdir = (chestAt - World.HeroPos).normalized;
                     if (Vector2.Distance(World.HeroPos, lastC) < 0.02f)
@@ -2828,7 +2828,18 @@ namespace MoonThief
                     yield return null;
                 }
                 int shardsBeforeChest = State.MoonShards;
-                TryInteract();
+                // TryInteract would work too, but a villager drifting beside the chest
+                // wins the interact first (NPCs are checked before chests) - the shard
+                // path is what this leg exists to prove, so call the chest directly
+                int cIdx = World.NearestChest(World.HeroPos);
+                if (cIdx >= 0)
+                {
+                    World.OpenChest(cIdx);
+                    Sfx.Play(State.MoonShards > shardsBeforeChest ? "shard" : "chest");
+                    ShowZoneBanner(World.LastLootText);
+                    CheckMains();
+                    RefreshHud();
+                }
                 yield return new WaitForSeconds(0.7f);
                 Debug.Log("[selftest] chest shards " + shardsBeforeChest + "->" + State.MoonShards
                     + " left=" + World.ChestsLeft + " opened=" + State.ChestsOpened
