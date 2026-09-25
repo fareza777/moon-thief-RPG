@@ -2116,15 +2116,31 @@ namespace MoonThief
             var c = Hero.Sr.color;
             c.a = sneak ? 0.62f : 1f;
             Hero.Sr.color = c;
+            // a fading thief can't keep a full dark pool under his feet - the
+            // shadow creeps with him or the whole trick reads wrong
+            if (Hero.Shadow != null)
+            {
+                var sc = Hero.Shadow.color;
+                sc.a = sneak ? 0.4f : 1f;
+                Hero.Shadow.color = sc;
+            }
             // the company creeps with him: a party at full glow while their leader
             // prowls would give the whole trick away
             for (int i = 0; i < _friends.Count; i++)
+            {
                 if (_friends[i].Sr != null)
                 {
                     var fc = _friends[i].Sr.color;
                     fc.a = sneak ? 0.62f : 1f;
                     _friends[i].Sr.color = fc;
                 }
+                if (_friends[i].Shadow != null)
+                {
+                    var fs = _friends[i].Shadow.color;
+                    fs.a = sneak ? 0.4f : 1f;
+                    _friends[i].Shadow.color = fs;
+                }
+            }
         }
 
         public bool DriveHero(Vector2 input, float dt)
