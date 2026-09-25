@@ -2866,6 +2866,15 @@ namespace MoonThief
             Menus.EditorJournal(6);
             yield return new WaitForSecondsRealtime(0.5f);
             Shot("28g-medals");
+            // the back pages of the case: the late feats live there - film them too
+            for (int i = 0; i < 6; i++) Menus.Tick(0.1f, Vector2.zero, false, 1, false, false);
+            Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);
+            yield return new WaitForSecondsRealtime(0.4f);
+            Shot("28g2-medals-p2");
+            for (int i = 0; i < 6; i++) Menus.Tick(0.1f, Vector2.zero, false, 1, false, false);
+            Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);
+            yield return new WaitForSecondsRealtime(0.4f);
+            Shot("28g3-medals-p3");
             ClosePause();
 
             // the real run comes back before a single world leg touches it - the fake
