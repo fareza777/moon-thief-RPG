@@ -1539,7 +1539,10 @@ namespace MoonThief
                 case Page2.Character:
                     title = "jr.character";
                     sub = SubLine();
-                    AddK(labels, vals, acts, "jr.level", "L" + Game.State.Level);
+                    // the sub already says the level - the row's second word is the tale's
+                    // number instead, the one thing the sheet was never asked about
+                    AddK(labels, vals, acts, "jr.level", "L" + Game.State.Level
+                        + (Game.State.NgPlus > 0 ? " " + Strings.Get("jr.ngp", Game.State.NgPlus + 1) : ""));
                     AddK(labels, vals, acts, "jr.xp", Game.State.Xp + "/" + Game.State.NextLevelAt);
                     AddK(labels, vals, acts, "jr.shards", Game.State.MoonShards + "/" + Game.ShardsNeeded);
                     AddK(labels, vals, acts, "jr.befriended", Game.State.Befriended.ToString());
