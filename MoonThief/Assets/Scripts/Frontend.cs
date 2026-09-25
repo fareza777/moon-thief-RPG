@@ -837,16 +837,38 @@ namespace MoonThief
             Select(_sel);
         }
 
-        /// <summary>Copy the store link so a player can paste it anywhere. A proper share sheet
-        /// needs a plugin; the clipboard version works on every platform and costs nothing.</summary>
+        /// <summary>On Android this fires the real share sheet (no plugin needed - the
+        /// ACTION_SEND intent is one JavaObject away); everywhere else it copies the store
+        /// link so a player can paste it anywhere.</summary>
         void DoShare()
         {
-            GUIUtility.systemCopyBuffer = Strings.Get("share.text", StoreUrl);
+            string shareText = Strings.Get("share.text", StoreUrl);
+            bool shared = false;
+#if UNITY_ANDROID && !UNITY_EDITOR
+            try
+            {
+                var intent = new AndroidJavaObject("android.content.Intent");
+                intent.Call<AndroidJavaObject>("setAction", intent.GetStatic<string>("ACTION_SEND"));
+                intent.Call<AndroidJavaObject>("setType", "text/plain");
+                intent.Call<AndroidJavaObject>("putExtra", intent.GetStatic<string>("EXTRA_TEXT"), shareText);
+                var chooser = intent.CallStatic<AndroidJavaObject>("createChooser",
+                    intent, Strings.Get("menu.share"));
+                var activity = new AndroidJavaClass("com.unity3d.player.UnityPlayer")
+                    .GetStatic<AndroidJavaObject>("currentActivity");
+                activity.Call("startActivity", chooser);
+                shared = true;
+            }
+            catch { }
+#endif
+            if (!shared)
+            {
+                GUIUtility.systemCopyBuffer = shareText;
+                // the world's notice lane is parked on the title, and ShowToast parks with it -
+                // this notice belongs to THIS screen, so it draws now instead of surfacing
+                // when a run finally starts
+                DrawToast(Strings.Get("share.copied"), 3.2f);
+            }
             Sfx.Play("ui");
-            // the world's notice lane is parked on the title, and ShowToast parks with it -
-            // this notice belongs to THIS screen, so it draws now instead of surfacing
-            // when a run finally starts
-            DrawToast(Strings.Get("share.copied"), 3.2f);
         }
 
         /// <summary>market:// on a phone opens the Play Store app; everywhere else the web page
