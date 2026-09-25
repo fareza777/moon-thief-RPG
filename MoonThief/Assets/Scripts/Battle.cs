@@ -1703,6 +1703,7 @@ namespace MoonThief
             if (fFam == "worm" && target.Alive && UnityEngine.Random.value < 0.35f)
             {
                 target.Corrode++;
+                Sfx.Play("venom");
                 View.FloatNumber(tRig.Home + new Vector3(0f, 1.9f, 0f),
                     Strings.Get("bt.corroded"), new Color(0.8f, 0.55f, 0.3f));
             }
@@ -2027,6 +2028,7 @@ namespace MoonThief
             if (fam == "worm" && target.Alive && UnityEngine.Random.value < 0.35f)
             {
                 target.Corrode++;
+                Sfx.Play("venom");
                 View.FloatNumber(tRig.Home + new Vector3(0f, 1.9f, 0f),
                     Strings.Get("bt.corroded"), new Color(0.8f, 0.55f, 0.3f));
             }
@@ -2546,6 +2548,7 @@ namespace MoonThief
             {
                 if (!z.Alive || FamOf(z) != "zombi") continue;
                 z.Hp = Mathf.Min(z.MaxHp, z.Hp + 5);
+                Sfx.Play("heal");
                 var zr = View.RigOf(z);
                 if (zr != null)
                     View.FloatNumber(zr.Home + new Vector3(0f, 1.9f, 0f),
