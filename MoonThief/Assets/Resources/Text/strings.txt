@@ -511,6 +511,11 @@ item.moontart|STAR TART
 item.feast|VILLAGE FEAST
 item.starlight|BOTTLED STARLIGHT
 item.ambrosia|DEW AMBROSIA
+item.mooncake|MOON CAKE
+item.starjam|STAR JAM
+item.nightfeast|NIGHT FEAST
+item.dawnsoup|DAWN SOUP
+item.cristalbite|CRISTAL BITE
 item.spoon|BENT SPOON
 item.knife|KITCHEN KNIFE
 item.sickle|OLD SICKLE
@@ -540,6 +545,12 @@ item.voidedge|VOID EDGE
 item.starmetal|STARMETAL EDGE
 item.moonblade|CRESCENT BLADE
 item.dawnbreaker|DAWNBREAKER
+item.moonsteel|MOONSTEEL SABER
+item.nightfall|NIGHTFALL EDGE
+item.starforged|STARFORGED BLADE
+item.duskbane|DUSKBANE
+item.palesaber|PALE SABER
+item.cristalblade|CRISTAL BLADE
 item.cloak|MOTH CLOAK
 item.vest|HIDE VEST
 item.mail|CHAIN MAIL
@@ -564,6 +575,12 @@ item.voidmantle|VOID MANTLE
 item.dawnplate|DAWN PLATE
 item.lunarplate|LUNAR PLATE
 item.aegis|MOON AEGIS
+item.starweave|STARWEAVE
+item.nightsilk|NIGHTSILK WRAP
+item.dawnweave|DAWNWEAVE
+item.moonmail|MOON MAIL
+item.starmail|STAR MAIL
+item.cristalplate|CRISTAL PLATE
 item.charm.bell|BELL CHARM
 item.charm.leaf|LEAF CHARM
 item.charm.moon|MOON CHARM
@@ -588,6 +605,11 @@ item.charm.halo|PALE HALO
 item.charm.eclipse|ECLIPSE STONE
 item.charm.zodiac|ZODIAC WHEEL
 item.charm.moonstone|MOONSTONE
+item.charm.aurora|AURORA CHARM
+item.charm.nova|NOVA CHARM
+item.charm.lumen|LUMEN CHARM
+item.charm.crown|MOON CROWN
+item.charm.cristal|CRISTAL CHARM
 item.axe|AN OLD AXE
 item.doll|A RED DOLL
 item.note|A FOLDED NOTE

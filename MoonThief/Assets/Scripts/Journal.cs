@@ -38,7 +38,8 @@ namespace MoonThief
                                            "item.cider", "item.pie" }; break;
                     default: food = new[] { "item.stew", "item.fish", "item.cake", "item.mead",
                                             "item.roast", "item.chowder", "item.moonpie",
-                                            "item.dumpling", "item.honey" }; break;
+                                            "item.dumpling", "item.honey", "item.nightfeast",
+                                            "item.dawnsoup" }; break;
                 }
                 return food[rng.Next(food.Length)];
             }
@@ -55,7 +56,8 @@ namespace MoonThief
                 default: gear = new[] { "item.saber", "item.glaive", "item.pike", "item.moonedge",
                                         "item.brigandine", "item.scale", "item.moonweave",
                                         "item.charm.lantern", "item.charm.rune", "item.charm.star",
-                                        "item.charm.moon" }; break;
+                                        "item.charm.moon", "item.moonsteel", "item.nightfall",
+                                        "item.starweave", "item.charm.aurora", "item.charm.nova" }; break;
             }
             return gear[rng.Next(gear.Length)];
         }
@@ -67,7 +69,8 @@ namespace MoonThief
             var gear = new[] { "item.sickle", "item.spear", "item.vest", "item.hauberk",
                                "item.charm.leaf", "item.charm.thread", "item.charm.owl",
                                "item.pike", "item.scale", "item.charm.lantern",
-                               "item.moonedge", "item.moonweave", "item.charm.moon" };
+                               "item.moonedge", "item.moonweave", "item.charm.moon",
+                               "item.starforged", "item.nightsilk", "item.charm.lumen" };
             return gear[rng.Next(gear.Length)];
         }
 
@@ -109,6 +112,11 @@ namespace MoonThief
             new ItemDef{ Key="item.feast",    Kind=ItemKind.Food, Power=26, Price=14 },
             new ItemDef{ Key="item.starlight",Kind=ItemKind.Food, Power=32, Price=18 },
             new ItemDef{ Key="item.ambrosia", Kind=ItemKind.Food, Power=40, Price=24 },
+            new ItemDef{ Key="item.mooncake",  Kind=ItemKind.Food, Power=44, Price=28 },
+            new ItemDef{ Key="item.starjam",   Kind=ItemKind.Food, Power=48, Price=32 },
+            new ItemDef{ Key="item.nightfeast",Kind=ItemKind.Food, Power=52, Price=36 },
+            new ItemDef{ Key="item.dawnsoup",  Kind=ItemKind.Food, Power=56, Price=40 },
+            new ItemDef{ Key="item.cristalbite",Kind=ItemKind.Food, Power=60, Price=46 },
 
             // ---- blades (30): +attack to the whole party. Kitchen things first,
             // field tools next, then the moon-forged steel of the last night.
@@ -141,6 +149,12 @@ namespace MoonThief
             new ItemDef{ Key="item.starmetal",  Kind=ItemKind.Blade, Power=14, Price=72 },
             new ItemDef{ Key="item.moonblade",  Kind=ItemKind.Blade, Power=15, Price=80 },
             new ItemDef{ Key="item.dawnbreaker",Kind=ItemKind.Blade, Power=16, Price=90 },
+            new ItemDef{ Key="item.moonsteel",  Kind=ItemKind.Blade, Power=17, Price=96 },
+            new ItemDef{ Key="item.nightfall",  Kind=ItemKind.Blade, Power=18, Price=104 },
+            new ItemDef{ Key="item.starforged", Kind=ItemKind.Blade, Power=19, Price=112 },
+            new ItemDef{ Key="item.duskbane",   Kind=ItemKind.Blade, Power=20, Price=124 },
+            new ItemDef{ Key="item.palesaber",  Kind=ItemKind.Blade, Power=21, Price=136 },
+            new ItemDef{ Key="item.cristalblade",Kind=ItemKind.Blade, Power=22, Price=150 },
 
             // ---- cloth (26): +max hp to the whole party. Scarves and aprons first,
             // then leather and mail, then the woven-moon armour.
@@ -168,6 +182,12 @@ namespace MoonThief
             new ItemDef{ Key="item.dawnplate",  Kind=ItemKind.Cloth, Power=23, Price=72 },
             new ItemDef{ Key="item.lunarplate", Kind=ItemKind.Cloth, Power=24, Price=76 },
             new ItemDef{ Key="item.aegis",      Kind=ItemKind.Cloth, Power=26, Price=88 },
+            new ItemDef{ Key="item.starweave",  Kind=ItemKind.Cloth, Power=27, Price=96 },
+            new ItemDef{ Key="item.nightsilk",  Kind=ItemKind.Cloth, Power=28, Price=104 },
+            new ItemDef{ Key="item.dawnweave",  Kind=ItemKind.Cloth, Power=29, Price=112 },
+            new ItemDef{ Key="item.moonmail",   Kind=ItemKind.Cloth, Power=30, Price=124 },
+            new ItemDef{ Key="item.starmail",   Kind=ItemKind.Cloth, Power=31, Price=136 },
+            new ItemDef{ Key="item.cristalplate",Kind=ItemKind.Cloth, Power=32, Price=150 },
 
             // ---- charms (24): a small mixed blessing - a little speed, a little edge,
             // a little health all at once. Pocket luck first, star-magic last.
@@ -195,6 +215,11 @@ namespace MoonThief
             new ItemDef{ Key="item.charm.eclipse", Kind=ItemKind.Charm, Power=12, Price=54 },
             new ItemDef{ Key="item.charm.zodiac",  Kind=ItemKind.Charm, Power=13, Price=60 },
             new ItemDef{ Key="item.charm.moonstone",Kind=ItemKind.Charm, Power=14, Price=66 },
+            new ItemDef{ Key="item.charm.aurora",  Kind=ItemKind.Charm, Power=15, Price=72 },
+            new ItemDef{ Key="item.charm.nova",    Kind=ItemKind.Charm, Power=16, Price=80 },
+            new ItemDef{ Key="item.charm.lumen",   Kind=ItemKind.Charm, Power=17, Price=88 },
+            new ItemDef{ Key="item.charm.crown",   Kind=ItemKind.Charm, Power=18, Price=96 },
+            new ItemDef{ Key="item.charm.cristal", Kind=ItemKind.Charm, Power=19, Price=110 },
 
             // ---- things a quest wants (5): never sold, never bought
             new ItemDef{ Key="item.axe",      Kind=ItemKind.Key, Price=0 },
@@ -282,10 +307,11 @@ namespace MoonThief
                     pool = rng.Next(100) < 50
                         ? new[] { "item.saber", "item.glaive", "item.pike", "item.scale",
                                   "item.brigandine", "item.hauberk", "item.charm.lantern",
-                                  "item.charm.rune", "item.charm.star", "item.charm.owl" }
+                                  "item.charm.rune", "item.charm.star", "item.charm.owl",
+                                  "item.starweave", "item.moonsteel", "item.charm.aurora" }
                         : new[] { "item.stew", "item.fish", "item.cake", "item.mead",
                                   "item.roast", "item.chowder", "item.moonpie",
-                                  "item.dumpling", "item.honey" };
+                                  "item.dumpling", "item.honey", "item.mooncake", "item.starjam" };
                     break;
             }
             return pool[rng.Next(pool.Length)];

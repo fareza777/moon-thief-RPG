@@ -1021,12 +1021,12 @@ namespace MoonThief
                                        "item.charm.thread", "item.charm.coin", "item.charm.feather" };
                 default: return new[] { "item.soup", "item.tea", "item.stew", "item.roast",
                                         "item.chowder", "item.moonpie", "item.feast",
-                                        "item.starlight", "item.sickle", "item.saber",
-                                        "item.glaive", "item.moonedge", "item.blade",
-                                        "item.nightbrand", "item.starmetal", "item.mail",
+                                        "item.mooncake", "item.sickle", "item.saber",
+                                        "item.glaive", "item.moonedge", "item.moonsteel",
+                                        "item.nightfall", "item.starmetal", "item.starforged",
                                         "item.scale", "item.plate", "item.moonweave",
-                                        "item.aegis", "item.charm.moon", "item.charm.star",
-                                        "item.charm.eclipse", "item.charm.moonstone" };
+                                        "item.aegis", "item.starweave", "item.charm.moon",
+                                        "item.charm.aurora", "item.charm.moonstone" };
             }
         }
 
