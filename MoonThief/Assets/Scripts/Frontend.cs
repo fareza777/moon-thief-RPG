@@ -1051,9 +1051,8 @@ namespace MoonThief
             _onbBody.Set(Strings.Get("onb.body." + (_onbPage + 1)));
             if (_onbEmblem != null)
             {
-                _onbEmblem.sprite = _onbPage == 0 ? TexArt.MoonFull()
-                    : TexArt.MenuIcon(OnbEmblems[Mathf.Clamp(_onbPage, 0, OnbEmblems.Length - 1)]);
-                _onbEmblem.transform.localScale = Vector3.one * (_onbPage == 0 ? 2.4f : 3f);
+                _onbEmblem.sprite = TexArt.MenuIcon(OnbEmblems[Mathf.Clamp(_onbPage, 0, OnbEmblems.Length - 1)]);
+                _onbEmblem.transform.localScale = Vector3.one * 3f;
             }
             for (int i = 0; i < _onbDots.Count; i++)
                 _onbDots[i].color = i == _onbPage
