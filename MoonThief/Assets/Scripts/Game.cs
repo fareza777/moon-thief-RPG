@@ -2994,6 +2994,14 @@ namespace MoonThief
             Shot("10c2-menu");    // on a fresh boot shot 10 lands on onboarding, so re-take it here
             Debug.Log("[selftest] after onboard phase=" + Phase);
 
+            // back on the title raises the goodbye card - the one screen no run ever stood
+            // up: cancel to raise it, then STAY drops back to the menu rows
+            Menus.Tick(0.1f, Vector2.zero, false, 0, false, true);
+            yield return new WaitForSeconds(0.5f);
+            Shot("10c4-quitconf");
+            Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);   // STAY -> title rows
+            yield return new WaitForSeconds(0.3f);
+
             // the chapter card only plays inside the night-2/night-3 dissolve - too fast
             // to catch live, so the editor hook stands it up on demand instead
             Menus.ShowChapterCard(2);
