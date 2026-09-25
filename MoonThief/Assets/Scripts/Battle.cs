@@ -1513,6 +1513,7 @@ namespace MoonThief
             // the iron medal at the door
             if (!Prefs.Hard) Game.State.EasyFights++;
             _befriended = 0;
+            _fromMimic = fromMimic;
             _enraged = false;
             _bossSpoke = false;
             _partySpoke = false;
@@ -2363,6 +2364,7 @@ namespace MoonThief
         }
 
         bool _enraged;
+        bool _fromMimic;   // this fight walked out of a chest - the scar's own medal waits at the end
         bool _hasBoss;
         bool _bossSpoke;   // the keeper's guaranteed first line is spent
         bool _partySpoke;  // the party's opening line is spent
@@ -3036,6 +3038,9 @@ namespace MoonThief
                 Game.State.Defeats++;   // one step for the nightwatch
                 if (e.Rare) Medals.Grant("moonlit");
             }
+            // the box bit first and the thief is still standing - that earns a medal
+            // the way touching a hot stove earns a scar
+            if (_fromMimic) Medals.Grant("bitten");
             // the bestiary is keyed by the species, not its printed name - and the card
             // gets a line for whichever of them the book meets tonight for the first time
             var firsts = new List<string>();

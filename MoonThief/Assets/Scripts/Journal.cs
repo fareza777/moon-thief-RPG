@@ -734,6 +734,7 @@ namespace MoonThief
             new Def{ Id="warden",  Icon=20 },   // every villager errand finished
             new Def{ Id="iron",    Icon=3  },   // the moon raised on HARD - the cruel telling
             new Def{ Id="ghost",   Icon=16 },   // three blades they never saw coming
+            new Def{ Id="bitten",  Icon=8  },   // touched the wrong box and lived
         };
 
         static readonly HashSet<string> _set = new HashSet<string>();
