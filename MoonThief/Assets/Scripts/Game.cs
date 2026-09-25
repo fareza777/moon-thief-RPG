@@ -2855,6 +2855,12 @@ namespace MoonThief
             Menus.EditorJournal(3);
             yield return new WaitForSecondsRealtime(0.5f);
             Shot("28f-bestiary");
+            // page two of the beast book: late-night species and the FRIEND column
+            // live there, where no shot has ever reached them
+            for (int i = 0; i < 6; i++) Menus.Tick(0.1f, Vector2.zero, false, 1, false, false);
+            Menus.Tick(0.1f, Vector2.zero, false, 0, true, false);
+            yield return new WaitForSecondsRealtime(0.4f);
+            Shot("28f2-bestiary-p2");
             // the medal case: mostly "?????" this early - the trophy wall needs checking
             // for both its earned rows and its locked ones
             Menus.EditorJournal(6);
