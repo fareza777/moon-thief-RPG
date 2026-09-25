@@ -420,7 +420,10 @@ namespace MoonThief
             FullQuad(_credRoot, "dim", 6000, new Color(6f / 255f, 5f / 255f, 16f / 255f, 0.9f));
             _credCard = new GameObject("card").transform;
             _credCard.SetParent(_credRoot, false);
-            _credPanel = Panel(_credCard, "credPanel", 6002, 15.6f, 17.4f, 0f);
+            // tall enough to hold the RATE/SHARE/BACK rows: at 17.4 the frame ended at
+            // -8.7 while the rows run to -12.5, so SHARE straddled the border and BACK
+            // hung fully outside the card
+            _credPanel = Panel(_credCard, "credPanel", 6002, 15.6f, 21.55f, -2.08f);
 
             // the moon over the card, a hairline under the title block - a page this empty
             // reads as unfinished without a little furniture
